@@ -26,7 +26,7 @@ import { ErrorState } from "@/components/page-header";
 import { createExerciseTypeVersion, getExerciseType, updateExerciseType } from "@/api";
 import type { ExerciseTypeDetail } from "@/types";
 import { formatDate, parseJsonObjectText, toJsonText } from "@/lib/format";
-import { getErrorMessage } from "@/lib/use-query";
+import { getErrorMessage, useQuery } from "@/lib/use-query";
 import { toast } from "sonner";
 
 interface ExerciseTypeDetailSheetProps {

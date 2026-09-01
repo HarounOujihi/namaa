@@ -62,7 +62,7 @@ export class ExercisesService {
         id: e.id,
         versionsCount: e.versions.length,
         stageNames: e.stageItems.map((si) => si.roadmapStage.name),
-        latestVersion: e.versions[0],
+        latestVersion: latestView(e.versions[0]),
       }));
   }
 
@@ -125,12 +125,7 @@ export class ExercisesService {
       },
       include: { versions: VERSIONS_INCLUDE },
     });
-    return {
-      id: exercise.id,
-      versionsCount: exercise.versions.length,
-      stageNames: [] as string[],
-      latestVersion: exercise.versions[0],
-    };
+    return this.get(exercise.id);
   }
 
   /**
@@ -260,12 +255,7 @@ export class ExercisesService {
       },
       include: { versions: VERSIONS_INCLUDE },
     });
-    return {
-      id: exercise.id,
-      versionsCount: exercise.versions.length,
-      stageNames: [] as string[],
-      latestVersion: exercise.versions[0],
-    };
+    return this.get(exercise.id);
   }
 
   private async assertRefsExist(
@@ -284,4 +274,14 @@ export class ExercisesService {
     if (!difficulty) throw new BadRequestException('Unknown difficultyLevelId');
     if (ageGroupId && !ageGroup) throw new BadRequestException('Unknown ageGroupId');
   }
+}
+
+/** Flatten exerciseTypeVersion.exerciseType to exerciseType per the admin API contract. */
+function latestView<T extends { exerciseTypeVersion: { id: string; exerciseType: unknown } }>(v: T) {
+  const { exerciseTypeVersion, ...rest } = v;
+  return {
+    ...rest,
+    exerciseType: exerciseTypeVersion.exerciseType,
+    exerciseTypeVersionId: exerciseTypeVersion.id,
+  };
 }

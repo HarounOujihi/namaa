@@ -6,15 +6,16 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "turbo run dev",
-    "postinstall": "pnpm --filter api exec prisma generate",
-    "lint": "turbo run lint",
-    "db:migrate": "pnpm --filter api exec prisma migrate dev",
+    "build": "turbo run build",
     "db:deploy": "pnpm --filter api exec prisma migrate deploy",
+    "db:migrate": "pnpm --filter api exec prisma migrate dev",
     "db:seed": "pnpm --filter api exec prisma db seed",
     "db:studio": "pnpm --filter api exec prisma studio",
+    "dev": "turbo run dev",
+    "infra:down": "docker compose down",
     "infra:up": "docker compose up -d",
-    "infra:down": "docker compose down"
+    "lint": "turbo run lint",
+    "postinstall": "pnpm --filter api exec prisma generate"
   },
   "devDependencies": {
     "turbo": "^2.3.0"

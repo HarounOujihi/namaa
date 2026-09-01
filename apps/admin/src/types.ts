@@ -92,11 +92,6 @@ export interface ExerciseTypeCreatePayload {
   configSchema: Record<string, unknown>;
 }
 
-export interface ExerciseTypeUpdatePayload {
-  name?: string;
-  description?: string;
-}
-
 export type JsonObject = Record<string, unknown>;
 
 export type ExerciseStatus = "DRAFT" | "REVIEW" | "PUBLISHED" | "ARCHIVED";

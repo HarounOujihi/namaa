@@ -3,6 +3,7 @@ import { PageHeader, ErrorState } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getStats } from "@/api";
+import type { AdminStats } from "@/types";
 import { useQuery } from "@/lib/use-query";
 import {
   BrainIcon,
@@ -15,19 +16,9 @@ import {
 } from "lucide-react";
 
 interface StatCardSpec {
-  key: keyof StatsCards;
+  key: keyof AdminStats;
   label: string;
   icon: ComponentType<{ className?: string }>;
-}
-
-interface StatsCards {
-  skills: number;
-  exerciseTypes: number;
-  exercises: number;
-  published: number;
-  drafts: number;
-  assets: number;
-  roadmaps: number;
 }
 
 const STAT_CARDS: readonly StatCardSpec[] = [
@@ -41,7 +32,7 @@ const STAT_CARDS: readonly StatCardSpec[] = [
 ];
 
 export function DashboardPage() {
-  const { data, loading, error, reload } = useQuery<StatsCards>(() => getStats(), []);
+  const { data, loading, error, reload } = useQuery(() => getStats(), []);
 
   return (
     <div>

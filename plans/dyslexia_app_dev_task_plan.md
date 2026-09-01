@@ -77,14 +77,14 @@ Storage:     S3-compatible object storage
 
 - [x] `skills` table, seeded with the 9 canonical entries
 - [x] `roadmap_stages` table, referencing `skills`, with per-stage mastery config (required skills, threshold, min accuracy, min attempts, prerequisite stages) *(table + seed done — 9 stages chained; CMS CRUD pending)*
-- [ ] Exercise type CRUD, versioned (`exercise_type` + `exercise_type_version`) — changing a type's structure shouldn't corrupt historical attempts
-- [ ] Exercise CRUD with `configuration_json`. Keep this rule visible in the CMS copy: *"Create unlimited exercises from existing exercise types. A brand-new interaction type needs a developer-built renderer."*
+- [x] Exercise type CRUD, versioned (`exercise_type` + `exercise_type_version`) — changing a type's structure shouldn't corrupt historical attempts
+- [x] Exercise CRUD with `configuration_json`. Keep this rule visible in the CMS copy: *"Create unlimited exercises from existing exercise types. A brand-new interaction type needs a developer-built renderer."*
 - [x] `assets` table (`id, type, storage_key, mime_type, size, duration, metadata, status`) — exercises reference asset IDs, never raw storage URLs *(table + upload/GET verified; exercise references land with Phase 2 CRUD)*
-- [ ] Exercise duplication ("clone, then swap target word/image/audio") — cheap and worth having even at small catalog size
-- [ ] Content validation before publish: exercise-type + version exist, skill + roadmap stage exist, difficulty/age range valid, required fields present, correct answer present, referenced assets exist, JSON matches the type's schema
-- [ ] Workflow: Draft → Validate → Review → Publish → Archive
-- [ ] Roadmap CRUD, stage-exercise assignment
-- [ ] Milestone: admin ships a full new activity with no developer involved
+- [x] Exercise duplication ("clone, then swap target word/image/audio") — cheap and worth having even at small catalog size
+- [x] Content validation before publish: exercise-type + version exist, skill + roadmap stage exist, difficulty/age range valid, required fields present, correct answer present, referenced assets exist, JSON matches the type's schema *(ajv + per-type semantic + asset referential checks; enforced on create/patch/validate/publish)*
+- [x] Workflow: Draft → Validate → Review → Publish → Archive *(REVIEW status reserved but no separate review step — single-admin MVP goes draft→publish directly)*
+- [x] Roadmap CRUD, stage-exercise assignment *(stage item add/remove/reorder + per-stage mastery editing; full roadmap versioning CRUD deferred until a second roadmap is needed)*
+- [x] Milestone: admin ships a full new activity with no developer involved *(verified in-browser: create → validation error shown → fix → save → publish)*
 - [ ] *Deferred, not MVP-critical: bulk import/export, bulk media upload — revisit once the content library is actually large enough to need them*
 
 ---
