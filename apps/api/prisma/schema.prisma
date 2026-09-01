@@ -1,0 +1,696 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =========================================================================
+// ENUMS
+// =========================================================================
+
+enum UserRole {
+  PARENT
+  SPECIALIST
+  SUPER_ADMIN
+}
+
+enum ContentStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AssetType {
+  IMAGE
+  AUDIO
+  VIDEO
+  ANIMATION
+  GAME_ASSET
+}
+
+enum RewardTransactionType {
+  EARNED
+  SPENT
+}
+
+// =========================================================================
+// IDENTITY
+// CHILD is deliberately not a login role here — a child is a profile
+// selected inside an already-authenticated parent or specialist session,
+// matching the source spec's start-screen flow (child = pick a profile,
+// no PIN; parent/specialist = PIN/password).
+// =========================================================================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         UserRole
+  // Dashboard language preference — only meaningfully used by PARENT and
+  // SPECIALIST users; the admin app (SUPER_ADMIN) ships single-language
+  // and ignores this field.
+  locale       String   @default("ar")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  parentProfile     ParentProfile?
+  specialistProfile SpecialistProfile?
+
+  createdExerciseVersions   ExerciseVersion[]   @relation("ExerciseVersionCreatedBy")
+  createdRoadmapVersions    RoadmapVersion[]    @relation("RoadmapVersionCreatedBy")
+  createdAssessmentVersions AssessmentVersion[] @relation("AssessmentVersionCreatedBy")
+
+  @@map("users")
+}
+
+model ParentProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName  String
+  createdAt DateTime @default(now())
+
+  children       ParentChild[]
+  claimedInvites ChildInviteCode[]
+
+  @@map("parent_profiles")
+}
+
+model SpecialistProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName  String
+  createdAt DateTime @default(now())
+
+  children SpecialistChild[]
+
+  @@map("specialist_profiles")
+}
+
+model ChildProfile {
+  id            String   @id @default(cuid())
+  fullName      String
+  birthDate     DateTime
+  gradeLevel    String?
+  avatarAssetId String?
+  avatarAsset   Asset?   @relation(fields: [avatarAssetId], references: [id])
+  // Optional shared-device profile-picker PIN (hash it if implemented) —
+  // this is a "which kid is this" gate, not an account credential.
+  pin           String?
+  // Who created this profile: PARENT (family screen) or SPECIALIST
+  // (institutional onboarding, starts unclaimed — see ChildInviteCode).
+  createdByRole UserRole
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  parents     ParentChild[]
+  specialists SpecialistChild[]
+  inviteCodes ChildInviteCode[]
+
+  assessmentAttempts   AssessmentAttempt[]
+  exerciseAttempts     ExerciseAttempt[]
+  skillProgress        ChildSkillProgress[]
+  roadmapProgress      ChildRoadmapProgress[]
+  rewards              ChildReward[]
+  badges               ChildBadge[]
+  rewardTransactions   RewardTransaction[]
+  progressionDecisions ProgressionDecision[]
+
+  @@map("child_profiles")
+}
+
+// Many-to-many, no ownership transfer. The common case is one parent
+// account per child, but this also covers e.g. separated parents with two
+// family accounts, without a schema change.
+model ParentChild {
+  id       String        @id @default(cuid())
+  parentId String
+  parent   ParentProfile @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  childId  String
+  child    ChildProfile  @relation(fields: [childId], references: [id], onDelete: Cascade)
+  // Per the source spec, edit/delete of a child profile is parent-only.
+  // Kept as a field (not hardcoded to true) in case a future "read-only
+  // co-parent" case shows up — enforce it server-side either way.
+  canEdit  Boolean       @default(true)
+  linkedAt DateTime      @default(now())
+
+  @@unique([parentId, childId])
+  @@map("parent_children")
+}
+
+// Many-to-many — a child can have more than one specialist, concurrently
+// or over time. This is a relationship, never an ownership handoff.
+model SpecialistChild {
+  id           String            @id @default(cuid())
+  specialistId String
+  specialist   SpecialistProfile @relation(fields: [specialistId], references: [id], onDelete: Cascade)
+  childId      String
+  child        ChildProfile      @relation(fields: [childId], references: [id], onDelete: Cascade)
+  assignedAt   DateTime          @default(now())
+  // Soft-disable instead of deleting, so historical case notes/reports
+  // don't lose their specialist attribution when a case is handed off.
+  active       Boolean           @default(true)
+
+  @@unique([specialistId, childId])
+  @@map("specialist_children")
+}
+
+// Specialist-created children start unclaimed (no parent yet). A parent
+// redeems this code to create the ParentChild link. This IS the
+// specialist-assignment mechanism for that path — no separate flow needed.
+model ChildInviteCode {
+  id                String         @id @default(cuid())
+  childId           String
+  child             ChildProfile   @relation(fields: [childId], references: [id], onDelete: Cascade)
+  code              String         @unique
+  createdAt         DateTime       @default(now())
+  expiresAt         DateTime?
+  claimedAt         DateTime?
+  claimedByParentId String?
+  claimedByParent   ParentProfile? @relation(fields: [claimedByParentId], references: [id])
+
+  @@map("child_invite_codes")
+}
+
+// =========================================================================
+// CONTENT TAXONOMY
+// Skill = the 9-item canonical, independently-tracked list. RoadmapStage is
+// kept as its own entity (not folded into Skill) so a stage's sequencing/
+// mastery config can change, or a second roadmap can reuse the same skills
+// in a different order, without touching the skill definitions.
+// =========================================================================
+
+model Skill {
+  id               String   @id @default(cuid())
+  code             String   @unique // e.g. AUDITORY_DISCRIMINATION
+  name             String
+  // Optional { "en": "...", "fr": "..." } map for dashboard display only —
+  // never used for the underlying Arabic exercise content itself.
+  nameTranslations Json?
+  order            Int
+  createdAt        DateTime @default(now())
+
+  exerciseVersions     ExerciseVersion[]
+  assessmentItems      AssessmentItem[]
+  assessmentResults    AssessmentResult[]
+  childSkillProgress   ChildSkillProgress[]
+  roadmapStageSkills   RoadmapStageSkill[]
+  progressionDecisions ProgressionDecision[]
+
+  @@map("skills")
+}
+
+model DifficultyLevel {
+  id    String @id @default(cuid())
+  code  String @unique
+  name  String
+  order Int
+
+  exerciseVersions ExerciseVersion[]
+
+  @@map("difficulty_levels")
+}
+
+model AgeGroup {
+  id     String @id @default(cuid())
+  code   String @unique
+  label  String
+  minAge Int
+  maxAge Int
+
+  exerciseVersions ExerciseVersion[]
+
+  @@map("age_groups")
+}
+
+// =========================================================================
+// ROADMAP
+// =========================================================================
+
+model Roadmap {
+  id        String   @id @default(cuid())
+  name      String
+  isDefault Boolean  @default(true) // MVP ships exactly one
+  createdAt DateTime @default(now())
+
+  versions RoadmapVersion[]
+  progress ChildRoadmapProgress[]
+
+  @@map("roadmaps")
+}
+
+model RoadmapVersion {
+  id          String        @id @default(cuid())
+  roadmapId   String
+  roadmap     Roadmap       @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  version     Int
+  status      ContentStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdById String?
+  createdBy   User?         @relation("RoadmapVersionCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime      @default(now())
+
+  stages RoadmapStage[]
+
+  @@unique([roadmapId, version])
+  @@index([roadmapId, status])
+  @@map("roadmap_versions")
+}
+
+model RoadmapStage {
+  id                    String         @id @default(cuid())
+  roadmapVersionId      String
+  roadmapVersion        RoadmapVersion @relation(fields: [roadmapVersionId], references: [id], onDelete: Cascade)
+  name                  String
+  nameTranslations      Json?
+  order                 Int
+  // Mastery rule config, evaluated by the progression engine — not a
+  // hardcoded "stage N unlocks stage N+1" chain.
+  masteryThreshold      Float
+  minAccuracy           Float?
+  minSuccessfulAttempts Int?
+
+  requiredSkills RoadmapStageSkill[]
+  // Self-referencing m-n: a stage can require more than one prior stage,
+  // and unlock more than one next stage.
+  prerequisites  RoadmapStage[]      @relation("StagePrerequisites")
+  unlocks        RoadmapStage[]      @relation("StagePrerequisites")
+
+  stageItems StageItem[]
+  progress   ChildRoadmapProgress[]
+
+  @@unique([roadmapVersionId, order])
+  @@map("roadmap_stages")
+}
+
+model RoadmapStageSkill {
+  id             String       @id @default(cuid())
+  roadmapStageId String
+  roadmapStage   RoadmapStage @relation(fields: [roadmapStageId], references: [id], onDelete: Cascade)
+  skillId        String
+  skill          Skill        @relation(fields: [skillId], references: [id])
+
+  @@unique([roadmapStageId, skillId])
+  @@map("roadmap_stage_skills")
+}
+
+model StageItem {
+  id             String       @id @default(cuid())
+  roadmapStageId String
+  roadmapStage   RoadmapStage @relation(fields: [roadmapStageId], references: [id], onDelete: Cascade)
+  order          Int
+  // "EXERCISE" | "GAME" | "ASSESSMENT_CHECKPOINT" | "REWARD_MOMENT"
+  itemType       String
+  exerciseId     String?
+  exercise       Exercise?    @relation(fields: [exerciseId], references: [id])
+
+  @@unique([roadmapStageId, order])
+  @@map("stage_items")
+}
+
+model ChildRoadmapProgress {
+  id             String        @id @default(cuid())
+  childId        String
+  child          ChildProfile  @relation(fields: [childId], references: [id], onDelete: Cascade)
+  roadmapId      String
+  roadmap        Roadmap       @relation(fields: [roadmapId], references: [id])
+  currentStageId String?
+  currentStage   RoadmapStage? @relation(fields: [currentStageId], references: [id])
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([childId, roadmapId])
+  @@map("child_roadmap_progress")
+}
+
+// =========================================================================
+// EXERCISE TYPES & EXERCISES
+// Exercise = stable logical record. ExerciseVersion = the actual versioned
+// content. exercise_attempts reference a specific ExerciseVersion, so a
+// content edit after the fact can never change what a past attempt was
+// scored against. "Current published version" = query status=PUBLISHED,
+// order by version desc — deliberately no separate pointer column, to
+// avoid a circular FK for something a simple query already answers.
+// =========================================================================
+
+model ExerciseType {
+  id          String   @id @default(cuid())
+  code        String   @unique // MULTIPLE_CHOICE, IMAGE_MATCH, BALLOON_POP, ...
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  versions ExerciseTypeVersion[]
+
+  @@map("exercise_types")
+}
+
+model ExerciseTypeVersion {
+  id             String       @id @default(cuid())
+  exerciseTypeId String
+  exerciseType   ExerciseType @relation(fields: [exerciseTypeId], references: [id], onDelete: Cascade)
+  version        Int
+  // JSON schema that a linked ExerciseVersion.configuration must satisfy —
+  // this is what Phase 2's "content validation before publish" checks against.
+  configSchema   Json
+  createdAt      DateTime     @default(now())
+
+  exerciseVersions ExerciseVersion[]
+  assessmentItems  AssessmentItem[]
+
+  @@unique([exerciseTypeId, version])
+  @@map("exercise_type_versions")
+}
+
+model Exercise {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  versions   ExerciseVersion[]
+  stageItems StageItem[]
+
+  @@map("exercises")
+}
+
+model ExerciseVersion {
+  id                    String              @id @default(cuid())
+  exerciseId            String
+  exercise              Exercise            @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  version               Int
+  title                 String
+  instructions          String?
+  skillId               String
+  skill                 Skill               @relation(fields: [skillId], references: [id])
+  difficultyLevelId     String
+  difficultyLevel       DifficultyLevel     @relation(fields: [difficultyLevelId], references: [id])
+  ageGroupId            String?
+  ageGroup              AgeGroup?           @relation(fields: [ageGroupId], references: [id])
+  exerciseTypeVersionId String
+  exerciseTypeVersion   ExerciseTypeVersion @relation(fields: [exerciseTypeVersionId], references: [id])
+  // Prompt, options, correct answer, asset references — the actual content.
+  configuration         Json
+  estimatedDurationSec  Int?
+  status                ContentStatus       @default(DRAFT)
+  publishedAt           DateTime?
+  createdById           String?
+  createdBy             User?               @relation("ExerciseVersionCreatedBy", fields: [createdById], references: [id])
+  createdAt             DateTime            @default(now())
+
+  attempts ExerciseAttempt[]
+
+  @@unique([exerciseId, version])
+  @@index([exerciseId, status])
+  @@map("exercise_versions")
+}
+
+model Asset {
+  id         String        @id @default(cuid())
+  type       AssetType
+  storageKey String
+  mimeType   String
+  sizeBytes  Int
+  durationMs Int?
+  metadata   Json?
+  status     ContentStatus @default(PUBLISHED)
+  createdAt  DateTime      @default(now())
+
+  childAvatarsUsing ChildProfile[]
+
+  @@map("assets")
+}
+
+// =========================================================================
+// EXERCISE ATTEMPTS / EVENTS
+// clientAttemptId / clientEventId are supplied by the client (not the
+// server) specifically so the offline sync queue can submit the same
+// record twice after a dropped connection without creating a duplicate —
+// the unique constraint makes the write idempotent.
+// =========================================================================
+
+model ExerciseAttempt {
+  id                String          @id @default(cuid())
+  clientAttemptId   String          @unique
+  childId           String
+  child             ChildProfile    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  exerciseVersionId String
+  exerciseVersion   ExerciseVersion @relation(fields: [exerciseVersionId], references: [id])
+  startedAt         DateTime
+  completedAt       DateTime?
+  durationMs        Int?
+  score             Float?
+  stars             Int?
+  isSuccess         Boolean?
+  attemptNumber     Int             @default(1)
+  syncedAt          DateTime        @default(now())
+
+  answers ExerciseAnswer[]
+  events  ExerciseEvent[]
+
+  @@index([childId, completedAt])
+  @@map("exercise_attempts")
+}
+
+model ExerciseAnswer {
+  id             String          @id @default(cuid())
+  attemptId      String
+  attempt        ExerciseAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionKey    String
+  answer         Json
+  correct        Boolean
+  responseTimeMs Int?
+
+  @@map("exercise_answers")
+}
+
+model ExerciseEvent {
+  id            String          @id @default(cuid())
+  clientEventId String          @unique
+  attemptId     String
+  attempt       ExerciseAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  // GAME_STARTED, ANSWER_SELECTED, HINT_USED, TIMEOUT, GAME_COMPLETED, ...
+  eventType     String
+  eventData     Json?
+  createdAt     DateTime        @default(now())
+
+  @@index([attemptId, createdAt])
+  @@map("exercise_events")
+}
+
+// =========================================================================
+// DIAGNOSTIC ASSESSMENT
+// Same current-version-by-query pattern as Exercise. AssessmentItem
+// reuses an ExerciseTypeVersion for rendering but is NOT an Exercise row —
+// it's separate diagnostic content that happens to share the renderer.
+// =========================================================================
+
+model Assessment {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  versions AssessmentVersion[]
+
+  @@map("assessments")
+}
+
+model AssessmentVersion {
+  id           String        @id @default(cuid())
+  assessmentId String
+  assessment   Assessment    @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  version      Int
+  status       ContentStatus @default(DRAFT)
+  publishedAt  DateTime?
+  createdById  String?
+  createdBy    User?         @relation("AssessmentVersionCreatedBy", fields: [createdById], references: [id])
+  createdAt    DateTime      @default(now())
+
+  items    AssessmentItem[]
+  attempts AssessmentAttempt[]
+
+  @@unique([assessmentId, version])
+  @@map("assessment_versions")
+}
+
+model AssessmentItem {
+  id                    String              @id @default(cuid())
+  assessmentVersionId   String
+  assessmentVersion     AssessmentVersion   @relation(fields: [assessmentVersionId], references: [id], onDelete: Cascade)
+  order                 Int
+  // Routes the diagnostic result straight to a skill — no separate
+  // difficulty-to-skill lookup table needed.
+  skillId               String
+  skill                 Skill               @relation(fields: [skillId], references: [id])
+  exerciseTypeVersionId String
+  exerciseTypeVersion   ExerciseTypeVersion @relation(fields: [exerciseTypeVersionId], references: [id])
+  configuration         Json
+
+  answers AssessmentAnswer[]
+
+  @@unique([assessmentVersionId, order])
+  @@map("assessment_items")
+}
+
+model AssessmentAttempt {
+  id                  String            @id @default(cuid())
+  clientAttemptId     String            @unique
+  childId             String
+  child               ChildProfile      @relation(fields: [childId], references: [id], onDelete: Cascade)
+  assessmentVersionId String
+  assessmentVersion   AssessmentVersion @relation(fields: [assessmentVersionId], references: [id])
+  startedAt           DateTime
+  completedAt         DateTime?
+
+  answers AssessmentAnswer[]
+  results AssessmentResult[]
+
+  @@index([childId, completedAt])
+  @@map("assessment_attempts")
+}
+
+model AssessmentAnswer {
+  id             String            @id @default(cuid())
+  attemptId      String
+  attempt        AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  itemId         String
+  item           AssessmentItem    @relation(fields: [itemId], references: [id])
+  answer         Json
+  correct        Boolean
+  responseTimeMs Int?
+
+  @@map("assessment_answers")
+}
+
+// One row per skill measured by a given assessment attempt — the
+// parent/specialist-only results summary reads straight from this.
+model AssessmentResult {
+  id            String            @id @default(cuid())
+  attemptId     String
+  attempt       AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  skillId       String
+  skill         Skill             @relation(fields: [skillId], references: [id])
+  startingLevel Int
+  createdAt     DateTime          @default(now())
+
+  @@unique([attemptId, skillId])
+  @@map("assessment_results")
+}
+
+// =========================================================================
+// PROGRESSION & SKILL TRACKING
+// =========================================================================
+
+model ChildSkillProgress {
+  id             String       @id @default(cuid())
+  childId        String
+  child          ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+  skillId        String
+  skill          Skill        @relation(fields: [skillId], references: [id])
+  currentLevel   Int          @default(1)
+  accuracy       Float?
+  attempts       Int          @default(0)
+  successRate    Float?
+  lastActivityAt DateTime?
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([childId, skillId])
+  @@map("child_skill_progress")
+}
+
+// Every level change, logged with why it happened, so the adaptive system
+// stays debuggable instead of a black box.
+model ProgressionDecision {
+  id              String       @id @default(cuid())
+  childId         String
+  child           ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+  skillId         String
+  skill           Skill        @relation(fields: [skillId], references: [id])
+  previousLevel   Int
+  newLevel        Int
+  reason          String
+  sourceAttemptId String?
+  ruleId          String // e.g. "REPEATED_FAILURE_STEP_DOWN_V1", "MASTERY_UNLOCK_V1"
+  createdAt       DateTime     @default(now())
+
+  @@index([childId, skillId, createdAt])
+  @@map("progression_decisions")
+}
+
+// =========================================================================
+// GAMIFICATION / REWARDS
+// =========================================================================
+
+model RewardType {
+  id   String @id @default(cuid())
+  code String @unique // STAR, POINT, BADGE, CUSTOMIZATION
+  name String
+
+  rewards Reward[]
+
+  @@map("reward_types")
+}
+
+model Reward {
+  id           String     @id @default(cuid())
+  rewardTypeId String
+  rewardType   RewardType @relation(fields: [rewardTypeId], references: [id])
+  code         String     @unique
+  name         String
+  metadata     Json?
+
+  childRewards ChildReward[]
+
+  @@map("rewards")
+}
+
+model Badge {
+  id               String  @id @default(cuid())
+  code             String  @unique
+  name             String
+  nameTranslations Json?
+  description      String?
+  iconAssetId      String?
+
+  childBadges ChildBadge[]
+
+  @@map("badges")
+}
+
+model ChildReward {
+  id       String       @id @default(cuid())
+  childId  String
+  child    ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+  rewardId String
+  reward   Reward       @relation(fields: [rewardId], references: [id])
+  earnedAt DateTime     @default(now())
+
+  @@map("child_rewards")
+}
+
+model ChildBadge {
+  id       String       @id @default(cuid())
+  childId  String
+  child    ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+  badgeId  String
+  badge    Badge        @relation(fields: [badgeId], references: [id])
+  earnedAt DateTime     @default(now())
+
+  @@unique([childId, badgeId])
+  @@map("child_badges")
+}
+
+model RewardTransaction {
+  id        String                @id @default(cuid())
+  childId   String
+  child     ChildProfile          @relation(fields: [childId], references: [id], onDelete: Cascade)
+  type      RewardTransactionType
+  points    Int
+  reason    String
+  createdAt DateTime              @default(now())
+
+  @@index([childId, createdAt])
+  @@map("reward_transactions")
+}

@@ -1,0 +1,22 @@
+{
+  "name": "dyslexia-therapy",
+  "private": true,
+  "packageManager": "pnpm@9.13.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "db:migrate": "pnpm --filter api exec prisma migrate dev",
+    "db:deploy": "pnpm --filter api exec prisma migrate deploy",
+    "db:seed": "pnpm --filter api exec prisma db seed",
+    "db:studio": "pnpm --filter api exec prisma studio",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
+  }
+}

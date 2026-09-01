@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dyslexia-postgres
+    environment:
+      POSTGRES_USER: dyslexia
+      POSTGRES_PASSWORD: dyslexia
+      POSTGRES_DB: dyslexia
+    # 5432/9000/9001 on this host are taken by other projects' containers —
+    # dev stack uses 5435 / 9005 / 9006.
+    ports:
+      - "5435:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dyslexia"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio
+    container_name: dyslexia-minio
+    command: server /data --console-address ":9006"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9005:9000"
+      - "9006:9006"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
+  miniodata:
