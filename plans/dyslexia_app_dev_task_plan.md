@@ -22,13 +22,13 @@ Principle: build the configurable platform from day one, seed it with a small MV
 
 ## Phase 0 — Product & Architecture Decisions
 
-- [ ] Content model is data-driven at the schema level from day one — no hard-coded TS/JS exercise arrays. The Super Admin CMS *UI* can still be scoped down for MVP; seed the initial content via migration/seed scripts either way.
-- [ ] Accounts: only `PARENT`, `SPECIALIST`, `SUPER_ADMIN` are login-based roles. `CHILD` is **not** a credentialed role — a child is a profile selected inside an authenticated parent or specialist session. This matches the source flow directly: picking "child" lists linked profiles with no PIN; picking parent/specialist requires PIN/password.
-- [ ] Specialist↔child relationship is many-to-many (`specialist_children`), never an ownership transfer. A child can belong to a family (`parent_children`) and have one or more specialists at once, and can change specialists without losing history.
-- [ ] Specialist-created children start **unclaimed** (no parent yet); a parent claims one via invite code. This is the assignment mechanism — no separate flow needed.
-- [ ] `skills` = the 9-item canonical list (Auditory Discrimination → Reading Comprehension), independently tracked per child. `roadmap_stages` is a separate table that references skills — kept distinct so a stage's config can change, or a second roadmap can reuse the same skills in a different order, without touching the skill definitions themselves.
-- [ ] Roadmap unlocking uses per-stage configurable mastery rules (required skills, threshold, min accuracy, min attempts, prerequisites) — not a hardcoded `Stage 1 → Stage 2` chain.
-- [ ] Finalize monorepo layout (below), initialize repo.
+- [x] Content model is data-driven at the schema level from day one — no hard-coded TS/JS exercise arrays. The Super Admin CMS *UI* can still be scoped down for MVP; seed the initial content via migration/seed scripts either way.
+- [x] Accounts: only `PARENT`, `SPECIALIST`, `SUPER_ADMIN` are login-based roles. `CHILD` is **not** a credentialed role — a child is a profile selected inside an authenticated parent or specialist session. This matches the source flow directly: picking "child" lists linked profiles with no PIN; picking parent/specialist requires PIN/password.
+- [x] Specialist↔child relationship is many-to-many (`specialist_children`), never an ownership transfer. A child can belong to a family (`parent_children`) and have one or more specialists at once, and can change specialists without losing history.
+- [x] Specialist-created children start **unclaimed** (no parent yet); a parent claims one via invite code. This is the assignment mechanism — no separate flow needed.
+- [x] `skills` = the 9-item canonical list (Auditory Discrimination → Reading Comprehension), independently tracked per child. `roadmap_stages` is a separate table that references skills — kept distinct so a stage's config can change, or a second roadmap can reuse the same skills in a different order, without touching the skill definitions themselves.
+- [x] Roadmap unlocking uses per-stage configurable mastery rules (required skills, threshold, min accuracy, min attempts, prerequisites) — not a hardcoded `Stage 1 → Stage 2` chain.
+- [x] Finalize monorepo layout (below), initialize repo.
 - [ ] Produce: ERD, API spec, frontend architecture doc, exercise-type spec, game architecture, UI wireframes, content model.
 
 ---
@@ -58,16 +58,16 @@ Storage:     S3-compatible object storage
 
 ## Phase 1 — Identity & Backend Foundation
 
-- [ ] Auth (JWT/session) for `PARENT`, `SPECIALIST`, `SUPER_ADMIN` only
-- [ ] Tables: `users`, `roles`, `user_roles`, `parent_profiles`, `specialist_profiles`
-- [ ] `child_profiles` (no login credentials) — fields: `full_name`, `birth_date`, `grade_level`, avatar; optionally a lightweight shared PIN if you want a "which kid is this" gate on a shared tablet
-- [ ] `parent_children`, `specialist_children` — both many-to-many, no ownership field on either
-- [ ] Start screen: role picker (child / parent / specialist). Child path → list linked profiles, no credential. Parent/specialist path → PIN/password. Full audio narration, minimal text, light load.
-- [ ] Family child-selection screen: avatar card per child; **add child = parent only**; **edit/delete = parent only**, enforced server-side
-- [ ] Specialist "add child" flow: creates an unclaimed profile + parent invite code/link
-- [ ] Parent "claim child" flow: redeem invite code → creates the `parent_children` row (doesn't touch `specialist_children`)
-- [ ] Basic shells for all three apps
-- [ ] Object storage wiring
+- [x] Auth (JWT/session) for `PARENT`, `SPECIALIST`, `SUPER_ADMIN` only
+- [x] Tables: `users`, `roles`, `user_roles`, `parent_profiles`, `specialist_profiles` *(simplified: single `role` enum column on `users` replaces the `roles`/`user_roles` join tables — sufficient until roles need metadata)*
+- [x] `child_profiles` (no login credentials) — fields: `full_name`, `birth_date`, `grade_level`, avatar; optionally a lightweight shared PIN if you want a "which kid is this" gate on a shared tablet
+- [x] `parent_children`, `specialist_children` — both many-to-many, no ownership field on either
+- [x] Start screen: role picker (child / parent / specialist). Child path → list linked profiles, no credential. Parent/specialist path → PIN/password. Full audio narration, minimal text, light load. *(in `apps/child`; narration via speechSynthesis until audio assets exist)*
+- [x] Family child-selection screen: avatar card per child; **add child = parent only**; **edit/delete = parent only**, enforced server-side *(403 for specialists verified via API)*
+- [x] Specialist "add child" flow: creates an unclaimed profile + parent invite code/link
+- [x] Parent "claim child" flow: redeem invite code → creates the `parent_children` row (doesn't touch `specialist_children`)
+- [x] Basic shells for all three apps
+- [x] Object storage wiring *(MinIO via S3 SDK; presigned upload/GET verified)*
 
 **Result:** parents/specialists authenticate; children exist as profiles reachable from either side, with no login of their own.
 
@@ -75,11 +75,11 @@ Storage:     S3-compatible object storage
 
 ## Phase 2 — Content Model & Super Admin CMS (single language)
 
-- [ ] `skills` table, seeded with the 9 canonical entries
-- [ ] `roadmap_stages` table, referencing `skills`, with per-stage mastery config (required skills, threshold, min accuracy, min attempts, prerequisite stages)
+- [x] `skills` table, seeded with the 9 canonical entries
+- [x] `roadmap_stages` table, referencing `skills`, with per-stage mastery config (required skills, threshold, min accuracy, min attempts, prerequisite stages) *(table + seed done — 9 stages chained; CMS CRUD pending)*
 - [ ] Exercise type CRUD, versioned (`exercise_type` + `exercise_type_version`) — changing a type's structure shouldn't corrupt historical attempts
 - [ ] Exercise CRUD with `configuration_json`. Keep this rule visible in the CMS copy: *"Create unlimited exercises from existing exercise types. A brand-new interaction type needs a developer-built renderer."*
-- [ ] `assets` table (`id, type, storage_key, mime_type, size, duration, metadata, status`) — exercises reference asset IDs, never raw storage URLs
+- [x] `assets` table (`id, type, storage_key, mime_type, size, duration, metadata, status`) — exercises reference asset IDs, never raw storage URLs *(table + upload/GET verified; exercise references land with Phase 2 CRUD)*
 - [ ] Exercise duplication ("clone, then swap target word/image/audio") — cheap and worth having even at small catalog size
 - [ ] Content validation before publish: exercise-type + version exist, skill + roadmap stage exist, difficulty/age range valid, required fields present, correct answer present, referenced assets exist, JSON matches the type's schema
 - [ ] Workflow: Draft → Validate → Review → Publish → Archive
