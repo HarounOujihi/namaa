@@ -3,6 +3,7 @@ import { ApiError, getPlayRoadmap } from "../api";
 import type { Child, PlayRoadmap, PlayStage, PlayStageItem } from "../types";
 import { Mascot } from "../components/Mascot";
 import { speak } from "../speech";
+import { loadAppSounds, playAppSound } from "../app-sounds";
 import { toArabicIndic } from "../arabic";
 import { ExerciseRunner } from "./ExerciseRunner";
 import { StageScreen } from "./StageScreen";
@@ -45,7 +46,14 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
 
   useEffect(() => {
     void loadRoadmap();
-  }, [loadRoadmap]);
+    void loadAppSounds(token);
+  }, [loadRoadmap, token]);
+
+  useEffect(() => {
+    // Wait for the sounds map so a bound asset actually plays instead of
+    // racing the fetch and silently no-op-ing.
+    void loadAppSounds(token).then(() => playAppSound("WELCOME"));
+  }, [token]);
 
   const handleExerciseDone = (stage: PlayStage, item: PlayStageItem): void => {
     setCompletedItemIds((current) => {
@@ -58,6 +66,17 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
       .sort((a, b) => a.order - b.order)
       .filter((candidate) => candidate.order > item.order && candidate.exercise !== null);
     const nextItem = upcoming[0];
+    if (nextItem === undefined) {
+      const playableIds = stage.items
+        .filter((candidate) => candidate.exercise !== null)
+        .map((candidate) => candidate.id);
+      const allDone =
+        playableIds.length > 0 &&
+        playableIds.every((id) => id === item.id || completedItemIds.has(id));
+      if (allDone) {
+        playAppSound("STAGE_COMPLETE");
+      }
+    }
     setView(nextItem !== undefined ? { kind: "exercise", stage, item: nextItem } : { kind: "stage", stage });
   };
 

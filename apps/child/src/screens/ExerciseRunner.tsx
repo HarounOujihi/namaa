@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ExercisePlayer, speakArabic } from "@dyslexia/exercise-engine";
 import type { AnswerResult } from "@dyslexia/exercise-engine";
 import { ApiError, submitPlayAttempt } from "../api";
+import { playAppSound } from "../app-sounds";
 import type { PlayStageItem } from "../types";
 
 interface ExerciseRunnerProps {
@@ -91,7 +92,7 @@ export function ExerciseRunner({ token, childId, item, onAuthExpired, onBack, on
 
   const handleAnswer = (answerResult: AnswerResult): void => {
     setResult(answerResult);
-    speakArabic(answerResult.correct ? "أحسنت!" : "لنجرب مرة أخرى");
+    playAppSound(answerResult.correct ? "CELEBRATION_CORRECT" : "ENCOURAGEMENT_RETRY");
   };
 
   return (

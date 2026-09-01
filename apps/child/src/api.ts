@@ -6,6 +6,7 @@ import type {
   PlayAttemptInput,
   PlayAttemptResult,
   PlayRoadmap,
+  AppSoundsMap,
   RedeemInviteResponse,
   UpdateChildInput,
 } from "./types";
@@ -130,4 +131,10 @@ export function submitPlayAttempt(token: string, input: PlayAttemptInput): Promi
     token,
     body: input,
   });
+}
+
+export function getAppSounds(token: string): Promise<AppSoundsMap> {
+  return request<AppSoundsMap>("/play/sounds", { token }).then(
+    (body: unknown) => (body as { sounds: AppSoundsMap }).sounds,
+  );
 }

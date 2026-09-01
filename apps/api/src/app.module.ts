@@ -9,6 +9,7 @@ import { AssetsModule } from './assets/assets.module';
 import { MetaController } from './health.controller';
 import { AdminModule } from './admin/admin.module';
 import { PlayModule } from './play/play.module';
+import { SoundsModule } from './sounds/sounds.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { PlayModule } from './play/play.module';
     ChildrenModule,
     AdminModule,
     PlayModule,
+    SoundsModule,
     InvitesModule,
     AssetsModule,
   ],

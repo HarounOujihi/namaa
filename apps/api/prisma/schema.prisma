@@ -419,6 +419,7 @@ model Asset {
   createdAt  DateTime      @default(now())
 
   childAvatarsUsing ChildProfile[]
+  appSounds        AppSound[]
 
   @@map("assets")
 }
@@ -693,4 +694,23 @@ model RewardTransaction {
 
   @@index([childId, createdAt])
   @@map("reward_transactions")
+}
+
+// =========================================================================
+// PLATFORM SOUNDS
+// Admin-manageable app-level audio (welcome, celebration, retry
+// encouragement, stage complete). Falls back to TTS via textFallback when
+// no asset is bound. Keys are code constants — see KNOWN_APP_SOUND_KEYS.
+// =========================================================================
+
+model AppSound {
+  id          String   @id @default(cuid())
+  key         String   @unique // WELCOME, CELEBRATION_CORRECT, ENCOURAGEMENT_RETRY, STAGE_COMPLETE
+  label       String
+  assetId     String?
+  asset       Asset?   @relation(fields: [assetId], references: [id])
+  textFallback String
+  updatedAt   DateTime @updatedAt
+
+  @@map("app_sounds")
 }

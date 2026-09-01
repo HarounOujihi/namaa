@@ -96,3 +96,11 @@ export interface PlayAttemptResult {
   score: number;
   isSuccess: boolean;
 }
+
+// Platform sounds: url null means the app falls back to TTS of `text`
+export interface AppSoundEntry {
+  url: string | null;
+  text: string;
+}
+
+export type AppSoundsMap = Record<string, AppSoundEntry>;

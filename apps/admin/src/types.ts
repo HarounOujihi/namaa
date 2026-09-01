@@ -229,3 +229,25 @@ export interface AssetUploadResult {
   mimeType: string;
   url: string;
 }
+
+// Platform sounds (admin-manageable app audio with TTS fallback)
+export interface AppSoundAsset {
+  id: string;
+  mimeType: string;
+  sizeBytes: number;
+  url: string;
+}
+
+export interface AppSound {
+  key: string;
+  label: string;
+  textFallback: string;
+  updatedAt: string;
+  asset: AppSoundAsset | null;
+}
+
+export interface AppSoundUpdatePayload {
+  assetId?: string | null;
+  textFallback?: string;
+  label?: string;
+}

@@ -11,6 +11,7 @@ import {
   PaperclipIcon,
   RouteIcon,
   ShapesIcon,
+  Volume2Icon,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -19,6 +20,7 @@ const NAV_ITEMS = [
   { to: "/exercise-types", label: "Exercise Types", icon: ShapesIcon },
   { to: "/roadmap", label: "Roadmap", icon: RouteIcon },
   { to: "/assets", label: "Assets", icon: PaperclipIcon },
+  { to: "/sounds", label: "Platform Sounds", icon: Volume2Icon },
 ] as const;
 
 function navLinkClass(isActive: boolean, compact: boolean): string {

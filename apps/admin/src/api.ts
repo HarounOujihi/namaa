@@ -23,6 +23,8 @@ import type {
   StageUpdatePayload,
   User,
   ValidationResult,
+  AppSound,
+  AppSoundUpdatePayload,
 } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
@@ -333,4 +335,15 @@ export function uploadAsset(file: File, type: AssetType): Promise<AssetUploadRes
       throw new ApiError(0, "Could not reach the server");
     },
   );
+}
+
+export function listAppSounds(): Promise<AppSound[]> {
+  return request<AppSound[]>("/admin/app-sounds");
+}
+
+export function updateAppSound(key: string, payload: AppSoundUpdatePayload): Promise<AppSound> {
+  return request<AppSound>(`/admin/app-sounds/${encodeURIComponent(key)}`, {
+    method: "PUT",
+    body: payload,
+  });
 }

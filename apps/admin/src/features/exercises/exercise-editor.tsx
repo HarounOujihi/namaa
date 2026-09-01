@@ -15,6 +15,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { JsonEditor } from "@/components/json-editor";
 import { PreviewExerciseDialog } from "@/components/preview-exercise-dialog";
+import { AudioManagerDialog } from "./audio-manager-dialog";
 import { SimpleSelect, type SelectOption } from "@/components/simple-select";
 import { StatusBadge } from "@/components/status-badge";
 import {
@@ -121,6 +122,7 @@ export function ExerciseEditor({ exerciseId, onClose, onChanged }: ExerciseEdito
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<{ path: string; message: string }[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [audioOpen, setAudioOpen] = useState(false);
 
   const initializedFor = useRef<string | null>(null);
   // Once the form is initialized for an exercise (including one we just created),
@@ -176,6 +178,7 @@ export function ExerciseEditor({ exerciseId, onClose, onChanged }: ExerciseEdito
     : selectedType === undefined
       ? "Select an exercise type first"
       : null;
+  const audioDisabledReason = !configResult.ok ? "Fix JSON errors first" : null;
 
   function skillOptions(): SelectOption[] {
     return (options?.skills ?? []).map((skill) => ({ value: skill.id, label: skill.name }));
@@ -474,6 +477,16 @@ export function ExerciseEditor({ exerciseId, onClose, onChanged }: ExerciseEdito
               >
                 Preview
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={audioDisabledReason !== null}
+                onClick={() => setAudioOpen(true)}
+                title={audioDisabledReason ?? undefined}
+              >
+                Audio
+              </Button>
             </div>
             <div className="flex flex-col-reverse gap-2 sm:flex-row">
               <Button type="submit" size="sm" disabled={!canSave}>
@@ -497,6 +510,12 @@ export function ExerciseEditor({ exerciseId, onClose, onChanged }: ExerciseEdito
           typeCode={selectedType?.code ?? ""}
           typeName={selectedType?.name ?? ""}
           configuration={configResult.ok ? configResult.value : null}
+        />
+        <AudioManagerDialog
+          open={audioOpen}
+          onOpenChange={setAudioOpen}
+          configJson={configText}
+          onApply={setConfigText}
         />
       </SheetContent>
     </Sheet>
