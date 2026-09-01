@@ -6,7 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { ChildrenModule } from './children/children.module';
 import { InvitesModule } from './invites/invites.module';
 import { AssetsModule } from './assets/assets.module';
-import { HealthController } from './health.controller';
+import { MetaController } from './health.controller';
 
 @Module({
   imports: [
@@ -18,6 +18,6 @@ import { HealthController } from './health.controller';
     InvitesModule,
     AssetsModule,
   ],
-  controllers: [HealthController],
+  controllers: [MetaController],
 })
 export class AppModule {}
