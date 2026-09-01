@@ -3,6 +3,14 @@ import { Prisma, PrismaClient, UserRole } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+import {
+  AGE_GROUPS,
+  DIFFICULTY_LEVELS,
+  EXERCISE_TYPES,
+  SAMPLE_EXERCISES,
+  STAGE_ASSIGNMENTS,
+} from './seed-content';
+
 // The 9 canonical skills from the client brief (content bank levels 1-9).
 // Arabic is canonical; English is dashboard-display only.
 const SKILLS: { code: string; ar: string; en: string }[] = [
@@ -100,10 +108,95 @@ async function seedDefaultRoadmap() {
   );
 }
 
+async function seedContent() {
+  for (const level of DIFFICULTY_LEVELS) {
+    await prisma.difficultyLevel.upsert({ where: { code: level.code }, update: level, create: level });
+  }
+  for (const group of AGE_GROUPS) {
+    await prisma.ageGroup.upsert({ where: { code: group.code }, update: group, create: group });
+  }
+  console.log(`Seeded ${DIFFICULTY_LEVELS.length} difficulty levels, ${AGE_GROUPS.length} age groups`);
+
+  for (const type of EXERCISE_TYPES) {
+    const existing = await prisma.exerciseType.findUnique({ where: { code: type.code } });
+    if (!existing) {
+      await prisma.exerciseType.create({
+        data: {
+          code: type.code,
+          name: type.name,
+          description: type.description,
+          versions: { create: { version: 1, configSchema: type.configSchema as Prisma.InputJsonValue } },
+        },
+      });
+    }
+  }
+  console.log(`Seeded ${EXERCISE_TYPES.length} exercise types (v1 schemas)`);
+
+  let created = 0;
+  for (const sample of SAMPLE_EXERCISES) {
+    const dup = await prisma.exerciseVersion.findFirst({ where: { title: sample.title } });
+    if (dup) continue;
+    const [skill, difficulty, ageGroup, type] = await Promise.all([
+      prisma.skill.findUnique({ where: { code: sample.skillCode } }),
+      prisma.difficultyLevel.findUnique({ where: { code: sample.difficultyCode } }),
+      prisma.ageGroup.findUnique({ where: { code: sample.ageGroupCode } }),
+      prisma.exerciseType.findUnique({ where: { code: sample.typeCode } }),
+    ]);
+    if (!skill || !difficulty || !ageGroup || !type) {
+      throw new Error(`Seed prerequisites missing for sample "${sample.title}"`);
+    }
+    const typeVersion = await prisma.exerciseTypeVersion.findFirst({
+      where: { exerciseTypeId: type.id },
+      orderBy: { version: 'desc' },
+    });
+    await prisma.exercise.create({
+      data: {
+        versions: {
+          create: {
+            version: 1,
+            title: sample.title,
+            instructions: sample.instructions,
+            skillId: skill.id,
+            difficultyLevelId: difficulty.id,
+            ageGroupId: ageGroup.id,
+            exerciseTypeVersionId: typeVersion!.id,
+            configuration: sample.configuration as Prisma.InputJsonValue,
+            status: 'PUBLISHED',
+            publishedAt: new Date(),
+          },
+        },
+      },
+    });
+    created++;
+  }
+  console.log(`Sample exercises: ${created} created, ${SAMPLE_EXERCISES.length - created} already present`);
+
+  for (const assignment of STAGE_ASSIGNMENTS) {
+    const stage = await prisma.roadmapStage.findFirst({
+      where: { requiredSkills: { some: { skill: { code: assignment.stageSkillCode } } } },
+      include: { stageItems: true },
+    });
+    if (!stage || stage.stageItems.length > 0) continue;
+    let order = 1;
+    for (const title of assignment.exerciseTitles) {
+      const version = await prisma.exerciseVersion.findFirst({
+        where: { title },
+        orderBy: { version: 'desc' },
+      });
+      if (!version) continue;
+      await prisma.stageItem.create({
+        data: { roadmapStageId: stage.id, exerciseId: version.exerciseId, order: order++, itemType: 'EXERCISE' },
+      });
+    }
+  }
+  console.log('Stage assignments applied');
+}
+
 async function main() {
   await seedSuperAdmin();
   await seedSkills();
   await seedDefaultRoadmap();
+  await seedContent();
 }
 
 main()

@@ -1,51 +1,336 @@
-import type { AuthResponse } from "./types";
+import type {
+  AdminStats,
+  AgeGroup,
+  Asset,
+  AssetType,
+  AssetUploadResult,
+  AuthResponse,
+  DifficultyLevel,
+  ExerciseCreatePayload,
+  ExerciseDetail,
+  ExerciseListItem,
+  ExerciseTypeCreatePayload,
+  ExerciseTypeDetail,
+  ExerciseTypeSummary,
+  ExerciseTypeUpdatePayload,
+  ExerciseUpdatePayload,
+  ExerciseVersionDetail,
+  RoadmapDetail,
+  RoadmapStage,
+  RoadmapStageItem,
+  RoadmapSummary,
+  Skill,
+  StageUpdatePayload,
+  User,
+  ValidationResult,
+} from "./types";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export class ApiError extends Error {
   readonly status: number;
+  readonly validationErrors: { path: string; message: string }[];
 
-  constructor(status: number, message: string) {
+  constructor(
+    status: number,
+    message: string,
+    validationErrors: { path: string; message: string }[] = [],
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.validationErrors = validationErrors;
   }
 }
 
-async function readErrorMessage(response: Response): Promise<string> {
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null): void {
+  authToken = token;
+}
+
+export function getApiBase(): string {
+  return API_BASE;
+}
+
+function isValidationError(value: unknown): value is { path: string; message: string } {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  return "path" in value && typeof value.path === "string" && "message" in value && typeof value.message === "string";
+}
+
+async function buildApiError(response: Response): Promise<ApiError> {
+  let message = `Request failed (${response.status})`;
+  let validationErrors: { path: string; message: string }[] = [];
   try {
     const data: unknown = await response.json();
     if (typeof data === "object" && data !== null && "message" in data) {
-      const message = data.message;
-      if (typeof message === "string" && message.length > 0) {
-        return message;
-      }
-      if (Array.isArray(message)) {
-        const parts = message.filter((part): part is string => typeof part === "string");
+      const rawMessage = (data as { message: unknown }).message;
+      if (typeof rawMessage === "string" && rawMessage.length > 0) {
+        message = rawMessage;
+      } else if (Array.isArray(rawMessage)) {
+        const parts = rawMessage.filter((part): part is string => typeof part === "string");
         if (parts.length > 0) {
-          return parts.join(", ");
+          message = parts.join(", ");
         }
       }
     }
+    if (typeof data === "object" && data !== null && "validationErrors" in data) {
+      const rawErrors = (data as { validationErrors: unknown }).validationErrors;
+      if (Array.isArray(rawErrors)) {
+        validationErrors = rawErrors.filter(isValidationError);
+      }
+    }
   } catch {
-    // The body was not JSON; fall through to the generic message below.
+    // The body was not JSON; keep the generic message.
   }
-  return `Request failed (${response.status})`;
+  return new ApiError(response.status, message, validationErrors);
 }
 
-export async function login(email: string, password: string): Promise<AuthResponse> {
+interface RequestOptions {
+  method?: string;
+  body?: unknown;
+  signal?: AbortSignal;
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (options.body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (authToken !== null) {
+    headers["Authorization"] = `Bearer ${authToken}`;
+  }
+
   let response: Response;
   try {
-    response = await fetch(`${API_BASE}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+    response = await fetch(`${API_BASE}${path}`, {
+      method: options.method ?? "GET",
+      headers,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      signal: options.signal,
     });
-  } catch {
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw err;
+    }
     throw new ApiError(0, "Could not reach the server");
   }
+
   if (!response.ok) {
-    throw new ApiError(response.status, await readErrorMessage(response));
+    throw await buildApiError(response);
   }
-  return (await response.json()) as AuthResponse;
+  if (response.status === 204) {
+    return undefined as T;
+  }
+  return (await response.json()) as T;
+}
+
+function encodeQuery(params: Record<string, string | undefined>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== "") {
+      search.set(key, value);
+    }
+  }
+  const encoded = search.toString();
+  return encoded === "" ? "" : `?${encoded}`;
+}
+
+// ---------- Auth ----------
+
+export function login(email: string, password: string): Promise<AuthResponse> {
+  return request<AuthResponse>("/auth/login", {
+    method: "POST",
+    body: { email, password },
+  });
+}
+
+export function getMe(): Promise<User> {
+  return request<User>("/auth/me");
+}
+
+// ---------- Meta ----------
+
+export function getStats(): Promise<AdminStats> {
+  return request<AdminStats>("/admin/stats");
+}
+
+export function listSkills(): Promise<Skill[]> {
+  return request<Skill[]>("/admin/skills");
+}
+
+export function listDifficultyLevels(): Promise<DifficultyLevel[]> {
+  return request<DifficultyLevel[]>("/admin/difficulty-levels");
+}
+
+export function listAgeGroups(): Promise<AgeGroup[]> {
+  return request<AgeGroup[]>("/admin/age-groups");
+}
+
+// ---------- Exercise types ----------
+
+export function listExerciseTypes(includeSchemas = false): Promise<ExerciseTypeSummary[]> {
+  return request<ExerciseTypeSummary[]>(
+    `/admin/exercise-types${includeSchemas ? "?includeSchemas=1" : ""}`,
+  );
+}
+
+export function getExerciseType(id: string): Promise<ExerciseTypeDetail> {
+  return request<ExerciseTypeDetail>(`/admin/exercise-types/${id}`);
+}
+
+export function createExerciseType(payload: ExerciseTypeCreatePayload): Promise<ExerciseTypeDetail> {
+  return request<ExerciseTypeDetail>("/admin/exercise-types", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export function updateExerciseType(
+  id: string,
+  payload: ExerciseTypeUpdatePayload,
+): Promise<ExerciseTypeDetail> {
+  return request<ExerciseTypeDetail>(`/admin/exercise-types/${id}`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+export function createExerciseTypeVersion(
+  id: string,
+  configSchema: Record<string, unknown>,
+): Promise<ExerciseTypeDetail> {
+  return request<ExerciseTypeDetail>(`/admin/exercise-types/${id}/versions`, {
+    method: "POST",
+    body: { configSchema },
+  });
+}
+
+// ---------- Exercises ----------
+
+export interface ExerciseFilters {
+  status?: string;
+  skillId?: string;
+  q?: string;
+}
+
+export function listExercises(filters: ExerciseFilters = {}): Promise<ExerciseListItem[]> {
+  return request<ExerciseListItem[]>(
+    `/admin/exercises${encodeQuery({ status: filters.status, skillId: filters.skillId, q: filters.q })}`,
+  );
+}
+
+export function getExercise(id: string): Promise<ExerciseDetail> {
+  return request<ExerciseDetail>(`/admin/exercises/${id}`);
+}
+
+export function createExercise(payload: ExerciseCreatePayload): Promise<ExerciseDetail> {
+  return request<ExerciseDetail>("/admin/exercises", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export function updateExercise(
+  id: string,
+  payload: ExerciseUpdatePayload,
+): Promise<ExerciseDetail> {
+  return request<ExerciseDetail>(`/admin/exercises/${id}`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+export function validateExercise(id: string): Promise<ValidationResult> {
+  return request<ValidationResult>(`/admin/exercises/${id}/validate`, {
+    method: "POST",
+  });
+}
+
+export function publishExercise(id: string): Promise<ExerciseDetail> {
+  return request<ExerciseDetail>(`/admin/exercises/${id}/publish`, {
+    method: "POST",
+  });
+}
+
+export function archiveExercise(id: string): Promise<ExerciseDetail> {
+  return request<ExerciseDetail>(`/admin/exercises/${id}/archive`, {
+    method: "POST",
+  });
+}
+
+export function cloneExercise(id: string): Promise<ExerciseDetail> {
+  return request<ExerciseDetail>(`/admin/exercises/${id}/clone`, {
+    method: "POST",
+  });
+}
+
+export type { ExerciseVersionDetail };
+
+// ---------- Roadmap ----------
+
+export function listRoadmaps(): Promise<RoadmapSummary[]> {
+  return request<RoadmapSummary[]>("/admin/roadmaps");
+}
+
+export function getRoadmap(id: string): Promise<RoadmapDetail> {
+  return request<RoadmapDetail>(`/admin/roadmaps/${id}`);
+}
+
+export function updateStage(id: string, payload: StageUpdatePayload): Promise<RoadmapStage> {
+  return request<RoadmapStage>(`/admin/stages/${id}`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+export function addStageItem(stageId: string, exerciseId: string): Promise<RoadmapStageItem> {
+  return request<RoadmapStageItem>(`/admin/stages/${stageId}/items`, {
+    method: "POST",
+    body: { exerciseId },
+  });
+}
+
+export function deleteStageItem(itemId: string): Promise<void> {
+  return request<void>(`/admin/stage-items/${itemId}`, {
+    method: "DELETE",
+  });
+}
+
+export function updateStageItemOrder(itemId: string, order: number): Promise<RoadmapStageItem> {
+  return request<RoadmapStageItem>(`/admin/stage-items/${itemId}`, {
+    method: "PATCH",
+    body: { order },
+  });
+}
+
+// ---------- Assets ----------
+
+export function listAssets(type?: AssetType): Promise<Asset[]> {
+  return request<Asset[]>(`/admin/assets${type ? `?type=${type}` : ""}`);
+}
+
+export function uploadAsset(file: File, type: AssetType): Promise<AssetUploadResult> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("type", type);
+
+  const headers: Record<string, string> = {};
+  if (authToken !== null) {
+    headers["Authorization"] = `Bearer ${authToken}`;
+  }
+
+  return fetch(`${API_BASE}/assets`, { method: "POST", headers, body: form }).then(
+    async (response: Response): Promise<AssetUploadResult> => {
+      if (!response.ok) {
+        throw await buildApiError(response);
+      }
+      return (await response.json()) as AssetUploadResult;
+    },
+    () => {
+      throw new ApiError(0, "Could not reach the server");
+    },
+  );
 }

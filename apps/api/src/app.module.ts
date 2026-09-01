@@ -7,6 +7,7 @@ import { ChildrenModule } from './children/children.module';
 import { InvitesModule } from './invites/invites.module';
 import { AssetsModule } from './assets/assets.module';
 import { MetaController } from './health.controller';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { MetaController } from './health.controller';
     UsersModule,
     AuthModule,
     ChildrenModule,
+    AdminModule,
     InvitesModule,
     AssetsModule,
   ],
