@@ -3,6 +3,9 @@ import type {
   Child,
   CreateChildInput,
   CreateChildResponse,
+  PlayAttemptInput,
+  PlayAttemptResult,
+  PlayRoadmap,
   RedeemInviteResponse,
   UpdateChildInput,
 } from "./types";
@@ -114,5 +117,17 @@ export function redeemInvite(token: string, code: string): Promise<RedeemInviteR
     method: "POST",
     token,
     body: { code },
+  });
+}
+
+export function getPlayRoadmap(token: string, childId: string): Promise<PlayRoadmap> {
+  return request<PlayRoadmap>(`/play/${encodeURIComponent(childId)}/roadmap`, { token });
+}
+
+export function submitPlayAttempt(token: string, input: PlayAttemptInput): Promise<PlayAttemptResult> {
+  return request<PlayAttemptResult>("/play/attempts", {
+    method: "POST",
+    token,
+    body: input,
   });
 }

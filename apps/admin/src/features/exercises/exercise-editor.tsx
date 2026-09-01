@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { JsonEditor } from "@/components/json-editor";
+import { PreviewExerciseDialog } from "@/components/preview-exercise-dialog";
 import { SimpleSelect, type SelectOption } from "@/components/simple-select";
 import { StatusBadge } from "@/components/status-badge";
 import {
@@ -119,6 +120,7 @@ export function ExerciseEditor({ exerciseId, onClose, onChanged }: ExerciseEdito
   const [validating, setValidating] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<{ path: string; message: string }[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const initializedFor = useRef<string | null>(null);
   // Once the form is initialized for an exercise (including one we just created),
@@ -144,6 +146,8 @@ export function ExerciseEditor({ exerciseId, onClose, onChanged }: ExerciseEdito
         (type) => type.latestVersion !== null,
       )?.latestVersion;
       setExerciseTypeVersionId(firstWithVersion?.id ?? "");
+    } else {
+      setExerciseTypeVersionId(version.exerciseTypeVersionId);
     }
     setConfigText(toJsonText(version === null ? {} : version.configuration));
   }, [ready, currentId, detail, options]);
@@ -166,6 +170,12 @@ export function ExerciseEditor({ exerciseId, onClose, onChanged }: ExerciseEdito
     difficultyLevelId !== "" &&
     (currentId !== null || exerciseTypeVersionId !== "") &&
     configResult.ok;
+
+  const previewDisabledReason = !configResult.ok
+    ? "Fix JSON errors first"
+    : selectedType === undefined
+      ? "Select an exercise type first"
+      : null;
 
   function skillOptions(): SelectOption[] {
     return (options?.skills ?? []).map((skill) => ({ value: skill.id, label: skill.name }));
@@ -454,6 +464,16 @@ export function ExerciseEditor({ exerciseId, onClose, onChanged }: ExerciseEdito
               >
                 Validate
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={previewDisabledReason !== null}
+                onClick={() => setPreviewOpen(true)}
+                title={previewDisabledReason ?? undefined}
+              >
+                Preview
+              </Button>
             </div>
             <div className="flex flex-col-reverse gap-2 sm:flex-row">
               <Button type="submit" size="sm" disabled={!canSave}>
@@ -471,6 +491,13 @@ export function ExerciseEditor({ exerciseId, onClose, onChanged }: ExerciseEdito
             </div>
           </div>
         </form>
+        <PreviewExerciseDialog
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          typeCode={selectedType?.code ?? ""}
+          typeName={selectedType?.name ?? ""}
+          configuration={configResult.ok ? configResult.value : null}
+        />
       </SheetContent>
     </Sheet>
   );

@@ -91,12 +91,12 @@ Storage:     S3-compatible object storage
 
 ## Phase 3 — Exercise Engine & Attempt Tracking
 
-- [ ] Frontend exercise-type registry (`{ type, version, render, validate }`)
-- [ ] Renderer + validator + **preview/test mode** for first-wave types: Multiple Choice, Image Match, Audio Match, Letter/Sound Position, Ordering, Drag & Drop / Word Builder, Memory — preview lives here (needs the renderer to exist), not in Phase 2
-- [ ] Build every renderer for touch input, small/tablet screens, and audio latency from the start — don't defer mobile constraints to the Capacitor phase
-- [ ] Tables: `exercise_attempts`, `exercise_answers`, `exercise_events` — include `client_attempt_id` / `client_event_id` on each from day one (needed for offline sync in Phase 11; cheap now, painful to retrofit)
-- [ ] Arabic text utility layer: normalization, character comparison, letter classification, diacritic handling, tokenization
-- [ ] Unit tests: renderer correctness, configuration validation, answer evaluation
+- [x] Frontend exercise-type registry (`{ type, version, render, validate }`) *(packages/exercise-engine `ExercisePlayer` + packages/exercise-core `evaluateAnswer`)*
+- [x] Renderer + validator + **preview/test mode** for first-wave types: Multiple Choice, Image Match, Audio Match, Letter/Sound Position, Ordering, Drag & Drop / Word Builder, Memory — preview lives here (needs the renderer to exist), not in Phase 2 *(all 7 renderers; preview dialog wired into the CMS editor)*
+- [x] Build every renderer for touch input, small/tablet screens, and audio latency from the start — don't defer mobile constraints to the Capacitor phase *(pointer-event handlers, ≥64px targets, audio-asset playback with TTS fallback)*
+- [x] Tables: `exercise_attempts`, `exercise_answers`, `exercise_events` — include `client_attempt_id` / `client_event_id` on each from day one (needed for offline sync in Phase 11; cheap now, painful to retrofit) *(live: server rejects duplicates by client id — verified)*
+- [x] Arabic text utility layer: normalization, character comparison, letter classification, diacritic handling, tokenization *(packages/exercise-core/arabic.ts, 15 unit tests)*
+- [x] Unit tests: renderer correctness, configuration validation, answer evaluation *(32 tests: evaluators per type + Arabic utils; config validation is the CMS ajv pipeline, exercised end-to-end)*
 
 ---
 

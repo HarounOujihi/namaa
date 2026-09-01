@@ -26,8 +26,15 @@ export default function App() {
     setScreen("start");
   }, []);
 
-  if (screen === "childHome" && activeChild !== null) {
-    return <ChildHome child={activeChild} onExit={() => setScreen("picker")} />;
+  if (screen === "childHome" && activeChild !== null && auth !== null) {
+    return (
+      <ChildHome
+        child={activeChild}
+        token={auth.accessToken}
+        onAuthExpired={handleLeavePicker}
+        onExit={() => setScreen("picker")}
+      />
+    );
   }
 
   if (screen === "picker" && auth !== null) {
