@@ -1,4 +1,5 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { collectAssetIds } from '../common/collect-asset-ids';
 import Ajv, { ValidateFunction } from 'ajv';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -164,22 +165,6 @@ export class ValidationService {
   }
 }
 
-function collectAssetIds(value: unknown, out: Set<string>): void {
-  if (Array.isArray(value)) {
-    for (const v of value) collectAssetIds(v, out);
-    return;
-  }
-  if (typeof value !== 'object' || value === null) {
-    return;
-  }
-  for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
-    if (/AssetId$/.test(key) && typeof v === 'string' && v.length > 0) {
-      out.add(v);
-    } else {
-      collectAssetIds(v, out);
-    }
-  }
-}
 
 function promptHasContent(prompt: unknown): boolean {
   if (typeof prompt !== 'object' || prompt === null) return false;
