@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, getPlayAssessment, getPlayRoadmap } from "../api";
 import type { Child, PlayAssessment, PlayRoadmap, PlayStage, PlayStageItem } from "../types";
-import { Mascot } from "../components/Mascot";
+import { JourneyMap } from "../components/JourneyMap";
 import { speak } from "../speech";
 import { loadAppSounds, playAppSound } from "../app-sounds";
-import { toArabicIndic } from "../arabic";
 import { AssessmentRunner } from "./assessment-runner";
 import { ExerciseRunner } from "./ExerciseRunner";
 import { StageScreen } from "./StageScreen";
@@ -31,8 +30,10 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
   const [loadError, setLoadError] = useState<string | null>(null);
   const [completedItemIds, setCompletedItemIds] = useState<ReadonlySet<string>>(() => new Set());
 
-  const loadHomeData = useCallback(async (): Promise<void> => {
-    setLoading(true);
+  const loadHomeData = useCallback(async (silent = false): Promise<void> => {
+    if (!silent) {
+      setLoading(true);
+    }
     setLoadError(null);
     try {
       // The assessment banner is optional garnish: if its endpoint hiccups
@@ -54,11 +55,15 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
         onAuthExpired();
         return;
       }
+      // A background refresh keeps the already-drawn map; only a visible
+      // load is allowed to surface a retry card.
+      if (silent) {
+        return;
+      }
       setLoading(false);
       setLoadError(error instanceof ApiError ? error.message : "تعذر تحميل الرحلة، حاول مرة أخرى");
     }
   }, [token, child.id, onAuthExpired]);
-
   useEffect(() => {
     void loadHomeData();
     void loadAppSounds(token);
@@ -90,6 +95,10 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
         playableIds.every((id) => id === item.id || completedItemIds.has(id));
       if (allDone) {
         playAppSound("STAGE_COMPLETE");
+        // The map should welcome the child at the next stop when they come
+        // back: pull fresh server completion and unlock flags in the
+        // background without flashing a loading state over the journey.
+        void loadHomeData(true);
       }
     }
     setView(nextItem !== undefined ? { kind: "exercise", stage, item: nextItem } : { kind: "stage", stage });
@@ -145,11 +154,20 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
   const showAssessmentBanner =
     assessment !== null && assessment.needsAssessment && assessment.items.length > 0;
 
+  const handleOpenStage = (stage: PlayStage): void => {
+    speak(stage.name);
+    setView({ kind: "stage", stage });
+  };
+
   return (
     <main className="screen child-home">
-      <h1 className="home-greeting">مرحبًا، {child.fullName}! 🎈</h1>
-      <Mascot />
-      {roadmap !== null ? <p className="home-roadmap">{roadmap.roadmap.name}</p> : null}
+      <header className="journey-top">
+        <h1 className="home-greeting">مرحبًا، {child.fullName}! 🎈</h1>
+        {roadmap !== null ? <p className="home-roadmap">{roadmap.roadmap.name}</p> : null}
+        <button type="button" className="big-button secondary" onClick={onExit}>
+          خروج
+        </button>
+      </header>
 
       {!loading && loadError === null && showAssessmentBanner ? (
         <section className="card assessment-banner">
@@ -181,40 +199,8 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
       ) : null}
 
       {!loading && loadError === null && stages.length > 0 ? (
-        <ol className="stage-list">
-          {stages.map((stage, index) => {
-            const playable = stage.items.filter((candidate) => candidate.exercise !== null).length;
-            return (
-              <li key={stage.id}>
-                <button
-                  type="button"
-                  className="stage-card"
-                  onClick={() => {
-                    speak(stage.name);
-                    setView({ kind: "stage", stage });
-                  }}
-                >
-                  <span className="stage-number" aria-hidden>
-                    {toArabicIndic(index + 1)}
-                  </span>
-                  <span className="stage-card-body">
-                    <span className="stage-name">
-                      المرحلة {toArabicIndic(index + 1)}: {stage.name}
-                    </span>
-                    <span className="stage-meta">
-                      {playable > 0 ? `${toArabicIndic(playable)} أنشطة` : "قيد التحضير"}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ol>
+        <JourneyMap stages={stages} completedItemIds={completedItemIds} onOpenStage={handleOpenStage} />
       ) : null}
-
-      <button type="button" className="big-button secondary" onClick={onExit}>
-        خروج
-      </button>
     </main>
   );
 }

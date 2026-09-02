@@ -64,17 +64,18 @@ export class PlayService {
       return { child: { id: child.id, fullName: child.fullName }, roadmap: { id: roadmap.id, name: roadmap.name }, stages: [] };
     }
 
-    const items = await Promise.all(
-      version.stages.map(async (stage) => ({
-        id: stage.id,
-        name: stage.name,
-        order: stage.order,
-        mastery: {
-          threshold: stage.masteryThreshold,
-          minAccuracy: stage.minAccuracy,
-          minSuccessfulAttempts: stage.minSuccessfulAttempts,
-        },
-        items: (
+    // Successful exercises for this child — powers stage unlocking.
+    // v0 progression gate: a stage is completed when every playable item has
+    // at least one successful attempt (the Phase 5 rule engine replaces this).
+    const successRows = await this.prisma.exerciseAttempt.findMany({
+      where: { childId, isSuccess: true },
+      select: { exerciseVersion: { select: { exerciseId: true } } },
+    });
+    const succeededExerciseIds = new Set(successRows.map((r) => r.exerciseVersion.exerciseId));
+
+    const stageViews = await Promise.all(
+      version.stages.map(async (stage) => {
+        const items = (
           await Promise.all(
             stage.stageItems
               .filter((si) => si.exerciseId !== null)
@@ -84,14 +85,42 @@ export class PlayService {
                 exercise: await this.publishedExercise(si.exerciseId!),
               })),
           )
-        ).filter((si) => si.exercise !== null),
-      })),
+        ).filter((si) => si.exercise !== null);
+        const completedItems = items.filter(
+          (si) => si.exercise !== null && succeededExerciseIds.has(si.exercise.id),
+        ).length;
+        return {
+          id: stage.id,
+          name: stage.name,
+          order: stage.order,
+          mastery: {
+            threshold: stage.masteryThreshold,
+            minAccuracy: stage.minAccuracy,
+            minSuccessfulAttempts: stage.minSuccessfulAttempts,
+          },
+          items,
+          completedItems,
+          totalItems: items.length,
+          completed: items.length > 0 && completedItems === items.length,
+          unlocked: false,
+        };
+      }),
     );
+
+    // Unlock chain by order: a stage is unlocked when every PRIOR playable
+    // stage is completed. Stages with no playable items never block the chain.
+    let allPriorCompleted = true;
+    for (const stage of stageViews) {
+      stage.unlocked = allPriorCompleted;
+      if (stage.totalItems > 0 && !stage.completed) {
+        allPriorCompleted = false;
+      }
+    }
 
     return {
       child: { id: child.id, fullName: child.fullName },
       roadmap: { id: roadmap.id, name: roadmap.name },
-      stages: items,
+      stages: stageViews,
     };
   }
 

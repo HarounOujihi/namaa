@@ -66,6 +66,10 @@ export interface PlayStage {
   name: string;
   order: number;
   items: PlayStageItem[];
+  completedItems: number;
+  totalItems: number;
+  completed: boolean;
+  unlocked: boolean;
 }
 
 export interface PlayRoadmap {

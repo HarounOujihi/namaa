@@ -1,0 +1,277 @@
+/* Journey map — the child's roadmap drawn as a winding island path.
+   One sticky header, then a tall map: sandy road, round stage stops,
+   palm/bush greenery, water washes at both shores. */
+
+.journey-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0 16px;
+  background: var(--bg);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  box-shadow: 0 8px 18px rgba(93, 64, 55, 0.1);
+}
+
+.journey-top .big-button {
+  min-width: 180px;
+}
+
+.journey {
+  position: relative;
+  width: min(720px, 100%);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  overflow: clip;
+  background:
+    radial-gradient(120% 210px at 50% 0, #ddf0f7 0%, rgba(221, 240, 247, 0) 72%),
+    radial-gradient(120% 210px at 50% 100%, #ddf0f7 0%, rgba(221, 240, 247, 0) 72%),
+    linear-gradient(180deg, #fdf3e0 0%, #faeccf 100%);
+}
+
+.journey-art {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* the sandy road itself */
+.journey-road-edge {
+  fill: none;
+  stroke: #d8ae72;
+  stroke-width: 36px;
+  stroke-linecap: round;
+}
+
+.journey-road {
+  fill: none;
+  stroke: #e8c98f;
+  stroke-width: 30px;
+  stroke-linecap: round;
+}
+
+.journey-road-dashes {
+  fill: none;
+  stroke: #fff8e1;
+  stroke-width: 5px;
+  stroke-linecap: round;
+  stroke-dasharray: 1 20;
+}
+
+.journey-wave {
+  fill: none;
+  stroke: #a7cfe0;
+  stroke-width: 5px;
+  stroke-linecap: round;
+}
+
+.journey-pebble {
+  fill: #d9bd8d;
+}
+
+.journey-deco {
+  font-size: 38px;
+  opacity: 0.85;
+}
+
+.journey-rows {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.journey-row {
+  position: absolute;
+  width: min(46vw, 170px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.journey-node {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  margin-top: 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 2.2rem;
+  font-weight: 900;
+  border: 4px solid #ffffff;
+  box-shadow: 0 6px 0 rgba(93, 64, 55, 0.16);
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+.journey-node:active {
+  transform: translateY(3px);
+}
+
+.journey-node:focus-visible {
+  outline: 4px solid var(--secondary);
+  outline-offset: 6px;
+}
+
+.journey-glyph {
+  line-height: 1;
+}
+
+.journey-node.is-open,
+.journey-node.is-current {
+  background: var(--accent);
+  color: #6b4004;
+}
+
+.journey-node.is-current {
+  border-color: #fff3d6;
+}
+
+/* "you are here": a warm ring breathing around the current stop */
+.journey-node.is-current::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+  border: 5px solid rgba(255, 167, 38, 0.9);
+  animation: journey-pulse 1.9s ease-out infinite;
+  pointer-events: none;
+}
+
+.journey-node.is-completed {
+  background: #58b368;
+  color: #ffffff;
+  box-shadow:
+    0 0 0 6px rgba(88, 179, 104, 0.28),
+    0 6px 0 rgba(93, 64, 55, 0.16);
+}
+
+.journey-node.is-completed .journey-glyph {
+  font-size: 3rem;
+}
+
+.journey-node.is-locked {
+  background: #b6c4cd;
+  color: #5d6b74;
+  border-color: #e7edf1;
+  cursor: default;
+}
+
+.journey-node.is-soon {
+  background: transparent;
+  border: 4px dashed #cfab7c;
+  box-shadow: none;
+  color: #a1886d;
+  cursor: default;
+}
+
+.journey-label {
+  margin-top: 10px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--ink);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.journey-row.is-soon .journey-label {
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+
+/* the traveler: the owl perched on the current stop */
+.journey-owl {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  width: 80px;
+  transform: translateX(-50%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.journey-owl .mascot {
+  display: block;
+  width: 100%;
+  height: auto;
+  animation: journey-bob 2.4s ease-in-out infinite;
+  filter: drop-shadow(0 4px 3px rgba(52, 26, 10, 0.25));
+}
+
+/* gentle feedback for a locked stop — never red, never loud */
+.journey-hint {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  margin: 0;
+  padding: 8px 18px;
+  max-width: min(300px, 92%);
+  background: #fffdf7;
+  border: 3px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(93, 64, 55, 0.14);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--ink-soft);
+  text-align: center;
+  animation: journey-hint-in 0.25s ease-out;
+}
+
+@keyframes journey-pulse {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+@keyframes journey-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes journey-hint-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-node.is-current::after,
+  .journey-owl .mascot,
+  .journey-hint {
+    animation: none;
+  }
+
+  .journey-node,
+  .journey-node:active {
+    transition: none;
+    transform: none;
+  }
+}
