@@ -211,28 +211,37 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
   return (
     <main className="screen child-home">
       <header className="journey-top">
-        <h1 className="home-greeting">مرحبًا، {child.fullName}! 🎈</h1>
-        {roadmap !== null ? <p className="home-roadmap">{roadmap.roadmap.name}</p> : null}
-        <div className="home-actions">
-          <button type="button" className="big-button" onClick={() => setView({ kind: "rewards" })}>
-            🎁 جوائزي
-          </button>
-          <button type="button" className="big-button secondary" onClick={onExit}>
-            خروج
-          </button>
+        <div className="journey-top-row">
+          <h1 className="home-greeting">مرحبًا، {child.fullName}!</h1>
+          {roadmap !== null ? <span className="home-roadmap-chip">{roadmap.roadmap.name}</span> : null}
+          <div className="home-actions">
+            <button
+              type="button"
+              className="icon-button compact"
+              aria-label="جوائزي"
+              onClick={() => setView({ kind: "rewards" })}
+            >
+              🎁
+            </button>
+            <button type="button" className="text-button" onClick={onExit}>
+              خروج
+            </button>
+          </div>
         </div>
       </header>
 
       {!loading && loadError === null && showAssessmentBanner ? (
         <section className="card assessment-banner">
-          <h2 className="assessment-banner-title">🚀 لنبدأ رحلتك!</h2>
-          <p className="assessment-banner-subtitle">لعبة قصيرة تساعدنا على اختيار الأنشطة المناسبة لك</p>
+          <div className="assessment-banner-copy">
+            <h2 className="assessment-banner-title">🚀 لنبدأ رحلتك!</h2>
+            <p className="assessment-banner-subtitle">لعبة قصيرة تساعدنا على اختيار الأنشطة المناسبة لك</p>
+          </div>
           <button
             type="button"
-            className="big-button"
+            className="big-button assessment-banner-button"
             onClick={() => setView({ kind: "assessment" })}
           >
-            ابدأ اللعبة
+            ابدأ
           </button>
         </section>
       ) : null}
