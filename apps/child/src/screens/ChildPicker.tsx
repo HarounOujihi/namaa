@@ -92,7 +92,7 @@ export function ChildPicker({ auth, onChildSelected, onShowResults, onAuthExpire
               <div className="child-actions">
                 <button
                   type="button"
-                  className="icon-button"
+                  className="icon-button compact"
                   aria-label={`نتائج التشخيص لـ${child.fullName}`}
                   onClick={() => onShowResults(child)}
                 >
@@ -102,7 +102,7 @@ export function ChildPicker({ auth, onChildSelected, onShowResults, onAuthExpire
                   <>
                     <button
                       type="button"
-                      className="icon-button"
+                      className="icon-button compact"
                       aria-label={`تعديل ${child.fullName}`}
                       onClick={() => setDialog({ kind: "edit", child })}
                     >
@@ -110,7 +110,7 @@ export function ChildPicker({ auth, onChildSelected, onShowResults, onAuthExpire
                     </button>
                     <button
                       type="button"
-                      className="icon-button danger"
+                      className="icon-button compact danger"
                       aria-label={`حذف ${child.fullName}`}
                       onClick={() => setDialog({ kind: "delete", child })}
                     >

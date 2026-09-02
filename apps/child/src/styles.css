@@ -42,12 +42,20 @@ button {
 }
 
 .screen {
+  /* Mobile-first full width; on large screens content stays readable and
+     centered instead of stretching edge to edge. */
+  width: min(100%, 860px);
+  margin-inline: auto;
   min-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 22px;
-  padding: 24px 16px 40px;
+  padding: 24px clamp(16px, 4vw, 40px) 48px;
+}
+
+body {
+  overflow-x: clip;
 }
 
 /* Large touch targets: every interactive element is at least 64px tall. */
@@ -115,6 +123,16 @@ button {
 .icon-button.danger {
   color: var(--danger);
   border-color: #f3c1c1;
+}
+
+/* Compact variant for secondary actions inside cards — 44px still meets
+   touch-target minimums while fitting three buttons within a ~160px card. */
+.icon-button.compact {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  font-size: 1.15rem;
+  border-width: 2px;
 }
 
 .mascot {
@@ -251,7 +269,7 @@ button {
   padding: 0;
   width: min(760px, 100%);
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 20px;
 }
 
@@ -263,7 +281,8 @@ button {
   background: var(--card);
   border: 3px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 18px 10px;
+  padding: 18px 10px 14px;
+  overflow: hidden;
 }
 
 .child-tap {
@@ -301,8 +320,10 @@ button {
 }
 
 .child-actions {
+  width: 100%;
   display: flex;
-  gap: 10px;
+  justify-content: center;
+  gap: 8px;
 }
 
 .picker-actions {
