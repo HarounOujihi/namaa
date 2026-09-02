@@ -288,16 +288,49 @@ export function ExerciseEditor({ exerciseId, onClose, onChanged }: ExerciseEdito
     }
   }
 
+  /** True when the form differs from the last saved version. */
+  function isDirty(): boolean {
+    if (snapshot === null) {
+      return true;
+    }
+    return (
+      title.trim() !== snapshot.title ||
+      (instructions.trim() === "" ? null : instructions.trim()) !== (snapshot.instructions ?? null) ||
+      skillId !== snapshot.skillId ||
+      difficultyLevelId !== snapshot.difficultyLevelId ||
+      (ageGroupId === NO_AGE_GROUP ? null : ageGroupId) !== (snapshot.ageGroupId ?? null) ||
+      JSON.stringify(configResult.ok ? configResult.value : null) !== JSON.stringify(snapshot.configuration)
+    );
+  }
+
   async function handlePublish(): Promise<void> {
     if (currentId === null || publishing) {
+      return;
+    }
+    if (!canSave || !configResult.ok) {
+      toast.error("Fix the form errors before publishing");
       return;
     }
     setPublishing(true);
     resetFeedback();
     try {
+      // Publishing must never silently drop unsaved edits: save them as a new
+      // draft version first, then publish that version.
+      const dirty = isDirty();
+      if (dirty) {
+        const updated = await updateExercise(currentId, {
+          title: title.trim(),
+          instructions: instructions.trim() === "" ? null : instructions.trim(),
+          skillId,
+          difficultyLevelId,
+          ageGroupId: ageGroupId === NO_AGE_GROUP ? null : ageGroupId,
+          configuration: configResult.value,
+        });
+        setSnapshot(latestVersion(updated));
+      }
       const published = await publishExercise(currentId);
       setSnapshot(latestVersion(published));
-      toast.success("Exercise published");
+      toast.success(dirty ? "Changes saved and published" : "Exercise published");
       onChanged();
     } catch (err) {
       setSubmitError(getErrorMessage(err));
