@@ -12,6 +12,7 @@ import { PlayModule } from './play/play.module';
 import { SoundsModule } from './sounds/sounds.module';
 import { AssessmentModule } from './assessment/assessment.module';
 import { ProgressionModule } from './progression/progression.module';
+import { RewardsModule } from './rewards/rewards.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ProgressionModule } from './progression/progression.module';
     SoundsModule,
     AssessmentModule,
     ProgressionModule,
+    RewardsModule,
     InvitesModule,
     AssetsModule,
   ],

@@ -3,7 +3,6 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
 import { evaluateAnswer, ExerciseAnswer } from '@dyslexia/exercise-core';
 import { PrismaService } from '../prisma/prisma.service';
 import { AssetsService } from '../assets/assets.service';
@@ -11,6 +10,8 @@ import { AuthUser } from '../auth/auth-user.interface';
 import { collectAssetIds } from '../common/collect-asset-ids';
 import { SubmitAttemptDto } from './dto/attempt.dto';
 import { ProgressionService } from '../progression/progression.service';
+import { RewardsService } from '../rewards/rewards.service';
+import { ChildAccessService } from '../child-access/child-access.service';
 import { computeStageUnlocks } from '../progression/rules';
 
 @Injectable()
@@ -19,23 +20,13 @@ export class PlayService {
     private readonly prisma: PrismaService,
     private readonly assets: AssetsService,
     private readonly progression: ProgressionService,
+    private readonly rewards: RewardsService,
+    private readonly childAccess: ChildAccessService,
   ) {}
 
-  /** A caller (parent/specialist session) may only reach children linked to them. */
-  async assertChildLinked(user: AuthUser, childId: string): Promise<void> {
-    if (user.role === UserRole.PARENT) {
-      const link = await this.prisma.parentChild.findFirst({
-        where: { parentId: user.parentProfileId!, childId },
-      });
-      if (link) return;
-    }
-    if (user.role === UserRole.SPECIALIST) {
-      const link = await this.prisma.specialistChild.findFirst({
-        where: { specialistId: user.specialistProfileId!, childId, active: true },
-      });
-      if (link) return;
-    }
-    throw new ForbiddenException('Child not linked to this account');
+  /** Kept for existing callers — delegates to the shared ChildAccessService. */
+  assertChildLinked(user: AuthUser, childId: string): Promise<void> {
+    return this.childAccess.assertLinked(user, childId);
   }
 
   async roadmap(childId: string) {
@@ -217,6 +208,13 @@ export class PlayService {
       correct: isSuccess,
     });
 
+    const reward = await this.rewards.grantForAttempt({
+      childId: dto.childId,
+      attemptId: attempt.id,
+      durationMs: attempt.durationMs,
+      correct: isSuccess,
+    });
+
     return {
       clientAttemptId: attempt.clientAttemptId,
       attemptNumber: attempt.attemptNumber,
@@ -224,6 +222,9 @@ export class PlayService {
       score,
       isSuccess,
       duplicate: false,
+      stars: reward.stars,
+      pointsEarned: reward.pointsEarned,
+      newBadges: reward.newBadges,
     };
   }
 

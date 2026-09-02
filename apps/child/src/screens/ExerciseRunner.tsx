@@ -3,7 +3,7 @@ import { ExercisePlayer, speakArabic } from "@dyslexia/exercise-engine";
 import type { AnswerResult } from "@dyslexia/exercise-engine";
 import { ApiError, submitPlayAttempt } from "../api";
 import { playAppSound } from "../app-sounds";
-import type { PlayStageItem } from "../types";
+import type { PlayAttemptResult, PlayStageItem } from "../types";
 
 interface ExerciseRunnerProps {
   token: string;
@@ -19,16 +19,25 @@ interface PlaySession {
   startedAt: string;
 }
 
+/** What the server just awarded — appended to the banner once it lands. */
+interface AttemptRewards {
+  stars: number;
+  newBadges: string[];
+}
+
 /**
  * One exercise launch = one attempt: the runner narrates the instructions,
  * renders the engine player, shows gentle positive-only feedback, and submits
- * the single recorded answer fire-and-forget when the child moves on.
+ * the single recorded answer the moment the child answers — التالي only moves on.
  */
 export function ExerciseRunner({ token, childId, item, onAuthExpired, onBack, onDone }: ExerciseRunnerProps) {
   const exercise = item.exercise;
   const [result, setResult] = useState<AnswerResult | null>(null);
+  const [earned, setEarned] = useState<AttemptRewards | null>(null);
   const sessionRef = useRef<PlaySession | null>(null);
   const submittedRef = useRef(false);
+  const submitPromiseRef = useRef<Promise<PlayAttemptResult | null> | null>(null);
+
 
   if (sessionRef.current === null) {
     sessionRef.current = {
@@ -59,16 +68,17 @@ export function ExerciseRunner({ token, childId, item, onAuthExpired, onBack, on
     );
   }
 
-  const submitAttempt = (): void => {
-    if (submittedRef.current || result === null) {
-      return;
+  const submitAttempt = (answerResult: AnswerResult): Promise<PlayAttemptResult | null> => {
+    if (submittedRef.current) {
+      // Already answered-and-sent: التالي/رجوع reuse the in-flight promise.
+      return submitPromiseRef.current ?? Promise.resolve(null);
     }
     submittedRef.current = true;
     const session = sessionRef.current;
     if (session === null) {
-      return;
+      return Promise.resolve(null);
     }
-    submitPlayAttempt(token, {
+    const promise = submitPlayAttempt(token, {
       childId,
       clientAttemptId: session.clientAttemptId,
       exerciseVersionId: exercise.exerciseVersionId,
@@ -77,8 +87,8 @@ export function ExerciseRunner({ token, childId, item, onAuthExpired, onBack, on
       answers: [
         {
           questionKey: "answer",
-          answer: result.answer,
-          responseTimeMs: result.responseTimeMs,
+          answer: answerResult.answer,
+          responseTimeMs: answerResult.responseTimeMs,
         },
       ],
     }).catch((error: unknown) => {
@@ -87,12 +97,22 @@ export function ExerciseRunner({ token, childId, item, onAuthExpired, onBack, on
       if (error instanceof ApiError && error.status === 401) {
         onAuthExpired();
       }
+      return null;
     });
+    submitPromiseRef.current = promise;
+    return promise;
   };
 
   const handleAnswer = (answerResult: AnswerResult): void => {
     setResult(answerResult);
     playAppSound(answerResult.correct ? "CELEBRATION_CORRECT" : "ENCOURAGEMENT_RETRY");
+    // Submit immediately so completedAt is the true answer time; when the
+    // server replies the earned stars (and any new badge) join the banner.
+    void submitAttempt(answerResult).then((submitted) => {
+      if (submitted !== null && submitted.correct) {
+        setEarned({ stars: submitted.stars, newBadges: submitted.newBadges });
+      }
+    });
   };
 
   return (
@@ -102,7 +122,9 @@ export function ExerciseRunner({ token, childId, item, onAuthExpired, onBack, on
           type="button"
           className="text-button"
           onClick={() => {
-            submitAttempt();
+            if (result !== null) {
+              void submitAttempt(result);
+            }
             onBack();
           }}
         >
@@ -129,7 +151,17 @@ export function ExerciseRunner({ token, childId, item, onAuthExpired, onBack, on
           <span className="feedback-emoji" aria-hidden>
             {result.correct ? "🎉" : "🌱"}
           </span>
-          {result.correct ? "أحسنت!" : "لنجرب مرة أخرى"}
+          <span className="feedback-text">
+            {result.correct ? "أحسنت!" : "لنجرب مرة أخرى"}
+            {result.correct && earned !== null && earned.stars > 0 ? (
+              <span className="feedback-stars" aria-hidden>
+                {"⭐".repeat(earned.stars)}
+              </span>
+            ) : null}
+          </span>
+          {earned !== null && earned.newBadges.length > 0 ? (
+            <span className="feedback-badges">🏅 حصلت على وسام: {earned.newBadges.join("، ")}</span>
+          ) : null}
         </div>
       ) : null}
 
@@ -145,7 +177,7 @@ export function ExerciseRunner({ token, childId, item, onAuthExpired, onBack, on
           type="button"
           className="big-button"
           onClick={() => {
-            submitAttempt();
+            void submitAttempt(result);
             onDone();
           }}
         >

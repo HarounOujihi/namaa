@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
-import { ApiError, getPlayAssessment, getPlayRoadmap, getRecommendations } from "../api";
-import type { Child, PlayAssessment, PlayRecommendation, PlayRoadmap, PlayStage, PlayStageItem } from "../types";
+import { ApiError, getPlayAssessment, getPlayRoadmap, getPlayRewards, getRecommendations } from "../api";
+import type {
+  Child,
+  PlayAssessment,
+  PlayRecommendation,
+  PlayRewards,
+  PlayRoadmap,
+  PlayStage,
+  PlayStageItem,
+} from "../types";
 import { JourneyMap } from "../components/JourneyMap";
 import { speak } from "../speech";
 import { loadAppSounds, playAppSound } from "../app-sounds";
 import { AssessmentRunner } from "./assessment-runner";
 import { ExerciseRunner } from "./ExerciseRunner";
+import { RewardsScreen } from "./RewardsScreen";
 import { StageScreen } from "./StageScreen";
 
 interface ChildHomeProps {
@@ -18,6 +27,7 @@ interface ChildHomeProps {
 type PlayView =
   | { kind: "stations" }
   | { kind: "assessment" }
+  | { kind: "rewards" }
   | { kind: "stage"; stage: PlayStage }
   | { kind: "exercise"; stage: PlayStage; item: PlayStageItem };
 
@@ -26,10 +36,25 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
   const [view, setView] = useState<PlayView>({ kind: "stations" });
   const [roadmap, setRoadmap] = useState<PlayRoadmap | null>(null);
   const [assessment, setAssessment] = useState<PlayAssessment | null>(null);
+  const [rewards, setRewards] = useState<PlayRewards | null>(null);
+
+  const [recommendations, setRecommendations] = useState<PlayRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [completedItemIds, setCompletedItemIds] = useState<ReadonlySet<string>>(() => new Set());
-  const [recommendations, setRecommendations] = useState<PlayRecommendation[]>([]);
+
+  // Best-effort alongside everything else: the map's owl ring color comes
+  // from here, but the journey must never wait on it.
+  const refreshRewards = useCallback((): void => {
+    void getPlayRewards(token, child.id)
+      .then((data) => setRewards(data))
+      .catch(() => undefined);
+  }, [token, child.id]);
+
+  // Stable identity: RewardsScreen refetches on mount and pushes results up.
+  const handleRewardsLoaded = useCallback((data: PlayRewards): void => {
+    setRewards(data);
+  }, []);
 
   const loadHomeData = useCallback(async (silent = false): Promise<void> => {
     if (!silent) {
@@ -39,6 +64,7 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
     void getRecommendations(token, child.id)
       .then((list) => setRecommendations(list))
       .catch(() => setRecommendations([]));
+    void refreshRewards();
     try {
       // The assessment banner is optional garnish: if its endpoint hiccups
       // the stations must still load, so only auth errors propagate from it.
@@ -67,7 +93,7 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
       setLoading(false);
       setLoadError(error instanceof ApiError ? error.message : "تعذر تحميل الرحلة، حاول مرة أخرى");
     }
-  }, [token, child.id, onAuthExpired]);
+  }, [token, child.id, onAuthExpired, refreshRewards]);
   useEffect(() => {
     void loadHomeData();
     void loadAppSounds(token);
@@ -80,6 +106,9 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
   }, [token]);
 
   const handleExerciseDone = (stage: PlayStage, item: PlayStageItem): void => {
+    // Stars and points just landed server-side: pull the new balance in the
+    // background so the rewards state stays current without a spinner.
+    refreshRewards();
     setCompletedItemIds((current) => {
       const next = new Set(current);
       next.add(item.id);
@@ -144,6 +173,18 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
     );
   }
 
+  if (view.kind === "rewards") {
+    return (
+      <RewardsScreen
+        token={token}
+        childId={child.id}
+        onRewardsLoaded={handleRewardsLoaded}
+        onAuthExpired={onAuthExpired}
+        onBack={() => setView({ kind: "stations" })}
+      />
+    );
+  }
+
   if (view.kind === "exercise") {
     return (
       <ExerciseRunner
@@ -172,9 +213,14 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
       <header className="journey-top">
         <h1 className="home-greeting">مرحبًا، {child.fullName}! 🎈</h1>
         {roadmap !== null ? <p className="home-roadmap">{roadmap.roadmap.name}</p> : null}
-        <button type="button" className="big-button secondary" onClick={onExit}>
-          خروج
-        </button>
+        <div className="home-actions">
+          <button type="button" className="big-button" onClick={() => setView({ kind: "rewards" })}>
+            🎁 جوائزي
+          </button>
+          <button type="button" className="big-button secondary" onClick={onExit}>
+            خروج
+          </button>
+        </div>
       </header>
 
       {!loading && loadError === null && showAssessmentBanner ? (
@@ -207,7 +253,12 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
       ) : null}
 
       {!loading && loadError === null && stages.length > 0 ? (
-        <JourneyMap stages={stages} completedItemIds={completedItemIds} onOpenStage={handleOpenStage} />
+        <JourneyMap
+          stages={stages}
+          completedItemIds={completedItemIds}
+          owlRingColor={rewards?.items.find((item) => item.equipped)?.color ?? null}
+          onOpenStage={handleOpenStage}
+        />
       ) : null}
     </main>
   );

@@ -671,7 +671,10 @@ model ChildReward {
   rewardId String
   reward   Reward       @relation(fields: [rewardId], references: [id])
   earnedAt DateTime     @default(now())
+  // Customization items only: the single equipped item per child colors the owl
+  equipped Boolean      @default(false)
 
+  @@unique([childId, rewardId])
   @@map("child_rewards")
 }
 

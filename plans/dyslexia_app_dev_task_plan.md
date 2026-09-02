@@ -129,12 +129,12 @@ Storage:     S3-compatible object storage
 
 ## Phase 6 — Gamification
 
-- [ ] Stars (1–3), points, badges
-- [ ] Character/theme customization, unlockable with points
-- [ ] Short positive animation + audio celebration
-- [ ] No negative punishment for wrong answers, anywhere in the app
-- [ ] No competitive leaderboard — progress compared only to the child's own history
-- [ ] Tables: `reward_types`, `rewards`, `badges`, `child_rewards`, `child_badges`, `reward_transactions`
+- [x] Stars (1–3), points, badges *(3 stars ≤8s, 2 ≤15s, else 1; 10 pts/star; 9 skill badges on stage completion — granted retroactively too)*
+- [x] Character/theme customization, unlockable with points *(5 customization items, point shop, single equipped item rings the owl on the journey map)*
+- [x] Short positive animation + audio celebration *(existing celebration visuals + platform sound; stars/badge line joins the banner after the immediate submit resolves)*
+- [x] No negative punishment for wrong answers, anywhere in the app *(wrong = 0 stars/0 points, gentle retry line, level unchanged — all enforced server-side)*
+- [x] No competitive leaderboard — progress compared only to the child's own history *(rewards are per-child only; no cross-child comparisons exist anywhere)*
+- [x] Tables: `reward_types`, `rewards`, `badges`, `child_rewards`, `child_badges`, `reward_transactions` *(all live + seeded)*
 
 ---
 

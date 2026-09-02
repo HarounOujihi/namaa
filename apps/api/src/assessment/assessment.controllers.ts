@@ -24,7 +24,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthUser } from '../auth/auth-user.interface';
-import { PlayService } from '../play/play.service';
+import { ChildAccessService } from '../child-access/child-access.service';
 
 @ApiTags('admin: assessments')
 @ApiBearerAuth()
@@ -87,19 +87,19 @@ export class AdminAssessmentController {
 export class AssessmentPlayController {
   constructor(
     private readonly assessments: AssessmentService,
-    private readonly play: PlayService,
+    private readonly childAccess: ChildAccessService,
   ) {}
 
   @Get(':childId/assessment')
   async get(@CurrentUser() user: AuthUser, @Param('childId') childId: string) {
-    await this.play.assertChildLinked(user, childId);
+    await this.childAccess.assertLinked(user, childId);
     return this.assessments.forChild(childId);
   }
 
   @Post(':childId/assessment/attempts')
   @HttpCode(201)
   async submit(@CurrentUser() user: AuthUser, @Param('childId') childId: string, @Body() dto: SubmitAssessmentDto) {
-    await this.play.assertChildLinked(user, childId);
+    await this.childAccess.assertLinked(user, childId);
     return this.assessments.submitAttempt(user, dto);
   }
 }

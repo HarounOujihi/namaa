@@ -36,6 +36,8 @@ interface JourneyMapProps {
   stages: PlayStage[];
   completedItemIds: ReadonlySet<string>;
   onOpenStage: (stage: PlayStage) => void;
+  /** Color of the child's equipped customization item — rings the owl. */
+  owlRingColor?: string | null;
 }
 
 const STATUS_ARIA: Record<NodeStatus, string> = {
@@ -79,7 +81,7 @@ function roadPath(centers: Array<{ x: number; y: number }>): string {
  * The roadmap drawn as an island journey: a winding sandy road, one round stage
  * node per stop, and the owl mascot perched on the current stop.
  */
-export function JourneyMap({ stages, completedItemIds, onOpenStage }: JourneyMapProps) {
+export function JourneyMap({ stages, completedItemIds, onOpenStage, owlRingColor = null }: JourneyMapProps) {
   const mapRef = useRef<HTMLElement | null>(null);
   const [width, setWidth] = useState(0);
   const [rtl, setRtl] = useState(true);
@@ -299,7 +301,11 @@ export function JourneyMap({ stages, completedItemIds, onOpenStage }: JourneyMap
                 </button>
               )}
               {row.status === "current" ? (
-                <span className="journey-owl" aria-hidden="true">
+                <span
+                  className="journey-owl"
+                  aria-hidden="true"
+                  style={owlRingColor !== null ? { boxShadow: `0 0 0 5px ${owlRingColor}55, 0 0 22px ${owlRingColor}88` } : undefined}
+                >
                   <Mascot />
                 </span>
               ) : null}

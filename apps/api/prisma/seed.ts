@@ -233,12 +233,60 @@ async function seedAssessment() {
   console.log(`Seeded diagnostic assessment v${version.version} with ${ASSESSMENT_ITEMS.length} items`);
 }
 
+async function seedRewards() {
+  for (const code of ['STAR', 'POINT', 'BADGE', 'CUSTOMIZATION']) {
+    await prisma.rewardType.upsert({
+      where: { code },
+      update: {},
+      create: { code, name: code },
+    });
+  }
+  const customization = await prisma.rewardType.findUniqueOrThrow({ where: { code: 'CUSTOMIZATION' } });
+
+  const items = [
+    { code: 'OWL_SCARF_RED', name: 'وشاح أحمر', price: 30, color: '#ef4444' },
+    { code: 'OWL_SCARF_BLUE', name: 'وشاح أزرق', price: 30, color: '#3b82f6' },
+    { code: 'OWL_SCARF_GREEN', name: 'وشاح أخضر', price: 30, color: '#22c55e' },
+    { code: 'OWL_HALO_GOLD', name: 'هالة ذهبية', price: 80, color: '#f59e0b' },
+    { code: 'OWL_HALO_VIOLET', name: 'هالة بنفسجية', price: 80, color: '#8b5cf6' },
+  ];
+  for (const item of items) {
+    await prisma.reward.upsert({
+      where: { code: item.code },
+      update: { name: item.name, metadata: { price: item.price, color: item.color } },
+      create: {
+        rewardTypeId: customization.id,
+        code: item.code,
+        name: item.name,
+        metadata: { price: item.price, color: item.color },
+      },
+    });
+  }
+
+  // One "بطل <skill>" badge per skill, granted when its stage completes.
+  const skills = await prisma.skill.findMany({ orderBy: { order: 'asc' } });
+  for (const skill of skills) {
+    const code = `SKILL_MASTER_${skill.code}`;
+    await prisma.badge.upsert({
+      where: { code },
+      update: { name: `بطل ${skill.name}` },
+      create: {
+        code,
+        name: `بطل ${skill.name}`,
+        nameTranslations: { en: `${skill.nameTranslations && typeof skill.nameTranslations === 'object' && 'en' in skill.nameTranslations ? String((skill.nameTranslations as { en: unknown }).en) : skill.code} Champion` },
+      },
+    });
+  }
+  console.log(`Seeded rewards: ${items.length} customization items, ${skills.length} badges`);
+}
+
 async function main() {
   await seedSuperAdmin();
   await seedSkills();
   await seedDefaultRoadmap();
   await seedContent();
   await seedAssessment();
+  await seedRewards();
 }
 
 main()

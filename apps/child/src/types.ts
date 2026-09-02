@@ -99,6 +99,48 @@ export interface PlayAttemptResult {
   correct: boolean;
   score: number;
   isSuccess: boolean;
+  duplicate: boolean;
+  /** Gamification: 0–3 stars for a correct answer, 0 otherwise. */
+  stars: number;
+  pointsEarned: number;
+  /** Arabic badge names just earned with this attempt. */
+  newBadges: string[];
+}
+
+export interface PlayBadge {
+  code: string;
+  name: string;
+  /** ISO date when earned; null while the badge is still locked. */
+  earnedAt: string | null;
+}
+
+export interface PlayRewardItem {
+  id: string;
+  code: string;
+  name: string;
+  price: number;
+  owned: boolean;
+  equipped: boolean;
+  /** The customization color applied to the owl's ring on the journey map. */
+  color: string;
+}
+
+export interface PlayRewards {
+  balance: number;
+  lifetimePoints: number;
+  stars: number;
+  badges: PlayBadge[];
+  items: PlayRewardItem[];
+}
+
+export interface PlayPurchaseResult {
+  balance: number;
+  item: PlayRewardItem;
+}
+
+export interface PlayEquipResult {
+  balance: number;
+  equippedId: string;
 }
 
 export interface PlayAssessmentItem {

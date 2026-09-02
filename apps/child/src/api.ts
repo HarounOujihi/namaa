@@ -9,6 +9,9 @@ import type {
   PlayAssessmentAttemptResult,
   PlayAttemptInput,
   PlayAttemptResult,
+  PlayEquipResult,
+  PlayPurchaseResult,
+  PlayRewards,
   PlayRoadmap,
   RedeemInviteResponse,
   UpdateChildInput,
@@ -152,6 +155,34 @@ export function submitPlayAttempt(token: string, input: PlayAttemptInput): Promi
     method: "POST",
     token,
     body: input,
+  });
+}
+
+export function getPlayRewards(token: string, childId: string): Promise<PlayRewards> {
+  return request<PlayRewards>(`/play/${encodeURIComponent(childId)}/rewards`, { token });
+}
+
+export function purchasePlayReward(
+  token: string,
+  childId: string,
+  rewardId: string,
+): Promise<PlayPurchaseResult> {
+  return request<PlayPurchaseResult>(`/play/${encodeURIComponent(childId)}/rewards/purchase`, {
+    method: "POST",
+    token,
+    body: { rewardId },
+  });
+}
+
+export function equipPlayReward(
+  token: string,
+  childId: string,
+  rewardId: string,
+): Promise<PlayEquipResult> {
+  return request<PlayEquipResult>(`/play/${encodeURIComponent(childId)}/rewards/equip`, {
+    method: "POST",
+    token,
+    body: { rewardId },
   });
 }
 
