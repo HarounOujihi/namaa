@@ -13,6 +13,7 @@ import { SoundsModule } from './sounds/sounds.module';
 import { AssessmentModule } from './assessment/assessment.module';
 import { ProgressionModule } from './progression/progression.module';
 import { RewardsModule } from './rewards/rewards.module';
+import { ParentModule } from './parent/parent.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { RewardsModule } from './rewards/rewards.module';
     AssessmentModule,
     ProgressionModule,
     RewardsModule,
+    ParentModule,
     InvitesModule,
     AssetsModule,
   ],

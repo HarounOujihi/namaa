@@ -201,3 +201,10 @@ export interface PlayRecommendation {
   skill: { code: string; name: string };
   exercise: PlayExercise;
 }
+
+// Parent-managed screen-time settings (advisory enforcement in-app)
+export interface ChildSettings {
+  dailyLimitMinutes: number | null;
+  reminderEnabled: boolean;
+  reminderTime: string | null;
+}

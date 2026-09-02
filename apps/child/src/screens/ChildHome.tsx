@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { ApiError, getPlayAssessment, getPlayRoadmap, getPlayRewards, getRecommendations } from "../api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ApiError, getChildSettings, getPlayAssessment, getPlayRoadmap, getPlayRewards, getRecommendations } from "../api";
 import type {
   Child,
   PlayAssessment,
@@ -39,6 +39,8 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
   const [rewards, setRewards] = useState<PlayRewards | null>(null);
 
   const [recommendations, setRecommendations] = useState<PlayRecommendation[]>([]);
+  const [dailyLimitReached, setDailyLimitReached] = useState(false);
+  const limitRef = useRef<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [completedItemIds, setCompletedItemIds] = useState<ReadonlySet<string>>(() => new Set());
@@ -64,6 +66,14 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
     void getRecommendations(token, child.id)
       .then((list) => setRecommendations(list))
       .catch(() => setRecommendations([]));
+    void getChildSettings(token, child.id)
+      .then((settings) => {
+        limitRef.current = settings.dailyLimitMinutes;
+        if (settings.dailyLimitMinutes !== null) {
+          setDailyLimitReached(minutesToday(child.id) >= settings.dailyLimitMinutes);
+        }
+      })
+      .catch(() => undefined);
     void refreshRewards();
     try {
       // The assessment banner is optional garnish: if its endpoint hiccups
@@ -104,6 +114,20 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
     // racing the fetch and silently no-op-ing.
     void loadAppSounds(token).then(() => playAppSound("WELCOME"));
   }, [token]);
+
+  useEffect(() => {
+    // Gentle screen-time accounting: one tick per minute while the journey is
+    // open, persisted per child per day. When the parent's limit is reached a
+    // soft goodnight screen appears — never a harsh lock.
+    const tracker = window.setInterval(() => {
+      const limit = limitRef.current;
+      tickMinute(child.id);
+      if (limit !== null && minutesToday(child.id) >= limit) {
+        setDailyLimitReached(true);
+      }
+    }, 60_000);
+    return () => window.clearInterval(tracker);
+  }, [child.id]);
 
   const handleExerciseDone = (stage: PlayStage, item: PlayStageItem): void => {
     // Stars and points just landed server-side: pull the new balance in the
@@ -208,6 +232,20 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
     setView({ kind: "stage", stage });
   };
 
+  if (dailyLimitReached) {
+    return (
+      <main className="screen child-home">
+        <div className="card assessment-banner" style={{ maxWidth: 420, marginTop: 80 }}>
+          <h1 className="assessment-banner-title">🌙 انتهى وقت الرحلة لهذا اليوم</h1>
+          <p className="assessment-banner-subtitle">استرح الآن — نلتقي بمغامرة جديدة غدًا!</p>
+          <button type="button" className="big-button" onClick={onExit}>
+            إلى اللقاء 👋
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="screen child-home">
       <header className="journey-top">
@@ -278,4 +316,21 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
       ) : null}
     </main>
   );
+}
+
+
+function dayKey(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+}
+
+function minutesToday(childId: string): number {
+  const raw = window.localStorage.getItem(`dt_screen_time_${childId}_${dayKey()}`);
+  const parsed = raw === null ? 0 : Number.parseInt(raw, 10);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function tickMinute(childId: string): void {
+  const next = minutesToday(childId) + 1;
+  window.localStorage.setItem(`dt_screen_time_${childId}_${dayKey()}`, String(next));
 }

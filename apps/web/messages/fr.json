@@ -1,0 +1,117 @@
+{
+  "app": {
+    "title": "Portail de suivi",
+    "description": "Portail de suivi pour les parents et les spécialistes"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "logout": "Déconnexion",
+    "logoutAria": "Se déconnecter"
+  },
+  "locale": {
+    "label": "Langue",
+    "ar": "العربية",
+    "en": "English",
+    "fr": "Français"
+  },
+  "errors": {
+    "network": "Impossible de contacter le serveur — vérifiez votre connexion",
+    "generic": "Une erreur inattendue s'est produite",
+    "retry": "Réessayer"
+  },
+  "login": {
+    "title": "Portail de suivi",
+    "subtitle": "Entrez votre e-mail et votre mot de passe pour continuer",
+    "email": "E-mail",
+    "emailPlaceholder": "nom@exemple.com",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "••••••••",
+    "submit": "Connexion",
+    "pending": "Connexion…",
+    "invalid": "Identifiants invalides"
+  },
+  "dashboard": {
+    "greeting": "Bienvenue, {name}",
+    "subtitle": "La semaine de vos enfants en un coup d'œil",
+    "weeklyTitle": "Cette semaine",
+    "weekOf": "Semaine du {weekOf}",
+    "minutes": "min",
+    "activities": "activités",
+    "stars": "étoiles",
+    "minutesLine": "A passé {minutes} minutes d'entraînement cette semaine",
+    "activitiesLine": "A terminé {count} activités avec succès cette semaine",
+    "starsLine": "A gagné {count} étoiles cette semaine",
+    "viewChild": "Voir les détails",
+    "summaryError": "Impossible de charger le résumé de la semaine",
+    "noChildrenTitle": "Aucun enfant lié à votre compte pour l'instant",
+    "noChildrenHint": "Activez un code d'invitation reçu de votre spécialiste pour lier votre enfant et suivre ses progrès"
+  },
+  "invite": {
+    "title": "Vous avez un code d'invitation ?",
+    "description": "Saisissez le code pour lier votre enfant à votre compte",
+    "codeLabel": "Code d'invitation",
+    "codePlaceholder": "XXXX-XXXX",
+    "redeem": "Activer",
+    "pending": "Activation…",
+    "success": "{name} a été ajouté à votre compte",
+    "alreadyLinked": "{name} est déjà lié à votre compte",
+    "invalid": "Code invalide — vérifiez-le et réessayez",
+    "claimed": "Ce code a déjà été utilisé"
+  },
+  "child": {
+    "back": "Tableau de bord",
+    "age": "Âge : {years, plural, =0 {moins d'un an} one {# an} other {# ans}}",
+    "grade": "Niveau : {grade}",
+    "missingTitle": "Aucun enfant sélectionné",
+    "missingHint": "Retournez au tableau de bord et choisissez un enfant",
+    "backHome": "Retour au tableau de bord",
+    "notFoundTitle": "Enfant introuvable",
+    "notFoundHint": "Cet enfant n'est peut-être pas lié à votre compte",
+    "skills": {
+      "title": "Niveaux par compétence",
+      "skill": "Compétence",
+      "level": "Niveau",
+      "attempts": "Tentatives",
+      "successRate": "Taux de réussite",
+      "notStarted": "Non commencé",
+      "levelValue": "Niveau {level}",
+      "empty": "Aucune compétence à afficher pour l'instant"
+    },
+    "mostImproved": {
+      "title": "Compétence la plus améliorée cette semaine",
+      "body": "{skill} s'est améliorée de {percent} % par rapport à la semaine dernière",
+      "none": "Pas encore assez de données pour identifier la compétence la plus améliorée"
+    },
+    "comparison": {
+      "title": "Cette semaine vs la semaine dernière",
+      "metric": "Indicateur",
+      "lastWeek": "Semaine dernière",
+      "thisWeek": "Cette semaine",
+      "minutes": "Minutes d'entraînement",
+      "activities": "Activités terminées",
+      "up": "En hausse",
+      "down": "En baisse",
+      "same": "Sans changement"
+    },
+    "totals": {
+      "lifetimeAttempts": "Tentatives depuis le début : {count}"
+    },
+    "specialists": {
+      "title": "Spécialistes suivants",
+      "since": "Suivi depuis le {since}",
+      "empty": "Aucun spécialiste lié à cet enfant pour l'instant"
+    }
+  },
+  "settings": {
+    "title": "Paramètres de l'enfant",
+    "dailyLimit": "Limite d'utilisation quotidienne",
+    "dailyLimitUnit": "minutes",
+    "dailyLimitHint": "Entre 5 et 480 — laissez vide pour aucune limite quotidienne",
+    "reminder": "Rappel d'utilisation quotidien",
+    "reminderHint": "Une invite gentille à l'heure de votre choix pour garder l'entraînement sur les rails",
+    "reminderTime": "Heure du rappel",
+    "save": "Enregistrer les paramètres",
+    "saving": "Enregistrement…",
+    "saved": "Paramètres enregistrés"
+  }
+}

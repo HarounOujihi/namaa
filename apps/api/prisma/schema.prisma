@@ -120,6 +120,7 @@ model ChildProfile {
   badges               ChildBadge[]
   rewardTransactions   RewardTransaction[]
   progressionDecisions ProgressionDecision[]
+  settings             ChildSetting?
 
   @@map("child_profiles")
 }
@@ -701,6 +702,22 @@ model RewardTransaction {
 
   @@index([childId, createdAt])
   @@map("reward_transactions")
+}
+
+// =========================================================================
+// CHILD SETTINGS (parent-managed)
+// Screen-time limit + gentle reminders per child. The limit is advisory in
+// the child app session (server-side enforcement lands with the mobile phase).
+
+model ChildSetting {
+  childId             String   @id
+  child               ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+  dailyLimitMinutes   Int?
+  reminderEnabled     Boolean  @default(false)
+  reminderTime        String? // HH:mm local
+  updatedAt           DateTime @updatedAt
+
+  @@map("child_settings")
 }
 
 // =========================================================================

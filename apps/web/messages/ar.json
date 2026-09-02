@@ -1,0 +1,117 @@
+{
+  "app": {
+    "title": "بوابة المتابعة",
+    "description": "بوابة أولياء الأمور والمختصين لمتابعة التقدم التدريبي"
+  },
+  "nav": {
+    "dashboard": "لوحة المتابعة",
+    "logout": "خروج",
+    "logoutAria": "تسجيل الخروج"
+  },
+  "locale": {
+    "label": "اللغة",
+    "ar": "العربية",
+    "en": "English",
+    "fr": "Français"
+  },
+  "errors": {
+    "network": "تعذر الاتصال بالخادم، تحقق من اتصالك",
+    "generic": "حدث خطأ غير متوقع",
+    "retry": "إعادة المحاولة"
+  },
+  "login": {
+    "title": "بوابة المتابعة",
+    "subtitle": "أدخل بريدك الإلكتروني وكلمة المرور للمتابعة",
+    "email": "البريد الإلكتروني",
+    "emailPlaceholder": "name@example.com",
+    "password": "كلمة المرور",
+    "passwordPlaceholder": "••••••••",
+    "submit": "دخول",
+    "pending": "جارٍ الدخول…",
+    "invalid": "بيانات الدخول غير صحيحة"
+  },
+  "dashboard": {
+    "greeting": "أهلاً بك، {name}",
+    "subtitle": "ملخص متابعة أطفالك لهذا الأسبوع",
+    "weeklyTitle": "ملخص هذا الأسبوع",
+    "weekOf": "أسبوع {weekOf}",
+    "minutes": "دقيقة",
+    "activities": "نشاط",
+    "stars": "نجمة",
+    "minutesLine": "قضى {minutes} دقيقة في التدريب هذا الأسبوع",
+    "activitiesLine": "أكمل {count} نشاطًا بنجاح هذا الأسبوع",
+    "starsLine": "جمع {count} نجمة هذا الأسبوع",
+    "viewChild": "عرض التفاصيل",
+    "summaryError": "تعذر تحميل ملخص الأسبوع",
+    "noChildrenTitle": "لا يوجد أطفال مرتبطون بحسابك بعد",
+    "noChildrenHint": "فعّل رمز الدعوة الواصل إليك من المختص لربط طفلك وبدء المتابعة"
+  },
+  "invite": {
+    "title": "لديك رمز دعوة من مختص؟",
+    "description": "أدخل الرمز لربط طفلك بحسابك ومتابعة تقدمه",
+    "codeLabel": "رمز الدعوة",
+    "codePlaceholder": "XXXX-XXXX",
+    "redeem": "تفعيل",
+    "pending": "جارٍ التفعيل…",
+    "success": "تمت إضافة {name} إلى حسابك",
+    "alreadyLinked": "{name} مرتبط بحسابك بالفعل",
+    "invalid": "رمز غير صالح، تحقق منه وحاول مرة أخرى",
+    "claimed": "تم استخدام هذا الرمز مسبقًا"
+  },
+  "child": {
+    "back": "لوحة المتابعة",
+    "age": "العمر: {years, plural, zero {أقل من سنة} one {سنة واحدة} two {سنتان} few {{yearsText} سنوات} many {{yearsText} سنة} other {{yearsText} سنة}}",
+    "grade": "الصف: {grade}",
+    "missingTitle": "لم يتم اختيار طفل",
+    "missingHint": "عد إلى لوحة المتابعة واختر طفلاً لعرض تفاصيله",
+    "backHome": "العودة إلى لوحة المتابعة",
+    "notFoundTitle": "لم يتم العثور على الطفل",
+    "notFoundHint": "قد لا يكون هذا الطفل مرتبطًا بحسابك",
+    "skills": {
+      "title": "المستويات حسب المهارة",
+      "skill": "المهارة",
+      "level": "المستوى",
+      "attempts": "المحاولات",
+      "successRate": "نسبة النجاح",
+      "notStarted": "لم يبدأ",
+      "levelValue": "المستوى {level}",
+      "empty": "لا توجد مهارات لعرضها بعد"
+    },
+    "mostImproved": {
+      "title": "أكثر مهارة تحسنًا هذا الأسبوع",
+      "body": "تحسّن أداء {skill} بنسبة {percent}٪ مقارنة بالأسبوع الماضي",
+      "none": "لا تتوفر قياسات كافية بعد لتحديد أكثر المهارات تحسنًا"
+    },
+    "comparison": {
+      "title": "هذا الأسبوع مقابل الأسبوع الماضي",
+      "metric": "المؤشر",
+      "lastWeek": "الأسبوع الماضي",
+      "thisWeek": "هذا الأسبوع",
+      "minutes": "دقائق التدريب",
+      "activities": "الأنشطة المكتملة",
+      "up": "ارتفاع",
+      "down": "انخفاض",
+      "same": "بلا تغيير"
+    },
+    "totals": {
+      "lifetimeAttempts": "إجمالي المحاولات على الإطلاق: {count}"
+    },
+    "specialists": {
+      "title": "المختصون المتابعون",
+      "since": "متابعة منذ {since}",
+      "empty": "لا يوجد مختص مرتبط بهذا الطفل بعد"
+    }
+  },
+  "settings": {
+    "title": "إعدادات الطفل",
+    "dailyLimit": "الحد اليومي للاستخدام",
+    "dailyLimitUnit": "دقيقة",
+    "dailyLimitHint": "قيمة بين 5 و480، واتركه فارغًا لإلغاء الحد اليومي",
+    "reminder": "تذكير الاستخدام اليومي",
+    "reminderHint": "تنبيه لطيف في وقت تحدده لمتابعة التدريب",
+    "reminderTime": "وقت التذكير",
+    "save": "حفظ الإعدادات",
+    "saving": "جارٍ الحفظ…",
+    "saved": "تم حفظ الإعدادات"
+  }
+}

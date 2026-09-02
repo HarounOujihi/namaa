@@ -1,0 +1,533 @@
+/* RewardsScreen — the child's treasure room.
+   A slim sticky way back, one warm hero card that answers "how rich am I?"
+   (the owl wearing whatever the child equipped + the big balance), a wall of
+   badge medallions, and a shop whose cards preview each item on a mini owl.
+   Warm golds, teals and cream only — positive everywhere, never red. */
+
+/* ── sticky slim header, mirroring the journey map's top bar ────────── */
+
+.rewards-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  width: 100%;
+  padding: 6px 0 8px;
+  background: var(--bg);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  box-shadow: 0 6px 14px rgba(93, 64, 55, 0.08);
+}
+
+/* One row: رجوع on one end, the title centered, a spacer balancing the far end. */
+.rewards-top-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Slimmer than the global 64px text button, still a 44px touch target. */
+.rewards-top-row .text-button {
+  min-height: 44px;
+  padding: 4px 12px;
+  justify-self: start;
+}
+
+.rewards-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 4.5vw, 1.7rem);
+  text-align: center;
+}
+
+.rewards-top-tail {
+  justify-self: end;
+}
+
+/* ── hero: the treasure card with the owl and the big balance ───────── */
+
+.rewards-hero {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(14px, 4vw, 36px);
+  padding: clamp(18px, 4vw, 30px);
+  border-radius: var(--radius-lg);
+  border: 3px solid #ffe3ae;
+  background:
+    radial-gradient(90% 150% at 88% 0%, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 58%),
+    linear-gradient(135deg, #ffedc9 0%, #ffe0a3 48%, #ffd280 100%);
+  box-shadow: 0 10px 24px rgba(245, 166, 35, 0.22);
+  overflow: clip;
+}
+
+/* floating sparkles for treasure feel — decorative only */
+.rewards-spark {
+  position: absolute;
+  pointer-events: none;
+  line-height: 1;
+  animation: rewards-twinkle 2.8s ease-in-out infinite;
+}
+
+.rewards-spark.is-top {
+  top: 10px;
+  inset-inline-start: 16px;
+  font-size: 1.5rem;
+}
+
+.rewards-spark.is-bottom {
+  bottom: 12px;
+  inset-inline-end: 20px;
+  font-size: 1.2rem;
+  animation-delay: 1.3s;
+}
+
+/* the owl in his medallion — wearing the equipped scarf; a halo equipped
+   adds its colored glow via an inline box-shadow on this wrapper */
+.rewards-hero-owl {
+  flex-shrink: 0;
+  width: clamp(112px, 26vw, 168px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 30%, #fffdf4 0%, #ffe9bd 72%);
+  border: 3px solid #ffffff;
+  box-shadow: 0 8px 18px rgba(245, 166, 35, 0.3);
+}
+
+.rewards-hero-owl .mascot {
+  display: block;
+  width: 72%;
+  height: auto;
+  filter: drop-shadow(0 5px 4px rgba(93, 64, 55, 0.26));
+  animation: rewards-bob 3s ease-in-out infinite;
+}
+
+.rewards-hero-copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 20px;
+  min-width: 0;
+}
+
+.rewards-hero-balance {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* the single richest number on the screen */
+.rewards-hero-number {
+  font-size: clamp(3rem, 12vw, 4.6rem);
+  font-weight: 900;
+  line-height: 1;
+  color: var(--ink);
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.55);
+}
+
+.rewards-hero-unit {
+  font-size: clamp(1.15rem, 3.5vw, 1.4rem);
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+/* lifetime stars beside the balance */
+.rewards-hero-stars {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 2px solid #ffe3ae;
+  font-size: clamp(1.15rem, 3.5vw, 1.35rem);
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.rewards-hero-stars-unit {
+  font-size: 0.85em;
+  color: var(--ink-soft);
+}
+
+/* ── inline status: celebration or a gentle informational note ───────── */
+
+.rewards-status {
+  width: 100%;
+  margin: 0;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  background: #fffdf3;
+  border: 3px solid var(--border);
+  color: var(--ink-soft);
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: 800;
+  animation: rewards-rise 0.3s ease-out backwards;
+}
+
+.rewards-status.is-celebrate {
+  background: linear-gradient(135deg, #fff3c9, #ffe39a);
+  border-color: var(--accent);
+  color: var(--ink);
+  font-size: 1.3rem;
+}
+
+/* ── sections share one rhythm ───────────────────────────────────────── */
+
+.rewards-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rewards-section-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 4.5vw, 1.6rem);
+  color: var(--ink);
+}
+
+/* ── badges: a wall of medallions, earned gold / locked dashed ──────── */
+
+.rewards-badges {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 12px;
+}
+
+.badge-medal {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px 10px;
+  border-radius: var(--radius-md);
+  background: #fbf4e9;
+  border: 3px solid transparent;
+  text-align: center;
+  animation: rewards-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+.badge-medal-circle {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.badge-medal-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+/* earned: a gold coin with the skill name and the happy day */
+.badge-medal.is-earned {
+  background: #fffdf7;
+  border-color: #ffe3ae;
+}
+
+.badge-medal.is-earned .badge-medal-circle {
+  background: linear-gradient(145deg, #ffe08a 0%, #ffb300 75%);
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(245, 166, 35, 0.42), inset 0 -3px 0 rgba(146, 94, 6, 0.28);
+}
+
+.badge-medal.is-earned .badge-medal-name {
+  color: var(--ink);
+}
+
+.badge-medal-date {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+/* locked: muted and dashed — something lovely still waiting */
+.badge-medal:not(.is-earned) .badge-medal-circle {
+  border: 3px dashed #d9c6ae;
+  color: #a48b6d;
+  background: transparent;
+}
+
+/* ── shop: every card previews the item on a mini owl ────────────────── */
+
+.rewards-shop {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.shop-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--card);
+  border: 3px solid var(--border);
+  box-shadow: 0 4px 10px rgba(93, 64, 55, 0.06);
+  animation: rewards-rise 0.45s ease-out backwards;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+@media (hover: hover) {
+  .shop-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(93, 64, 55, 0.12);
+  }
+}
+
+/* the item currently worn: gold frame, warm card, impossible to miss */
+.shop-card.is-equipped {
+  border-color: var(--accent);
+  background: #fffaf0;
+  box-shadow: 0 0 0 4px rgba(255, 179, 0, 0.18), 0 6px 14px rgba(245, 166, 35, 0.25);
+}
+
+/* a soft stage the mini owl poses on */
+.shop-preview {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 10px 6px;
+  border-radius: calc(var(--radius-md) - 4px);
+  background: radial-gradient(120% 110% at 50% 0%, #fdf3e0 0%, #faeccf 100%);
+}
+
+/* halo items: their color blooms behind the owl */
+.shop-preview-glow {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+}
+
+.shop-preview .mascot {
+  position: relative;
+  display: block;
+  width: clamp(72px, 18vw, 96px);
+  height: auto;
+  filter: drop-shadow(0 4px 4px rgba(52, 26, 10, 0.22));
+}
+
+.shop-card.is-equipped .shop-preview .mascot {
+  animation: rewards-bob 2.6s ease-in-out infinite;
+}
+
+/* the price sits in a pill so numbers stay friendly */
+.shop-price {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 2px solid var(--border);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.shop-card.is-owned .shop-price {
+  background: #f3efe7;
+  color: var(--ink-soft);
+}
+
+.shop-name {
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.shop-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* 44px targets everywhere, chunky and pressable */
+.shop-button {
+  min-height: 44px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.shop-button:active {
+  transform: translateY(2px);
+}
+
+.shop-button.is-buy {
+  background: var(--secondary);
+  color: #ffffff;
+  box-shadow: 0 4px 0 var(--secondary-shadow);
+}
+
+.shop-button.is-buy:active {
+  box-shadow: 0 2px 0 var(--secondary-shadow);
+}
+
+/* not enough points yet: quiet and informational, never scolding */
+.shop-button.is-buy:disabled {
+  background: #cfe3df;
+  color: #3f6b64;
+  box-shadow: none;
+  cursor: default;
+}
+
+.shop-button.is-equip {
+  background: var(--accent);
+  color: var(--ink);
+  box-shadow: 0 4px 0 #d19000;
+}
+
+.shop-button.is-equip:active {
+  box-shadow: 0 2px 0 #d19000;
+}
+
+.shop-button.is-equip:disabled {
+  background: #ecdcae;
+  color: var(--ink-soft);
+  box-shadow: none;
+  cursor: default;
+}
+
+/* the worn state, worn proudly */
+.shop-state {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ffe27a, #ffb300);
+  border: 2px solid #ffffff;
+  box-shadow: 0 3px 0 rgba(180, 116, 0, 0.45);
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--ink);
+}
+
+/* "you need N more points" — an invitation, not a refusal */
+.shop-note {
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+/* keyboard focus stays visible for every control */
+.rewards-top-row .text-button:focus-visible,
+.shop-button:focus-visible {
+  outline: 4px solid #58a89b;
+  outline-offset: 2px;
+}
+
+/* ── motion ──────────────────────────────────────────────────────────── */
+
+@keyframes rewards-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.07);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rewards-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rewards-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes rewards-twinkle {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.9) rotate(-8deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15) rotate(8deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge-medal,
+  .shop-card,
+  .rewards-status,
+  .rewards-hero-owl .mascot,
+  .shop-card.is-equipped .shop-preview .mascot,
+  .rewards-spark {
+    animation: none;
+  }
+
+  .shop-card,
+  .shop-button {
+    transition: none;
+  }
+
+  .shop-card:hover {
+    transform: none;
+  }
+}

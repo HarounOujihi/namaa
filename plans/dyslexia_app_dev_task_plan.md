@@ -148,13 +148,13 @@ Storage:     S3-compatible object storage
 
 ## Phase 8 — Parent Dashboard (multi-language)
 
-- [ ] i18n: `next-intl`, locale switcher in settings, locale stored per-user
-- [ ] Dynamic `dir="rtl"`/`dir="ltr"` shell using CSS logical properties (`margin-inline-start`, not `margin-left`)
-- [ ] Translate: navigation, buttons, forms, settings, notifications — not the child's exercise content
-- [ ] Weekly summary: time spent, activities completed, most-improved skill, plain-language line per metric
-- [ ] Daily screen-time limits, reminder settings
-- [ ] Contact-specialist link, if one exists
-- [ ] Invite-code redemption UI
+- [x] i18n: `next-intl`, locale switcher in settings, locale stored per-user *(ar/en/fr, cookie + users.locale persisted, verified ar↔en dir flip)*
+- [x] Dynamic `dir="rtl"`/`dir="ltr"` shell using CSS logical properties (`margin-inline-start`, not `margin-left`) *(shadcn init with --rtl; dir flips on locale switch)*
+- [x] Translate: navigation, buttons, forms, settings, notifications — not the child's exercise content *(87 keys × 3 locales; zero hardcoded strings — grep-verified)*
+- [x] Weekly summary: time spent, activities completed, most-improved skill, plain-language line per metric *(computed from raw attempts server-side; verified with live data)*
+- [x] Daily screen-time limits, reminder settings *(child_settings table, parent-only writes validated 5–480 min; child app enforces with a gentle goodnight screen — verified)*
+- [x] Contact-specialist link, if one exists *(from active specialist_children, mailto link)*
+- [x] Invite-code redemption UI *(parent-only card with localized toasts)*
 
 ---
 

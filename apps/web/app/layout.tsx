@@ -1,16 +1,29 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getTranslations } from "next-intl/server";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "بوابة المتابعة",
-  description: "بوابة أولياء الأمور والمختصين لمنصة رحلتي",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("app");
+  return {
+    title: t("title"),
+    description: t("description"),
+  };
+}
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const locale = await getLocale();
+  const dir = locale === "ar" ? "rtl" : "ltr";
   return (
-    <html lang="ar" dir="rtl">
-      <body>{children}</body>
+    <html lang={locale} dir={dir}>
+      <body>
+        <NextIntlClientProvider>
+          {children}
+          <Toaster />
+        </NextIntlClientProvider>
+      </body>
     </html>
   );
 }

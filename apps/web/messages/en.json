@@ -1,0 +1,117 @@
+{
+  "app": {
+    "title": "Care Portal",
+    "description": "Follow-up portal for parents and specialists"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "logout": "Log out",
+    "logoutAria": "Log out"
+  },
+  "locale": {
+    "label": "Language",
+    "ar": "العربية",
+    "en": "English",
+    "fr": "Français"
+  },
+  "errors": {
+    "network": "Could not reach the server — check your connection",
+    "generic": "Something went wrong",
+    "retry": "Try again"
+  },
+  "login": {
+    "title": "Care Portal",
+    "subtitle": "Enter your email and password to continue",
+    "email": "Email",
+    "emailPlaceholder": "name@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "submit": "Sign in",
+    "pending": "Signing in…",
+    "invalid": "Invalid credentials"
+  },
+  "dashboard": {
+    "greeting": "Welcome, {name}",
+    "subtitle": "Your children's week at a glance",
+    "weeklyTitle": "This week",
+    "weekOf": "Week of {weekOf}",
+    "minutes": "min",
+    "activities": "activities",
+    "stars": "stars",
+    "minutesLine": "Spent {minutes} minutes training this week",
+    "activitiesLine": "Completed {count} activities successfully this week",
+    "starsLine": "Earned {count} stars this week",
+    "viewChild": "View details",
+    "summaryError": "Could not load the weekly summary",
+    "noChildrenTitle": "No children linked to your account yet",
+    "noChildrenHint": "Redeem an invite code from your specialist to link your child and start following their progress"
+  },
+  "invite": {
+    "title": "Have a specialist invite code?",
+    "description": "Enter the code to link your child to your account",
+    "codeLabel": "Invite code",
+    "codePlaceholder": "XXXX-XXXX",
+    "redeem": "Redeem",
+    "pending": "Redeeming…",
+    "success": "{name} was added to your account",
+    "alreadyLinked": "{name} is already linked to your account",
+    "invalid": "Invalid code — check it and try again",
+    "claimed": "This code has already been used"
+  },
+  "child": {
+    "back": "Dashboard",
+    "age": "Age: {years, plural, =0 {under one} one {# year} other {# years}}",
+    "grade": "Grade: {grade}",
+    "missingTitle": "No child selected",
+    "missingHint": "Go back to the dashboard and pick a child",
+    "backHome": "Back to dashboard",
+    "notFoundTitle": "Child not found",
+    "notFoundHint": "This child may not be linked to your account",
+    "skills": {
+      "title": "Levels by skill",
+      "skill": "Skill",
+      "level": "Level",
+      "attempts": "Attempts",
+      "successRate": "Success rate",
+      "notStarted": "Not started",
+      "levelValue": "Level {level}",
+      "empty": "No skills to show yet"
+    },
+    "mostImproved": {
+      "title": "Most improved this week",
+      "body": "{skill} improved by {percent}% compared to last week",
+      "none": "Not enough data yet to spot the most improved skill"
+    },
+    "comparison": {
+      "title": "This week vs last week",
+      "metric": "Metric",
+      "lastWeek": "Last week",
+      "thisWeek": "This week",
+      "minutes": "Training minutes",
+      "activities": "Activities completed",
+      "up": "Up",
+      "down": "Down",
+      "same": "No change"
+    },
+    "totals": {
+      "lifetimeAttempts": "Lifetime attempts: {count}"
+    },
+    "specialists": {
+      "title": "Following specialists",
+      "since": "Following since {since}",
+      "empty": "No specialist linked to this child yet"
+    }
+  },
+  "settings": {
+    "title": "Child settings",
+    "dailyLimit": "Daily usage limit",
+    "dailyLimitUnit": "minutes",
+    "dailyLimitHint": "Between 5 and 480 — leave empty for no daily limit",
+    "reminder": "Daily usage reminder",
+    "reminderHint": "A gentle nudge at a time you choose to keep training on track",
+    "reminderTime": "Reminder time",
+    "save": "Save settings",
+    "saving": "Saving…",
+    "saved": "Settings saved"
+  }
+}

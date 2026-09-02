@@ -16,6 +16,7 @@ import type {
   RedeemInviteResponse,
   UpdateChildInput,
   PlayRecommendation,
+  ChildSettings,
 } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
@@ -194,4 +195,8 @@ export function getAppSounds(token: string): Promise<AppSoundsMap> {
 
 export function getRecommendations(token: string, childId: string): Promise<PlayRecommendation[]> {
   return request<PlayRecommendation[]>(`/play/${encodeURIComponent(childId)}/recommendations`, { token });
+}
+
+export function getChildSettings(token: string, childId: string): Promise<ChildSettings> {
+  return request<ChildSettings>(`/children/${encodeURIComponent(childId)}/settings`, { token });
 }

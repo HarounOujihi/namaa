@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, equipPlayReward, getPlayRewards, purchasePlayReward } from "../api";
 import type { PlayRewardItem, PlayRewards } from "../types";
+import { Mascot } from "../components/Mascot";
 import { playAppSound } from "../app-sounds";
 import { toArabicIndic } from "../arabic";
+import "./rewards-screen.css";
 
 interface RewardsScreenProps {
   token: string;
@@ -29,9 +31,11 @@ function formatEarnedDate(iso: string): string | null {
 }
 
 /**
- * 🎁 The child's treasure room: points balance, lifetime stars, the nine skill
- * badges (earned or still locked), and the customization shop where points buy
- * a colored ring the owl wears on the journey map. Positive-only everywhere.
+ * 🎁 The child's treasure room: a warm hero card with the owl (wearing
+ * whatever the child equipped) and the big points balance beside the
+ * lifetime stars, a wall of badge medallions — earned gold or locked
+ * dashed — and the customization shop whose cards preview each item on a
+ * mini owl before buying. Positive-only everywhere.
  */
 export function RewardsScreen({ token, childId, onRewardsLoaded, onAuthExpired, onBack }: RewardsScreenProps) {
   const [rewards, setRewards] = useState<PlayRewards | null>(null);
@@ -109,20 +113,25 @@ export function RewardsScreen({ token, childId, onRewardsLoaded, onAuthExpired, 
       });
   };
 
+  // The hero owl mirrors the journey map: scarf worn, halo glowing.
+  const equippedItem = rewards?.items.find((item) => item.equipped) ?? null;
+  const heroScarfColor =
+    equippedItem !== null && equippedItem.code.startsWith("OWL_SCARF") ? equippedItem.color : null;
+  const heroGlow =
+    equippedItem !== null && equippedItem.code.startsWith("OWL_HALO")
+      ? { boxShadow: `0 0 0 5px ${equippedItem.color}55, 0 0 26px ${equippedItem.color}88` }
+      : undefined;
+
   return (
     <main className="screen rewards-screen">
-      <header className="play-header">
-        <button type="button" className="text-button" onClick={onBack}>
-          رجوع
-        </button>
-        <h1 className="screen-title">جوائزي 🎁</h1>
-        {rewards !== null ? (
-          <span className="rewards-chip" aria-label={`مجموع النجوم ${toArabicIndic(rewards.stars)}`}>
-            ⭐ {toArabicIndic(rewards.stars)}
-          </span>
-        ) : (
-          <span className="rewards-chip is-empty" aria-hidden />
-        )}
+      <header className="rewards-top">
+        <div className="rewards-top-row">
+          <button type="button" className="text-button" onClick={onBack}>
+            رجوع
+          </button>
+          <h1 className="rewards-title">جوائزي 🎁</h1>
+          <span className="rewards-top-tail" aria-hidden="true" />
+        </div>
       </header>
 
       {loading ? <p className="status-text">جارٍ تحميل الجوائز…</p> : null}
@@ -139,12 +148,26 @@ export function RewardsScreen({ token, childId, onRewardsLoaded, onAuthExpired, 
 
       {!loading && rewards !== null ? (
         <>
-          <section className="card rewards-summary" aria-label="رصيد النقاط والنجوم">
-            <p className="rewards-balance">
-              <span className="rewards-balance-number">{toArabicIndic(rewards.balance)}</span>
-              <span className="rewards-balance-unit">نقطة</span>
-            </p>
-            <p className="rewards-stars">⭐ {toArabicIndic(rewards.stars)}</p>
+          <section className="rewards-hero" aria-label="رصيد النقاط والنجوم">
+            <span className="rewards-spark is-top" aria-hidden="true">
+              ✨
+            </span>
+            <span className="rewards-spark is-bottom" aria-hidden="true">
+              ✨
+            </span>
+            <div className="rewards-hero-owl" style={heroGlow}>
+              <Mascot scarfColor={heroScarfColor} />
+            </div>
+            <div className="rewards-hero-copy">
+              <p className="rewards-hero-balance">
+                <span className="rewards-hero-number">{toArabicIndic(rewards.balance)}</span>
+                <span className="rewards-hero-unit">نقطة</span>
+              </p>
+              <p className="rewards-hero-stars">
+                ⭐ {toArabicIndic(rewards.stars)}
+                <span className="rewards-hero-stars-unit">نجمة</span>
+              </p>
+            </div>
           </section>
 
           {status !== null ? (
@@ -157,24 +180,25 @@ export function RewardsScreen({ token, childId, onRewardsLoaded, onAuthExpired, 
           ) : null}
 
           <section className="rewards-section" aria-label="الأوسمة">
-            <h2 className="rewards-section-title">🏅 الأوسمة</h2>
+            <h2 className="rewards-section-title">🏅 وسامي</h2>
             {rewards.badges.length === 0 ? (
               <p className="status-text">لا توجد أوسمة بعد</p>
             ) : (
-              <ul className="badges-grid">
-                {rewards.badges.map((badge) => {
+              <ul className="rewards-badges">
+                {rewards.badges.map((badge, index) => {
                   const dateText = badge.earnedAt !== null ? formatEarnedDate(badge.earnedAt) : null;
                   return (
                     <li
                       key={badge.code}
-                      className={badge.earnedAt !== null ? "badge-card is-earned" : "badge-card"}
+                      className={badge.earnedAt !== null ? "badge-medal is-earned" : "badge-medal"}
+                      style={{ animationDelay: `${Math.min(index, 9) * 55}ms` }}
                     >
-                      <span className="badge-medal" aria-hidden>
+                      <span className="badge-medal-circle" aria-hidden="true">
                         {badge.earnedAt !== null ? "🏅" : "🔒"}
                       </span>
-                      <span className="badge-name">{badge.name}</span>
+                      <span className="badge-medal-name">{badge.name}</span>
                       {badge.earnedAt !== null && dateText !== null ? (
-                        <span className="badge-date">{dateText}</span>
+                        <span className="badge-medal-date">{dateText}</span>
                       ) : null}
                     </li>
                   );
@@ -183,43 +207,60 @@ export function RewardsScreen({ token, childId, onRewardsLoaded, onAuthExpired, 
             )}
           </section>
 
-          <section className="rewards-section" aria-label="متجر الألوان">
-            <h2 className="rewards-section-title">🛍️ متجر الألوان</h2>
+          <section className="rewards-section" aria-label="متجر الوشاح">
+            <h2 className="rewards-section-title">🛍️ متجر الوشاح</h2>
             {rewards.items.length === 0 ? (
               <p className="status-text">لا توجد عناصر بعد</p>
             ) : (
-              <ul className="shop-grid">
-                {rewards.items.map((item) => {
+              <ul className="rewards-shop">
+                {rewards.items.map((item, index) => {
                   const busy = busyItemId === item.id;
+                  const scarf = item.code.startsWith("OWL_SCARF");
+                  const missingPoints = item.price - rewards.balance;
+                  const cardClass = `shop-card${item.owned ? " is-owned" : ""}${item.equipped ? " is-equipped" : ""}`;
                   return (
-                    <li key={item.id} className={item.equipped ? "shop-card is-equipped" : "shop-card"}>
-                      <span className="shop-swatch" style={{ backgroundColor: item.color }} aria-hidden />
-                      <span className="shop-name">{item.name}</span>
+                    <li key={item.id} className={cardClass} style={{ animationDelay: `${Math.min(index, 7) * 60}ms` }}>
+                      <div className="shop-preview" aria-hidden="true">
+                        {scarf ? null : (
+                          <span
+                            className="shop-preview-glow"
+                            style={{
+                              background: `radial-gradient(circle, ${item.color}66 0%, ${item.color}26 52%, rgba(255, 255, 255, 0) 74%)`,
+                            }}
+                          />
+                        )}
+                        <Mascot scarfColor={scarf ? item.color : null} />
+                      </div>
                       <span className="shop-price">{toArabicIndic(item.price)} نقطة</span>
+                      <span className="shop-name">{item.name}</span>
                       <div className="shop-actions">
-                        {item.owned ? (
-                          <>
-                            <button type="button" className="shop-button" disabled>
-                              مملوك
-                            </button>
-                            <button
-                              type="button"
-                              className="shop-button is-equip"
-                              disabled={busy || item.equipped}
-                              onClick={() => runItemAction(item, "equip")}
-                            >
-                              {item.equipped ? "مرتدى" : "ارتداء"}
-                            </button>
-                          </>
-                        ) : (
+                        {item.equipped ? (
+                          <span className="shop-state">مرتدى ✓</span>
+                        ) : item.owned ? (
                           <button
                             type="button"
-                            className="shop-button is-buy"
+                            className="shop-button is-equip"
                             disabled={busy}
-                            onClick={() => runItemAction(item, "purchase")}
+                            onClick={() => runItemAction(item, "equip")}
                           >
-                            {busy ? "…" : "شراء"}
+                            {busy ? "…" : "ارتداء"}
                           </button>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              className="shop-button is-buy"
+                              disabled={busy || rewards.balance < item.price}
+                              onClick={() => runItemAction(item, "purchase")}
+                            >
+                              {busy ? "…" : "شراء"}
+                            </button>
+                            {rewards.balance < item.price ? (
+                              <span className="shop-note">
+                                تحتاج {toArabicIndic(missingPoints)} نقطة إضافية
+                              </span>
+                            ) : null}
+                          </>
                         )}
                       </div>
                     </li>
