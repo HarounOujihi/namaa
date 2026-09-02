@@ -233,7 +233,9 @@ export function PlatformSoundsPage() {
     () =>
       (assetsQuery.data ?? []).map((asset) => ({
         value: asset.id,
-        label: `${asset.mimeType} · ${formatBytes(asset.sizeBytes)} · ${formatDate(asset.createdAt)}`,
+        label: asset.originalName !== null && asset.originalName !== ""
+          ? `${asset.originalName} · ${asset.mimeType}`
+          : `${asset.mimeType} · ${formatBytes(asset.sizeBytes)} · ${formatDate(asset.createdAt)}`,
       })),
     [assetsQuery.data],
   );

@@ -179,7 +179,9 @@ export function AudioManagerDialog({
   function assetOptions(): SelectOption[] {
     return assets.map((asset) => ({
       value: asset.id,
-      label: `${shortId(asset.id)} · ${asset.mimeType}`,
+      label: asset.originalName !== null && asset.originalName !== ""
+        ? `${asset.originalName} · ${asset.mimeType}`
+        : `${shortId(asset.id)} · ${asset.mimeType}`,
     }));
   }
 
@@ -189,6 +191,7 @@ export function AudioManagerDialog({
       const result = await uploadAsset(file, "AUDIO");
       const asset: Asset = {
         id: result.id,
+        originalName: result.originalName ?? file.name,
         type: result.type,
         mimeType: result.mimeType,
         sizeBytes: file.size,
@@ -310,12 +313,12 @@ export function AudioManagerDialog({
             placeholder={assets.length === 0 ? "No audio assets" : "Select existing…"}
             disabled={assets.length === 0}
             size="sm"
-            className="w-56"
+            className="w-64"
             ariaLabel={`Select existing audio asset for ${path.display}`}
           />
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             size="sm"
             disabled={uploadingPath !== null}
             onClick={() => {
@@ -324,7 +327,7 @@ export function AudioManagerDialog({
             }}
           >
             <UploadIcon />
-            {uploading ? "Uploading…" : "Upload new"}
+            {uploading ? "Uploading…" : "Upload MP3/WAV"}
           </Button>
           <Button
             type="button"
@@ -343,7 +346,7 @@ export function AudioManagerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Manage exercise audio</DialogTitle>
           <DialogDescription>

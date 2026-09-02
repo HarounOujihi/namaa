@@ -30,6 +30,7 @@ export class AdminAssetsController {
         id: a.id,
         type: a.type,
         mimeType: a.mimeType,
+        originalName: a.originalName,
         sizeBytes: a.sizeBytes,
         status: a.status,
         createdAt: a.createdAt,

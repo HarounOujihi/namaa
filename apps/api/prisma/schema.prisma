@@ -408,9 +408,11 @@ model ExerciseVersion {
 }
 
 model Asset {
-  id         String        @id @default(cuid())
-  type       AssetType
-  storageKey String
+  id           String       @id @default(cuid())
+  type         AssetType
+  storageKey   String
+  // Original upload filename — display-only, never used for storage paths
+  originalName String?
   mimeType   String
   sizeBytes  Int
   durationMs Int?

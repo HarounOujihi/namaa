@@ -216,6 +216,7 @@ export const ASSET_TYPES: readonly AssetType[] = [
 export interface Asset {
   id: string;
   type: AssetType;
+  originalName: string | null;
   mimeType: string;
   sizeBytes: number;
   status: string;
@@ -227,6 +228,7 @@ export interface AssetUploadResult {
   id: string;
   type: AssetType;
   mimeType: string;
+  originalName: string | null;
   url: string;
 }
 

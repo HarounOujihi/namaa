@@ -68,6 +68,7 @@ export class AssetsService implements OnModuleInit {
       data: {
         type,
         storageKey,
+        originalName: file.originalname,
         mimeType: file.mimetype,
         sizeBytes: file.size,
         status: 'PUBLISHED',

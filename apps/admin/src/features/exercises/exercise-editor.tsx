@@ -317,7 +317,7 @@ export function ExerciseEditor({ exerciseId, onClose, onChanged }: ExerciseEdito
 
   return (
     <Sheet open onOpenChange={(open) => (!open ? onClose() : undefined)}>
-      <SheetContent className="w-full gap-0 sm:max-w-xl">
+      <SheetContent className="w-full gap-0 overflow-y-auto data-[side=right]:w-full data-[side=right]:sm:max-w-3xl">
         <SheetHeader>
           <SheetTitle className="flex flex-wrap items-center justify-between gap-2 pr-8">
             <span>{currentId === null ? "New exercise" : "Edit exercise"}</span>

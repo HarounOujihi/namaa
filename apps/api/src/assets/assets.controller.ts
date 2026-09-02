@@ -57,6 +57,7 @@ export class AssetsController {
       id: asset.id,
       type: asset.type,
       mimeType: asset.mimeType,
+      originalName: asset.originalName,
       url: await this.assets.urlForAssetId(asset.id),
     };
   }
