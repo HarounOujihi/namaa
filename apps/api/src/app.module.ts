@@ -10,6 +10,7 @@ import { MetaController } from './health.controller';
 import { AdminModule } from './admin/admin.module';
 import { PlayModule } from './play/play.module';
 import { SoundsModule } from './sounds/sounds.module';
+import { AssessmentModule } from './assessment/assessment.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { SoundsModule } from './sounds/sounds.module';
     AdminModule,
     PlayModule,
     SoundsModule,
+    AssessmentModule,
     InvitesModule,
     AssetsModule,
   ],

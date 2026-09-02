@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { ApiError, getPlayRoadmap } from "../api";
-import type { Child, PlayRoadmap, PlayStage, PlayStageItem } from "../types";
+import { ApiError, getPlayAssessment, getPlayRoadmap } from "../api";
+import type { Child, PlayAssessment, PlayRoadmap, PlayStage, PlayStageItem } from "../types";
 import { Mascot } from "../components/Mascot";
 import { speak } from "../speech";
 import { loadAppSounds, playAppSound } from "../app-sounds";
 import { toArabicIndic } from "../arabic";
+import { AssessmentRunner } from "./assessment-runner";
 import { ExerciseRunner } from "./ExerciseRunner";
 import { StageScreen } from "./StageScreen";
 
@@ -17,6 +18,7 @@ interface ChildHomeProps {
 
 type PlayView =
   | { kind: "stations" }
+  | { kind: "assessment" }
   | { kind: "stage"; stage: PlayStage }
   | { kind: "exercise"; stage: PlayStage; item: PlayStageItem };
 
@@ -24,15 +26,28 @@ type PlayView =
 export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProps) {
   const [view, setView] = useState<PlayView>({ kind: "stations" });
   const [roadmap, setRoadmap] = useState<PlayRoadmap | null>(null);
+  const [assessment, setAssessment] = useState<PlayAssessment | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [completedItemIds, setCompletedItemIds] = useState<ReadonlySet<string>>(() => new Set());
 
-  const loadRoadmap = useCallback(async (): Promise<void> => {
+  const loadHomeData = useCallback(async (): Promise<void> => {
     setLoading(true);
     setLoadError(null);
     try {
-      setRoadmap(await getPlayRoadmap(token, child.id));
+      // The assessment banner is optional garnish: if its endpoint hiccups
+      // the stations must still load, so only auth errors propagate from it.
+      const [roadmapData, assessmentData] = await Promise.all([
+        getPlayRoadmap(token, child.id),
+        getPlayAssessment(token, child.id).catch((error: unknown) => {
+          if (error instanceof ApiError && error.status === 401) {
+            throw error;
+          }
+          return null;
+        }),
+      ]);
+      setRoadmap(roadmapData);
+      setAssessment(assessmentData);
       setLoading(false);
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
@@ -45,9 +60,9 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
   }, [token, child.id, onAuthExpired]);
 
   useEffect(() => {
-    void loadRoadmap();
+    void loadHomeData();
     void loadAppSounds(token);
-  }, [loadRoadmap, token]);
+  }, [loadHomeData, token]);
 
   useEffect(() => {
     // Wait for the sounds map so a bound asset actually plays instead of
@@ -95,6 +110,23 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
     );
   }
 
+  if (view.kind === "assessment" && assessment !== null) {
+    return (
+      <AssessmentRunner
+        token={token}
+        childId={child.id}
+        versionId={assessment.version.id}
+        items={assessment.items.slice().sort((a, b) => a.order - b.order)}
+        onAuthExpired={onAuthExpired}
+        onDone={() => {
+          setView({ kind: "stations" });
+          // Refresh both: the banner disappears and the roadmap may change.
+          void loadHomeData();
+        }}
+      />
+    );
+  }
+
   if (view.kind === "exercise") {
     return (
       <ExerciseRunner
@@ -110,6 +142,8 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
   }
 
   const stages = (roadmap?.stages ?? []).slice().sort((a, b) => a.order - b.order);
+  const showAssessmentBanner =
+    assessment !== null && assessment.needsAssessment && assessment.items.length > 0;
 
   return (
     <main className="screen child-home">
@@ -117,13 +151,27 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
       <Mascot />
       {roadmap !== null ? <p className="home-roadmap">{roadmap.roadmap.name}</p> : null}
 
+      {!loading && loadError === null && showAssessmentBanner ? (
+        <section className="card assessment-banner">
+          <h2 className="assessment-banner-title">🚀 لنبدأ رحلتك!</h2>
+          <p className="assessment-banner-subtitle">لعبة قصيرة تساعدنا على اختيار الأنشطة المناسبة لك</p>
+          <button
+            type="button"
+            className="big-button"
+            onClick={() => setView({ kind: "assessment" })}
+          >
+            ابدأ اللعبة
+          </button>
+        </section>
+      ) : null}
+
       {loading ? <p className="status-text">جارٍ تحميل الرحلة…</p> : null}
       {!loading && loadError !== null ? (
         <div className="card retry-card">
           <p className="form-error" role="alert">
             {loadError}
           </p>
-          <button type="button" className="big-button" onClick={() => void loadRoadmap()}>
+          <button type="button" className="big-button" onClick={() => void loadHomeData()}>
             إعادة المحاولة
           </button>
         </div>

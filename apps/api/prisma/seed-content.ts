@@ -352,3 +352,24 @@ export const STAGE_ASSIGNMENTS: { stageSkillCode: string; exerciseTitles: string
   { stageSkillCode: 'VOCABULARY', exerciseTitles: ['مطابقة الصورة بالكلمة: قطة'] },
   { stageSkillCode: 'READING_COMPREHENSION', exerciseTitles: ['اقرأ ثم أجب: سلمى في السوق'] },
 ];
+
+// MVP diagnostic assessment: 8 items across 6 skills, reusing the brief's
+// own example content. Each item maps straight to a skill → starting level.
+export const ASSESSMENT_ITEMS = [
+  { skillCode: 'AUDITORY_PERCEPTION', typeCode: 'AUDIO_MATCH',
+    configuration: { mode: 'pair_comparison', wordA: { text: 'باب' }, wordB: { text: 'دب' }, question: 'same_word', correct: 'different' } },
+  { skillCode: 'AUDITORY_PERCEPTION', typeCode: 'SOUND_POSITION',
+    configuration: { word: { text: 'كتاب' }, targetPhoneme: 'ك', correctPosition: 'beginning' } },
+  { skillCode: 'VISUAL_PERCEPTION', typeCode: 'MULTIPLE_CHOICE',
+    configuration: { prompt: { text: 'أوجد المختلف' }, options: [ { id: 'a', text: 'ب' }, { id: 'b', text: 'ب' }, { id: 'c', text: 'ب' }, { id: 'd', text: 'ت' }, { id: 'e', text: 'ب' } ], correctOptionId: 'd' } },
+  { skillCode: 'VISUAL_PERCEPTION', typeCode: 'MEMORY_GAME',
+    configuration: { task: 'reorder', cards: [ { id: 'c1', text: 'ب' }, { id: 'c2', text: 'ت' }, { id: 'c3', text: 'ث' } ], displaySeconds: 4 } },
+  { skillCode: 'SIMILAR_LETTERS_DISCRIMINATION', typeCode: 'IMAGE_MATCH',
+    configuration: { prompt: { text: 'ـيت' }, options: [ { id: 'o1', text: 'ب' }, { id: 'o2', text: 'ت' }, { id: 'o3', text: 'ث' } ], correctOptionId: 'o1', cueStyle: 'dots' } },
+  { skillCode: 'DECODING', typeCode: 'WORD_BUILDER',
+    configuration: { targetWord: 'قلم', pieceKind: 'letter', pieces: [ { id: 'p1', text: 'ق' }, { id: 'p2', text: 'ل' }, { id: 'p3', text: 'م' } ], audio: { text: 'قلم' } } },
+  { skillCode: 'PHONOLOGICAL_AWARENESS', typeCode: 'ORDERING',
+    configuration: { presentation: 'sequential_audio', items: [ { id: 'i1', text: 'شمس' }, { id: 'i2', text: 'بيت' }, { id: 'i3', text: 'قلم' } ] } },
+  { skillCode: 'VOCABULARY', typeCode: 'MULTIPLE_CHOICE',
+    configuration: { prompt: { text: 'قطة' }, options: [ { id: 'o1', text: 'قط' }, { id: 'o2', text: 'كلب' }, { id: 'o3', text: 'حصان' } ], correctOptionId: 'o1' } },
+];

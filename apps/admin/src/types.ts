@@ -253,3 +253,61 @@ export interface AppSoundUpdatePayload {
   textFallback?: string;
   label?: string;
 }
+
+// ---------- Diagnostic assessments ----------
+
+export type AssessmentStatus = "DRAFT" | "REVIEW" | "PUBLISHED" | "ARCHIVED";
+
+export interface AssessmentListVersion {
+  id: string;
+  version: number;
+  status: AssessmentStatus;
+  publishedAt: string | null;
+  itemCount: number;
+}
+
+export interface AssessmentListItem {
+  id: string;
+  name: string;
+  versions: AssessmentListVersion[];
+}
+
+export interface AssessmentItem {
+  id: string;
+  order: number;
+  skillId: string;
+  skill: { id: string; code: string; name: string };
+  exerciseTypeVersionId: string;
+  typeCode: string;
+  configuration: JsonObject;
+}
+
+export interface AssessmentVersionDetail {
+  id: string;
+  version: number;
+  status: AssessmentStatus;
+  publishedAt: string | null;
+  items: AssessmentItem[];
+}
+
+export interface AssessmentDetail {
+  id: string;
+  name: string;
+  versions: AssessmentVersionDetail[];
+}
+
+export interface AssessmentCreatePayload {
+  name: string;
+}
+
+export interface AssessmentItemCreatePayload {
+  assessmentVersionId: string;
+  skillId: string;
+  exerciseTypeVersionId: string;
+  configuration: JsonObject;
+}
+
+export interface AssessmentItemUpdatePayload {
+  skillId?: string;
+  configuration?: JsonObject;
+}

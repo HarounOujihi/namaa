@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import {
   BrainIcon,
+  ClipboardListIcon,
   DumbbellIcon,
   LayoutDashboardIcon,
   LogOutIcon,
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboardIcon, end: true },
   { to: "/exercises", label: "Exercises", icon: DumbbellIcon },
   { to: "/exercise-types", label: "Exercise Types", icon: ShapesIcon },
+  { to: "/assessments", label: "Assessments", icon: ClipboardListIcon },
   { to: "/roadmap", label: "Roadmap", icon: RouteIcon },
   { to: "/assets", label: "Assets", icon: PaperclipIcon },
   { to: "/sounds", label: "Platform Sounds", icon: Volume2Icon },

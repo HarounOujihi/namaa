@@ -8,5 +8,6 @@ import { PlayService } from './play.service';
   imports: [AssetsModule, SoundsModule],
   controllers: [PlayController],
   providers: [PlayService],
+  exports: [PlayService],
 })
 export class PlayModule {}

@@ -12,6 +12,7 @@ import { speak } from "../speech";
 interface ChildPickerProps {
   auth: AuthResponse;
   onChildSelected: (child: Child) => void;
+  onShowResults: (child: Child) => void;
   onAuthExpired: () => void;
   onLogout: () => void;
 }
@@ -24,7 +25,7 @@ type PickerDialog =
   | { kind: "edit"; child: Child }
   | { kind: "delete"; child: Child };
 
-export function ChildPicker({ auth, onChildSelected, onAuthExpired, onLogout }: ChildPickerProps) {
+export function ChildPicker({ auth, onChildSelected, onShowResults, onAuthExpired, onLogout }: ChildPickerProps) {
   const [children, setChildren] = useState<Child[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -88,26 +89,36 @@ export function ChildPicker({ auth, onChildSelected, onAuthExpired, onLogout }: 
                 <Avatar child={child} />
                 <span className="child-name">{child.fullName}</span>
               </button>
-              {isParent ? (
-                <div className="child-actions">
-                  <button
-                    type="button"
-                    className="icon-button"
-                    aria-label={`تعديل ${child.fullName}`}
-                    onClick={() => setDialog({ kind: "edit", child })}
-                  >
-                    ✏
-                  </button>
-                  <button
-                    type="button"
-                    className="icon-button danger"
-                    aria-label={`حذف ${child.fullName}`}
-                    onClick={() => setDialog({ kind: "delete", child })}
-                  >
-                    🗑
-                  </button>
-                </div>
-              ) : null}
+              <div className="child-actions">
+                <button
+                  type="button"
+                  className="icon-button"
+                  aria-label={`نتائج التشخيص لـ${child.fullName}`}
+                  onClick={() => onShowResults(child)}
+                >
+                  📊
+                </button>
+                {isParent ? (
+                  <>
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label={`تعديل ${child.fullName}`}
+                      onClick={() => setDialog({ kind: "edit", child })}
+                    >
+                      ✏
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-button danger"
+                      aria-label={`حذف ${child.fullName}`}
+                      onClick={() => setDialog({ kind: "delete", child })}
+                    >
+                      🗑
+                    </button>
+                  </>
+                ) : null}
+              </div>
             </li>
           ))}
         </ul>

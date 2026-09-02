@@ -1,12 +1,15 @@
 import type {
+  AppSoundsMap,
   AuthResponse,
   Child,
   CreateChildInput,
   CreateChildResponse,
+  PlayAssessment,
+  PlayAssessmentAttemptInput,
+  PlayAssessmentAttemptResult,
   PlayAttemptInput,
   PlayAttemptResult,
   PlayRoadmap,
-  AppSoundsMap,
   RedeemInviteResponse,
   UpdateChildInput,
 } from "./types";
@@ -123,6 +126,24 @@ export function redeemInvite(token: string, code: string): Promise<RedeemInviteR
 
 export function getPlayRoadmap(token: string, childId: string): Promise<PlayRoadmap> {
   return request<PlayRoadmap>(`/play/${encodeURIComponent(childId)}/roadmap`, { token });
+}
+
+export function getPlayAssessment(token: string, childId: string): Promise<PlayAssessment> {
+  return request<PlayAssessment>(`/play/${encodeURIComponent(childId)}/assessment`, { token });
+}
+
+export function submitPlayAssessmentAttempt(
+  token: string,
+  input: PlayAssessmentAttemptInput,
+): Promise<PlayAssessmentAttemptResult> {
+  return request<PlayAssessmentAttemptResult>(
+    `/play/${encodeURIComponent(input.childId)}/assessment/attempts`,
+    {
+      method: "POST",
+      token,
+      body: input,
+    },
+  );
 }
 
 export function submitPlayAttempt(token: string, input: PlayAttemptInput): Promise<PlayAttemptResult> {

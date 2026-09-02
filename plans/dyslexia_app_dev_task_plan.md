@@ -102,15 +102,15 @@ Storage:     S3-compatible object storage
 
 ## Phase 4 — Diagnostic Assessment
 
-- [ ] Assessment builder on the same content model as Phase 2, seeded with the MVP set
-- [ ] 8–12 short-task session, unified button/image/audio interface
-- [ ] Visual progress bar
-- [ ] Positive closing screen regardless of score
-- [ ] No red marks, no harsh error sound anywhere in this flow — its own acceptance criterion, not inherited from Phase 6
-- [ ] Each `assessment_item` references its target `skill_id` directly, so scoring routes straight to a per-skill starting level — no separate difficulty→skill lookup table needed
-- [ ] Results summary — parent/specialist only, no child-facing version
+- [x] Assessment builder on the same content model as Phase 2, seeded with the MVP set *(admin Assessments page: versioned items, visual config editor reused, publish freezes versions; 8 items / 6 skills seeded)*
+- [x] 8–12 short-task session, unified button/image/audio interface *(renders via the Phase 3 ExercisePlayer — same engine as play)*
+- [x] Visual progress bar *(النشاط ٣ من ٨ + percent-width fill)*
+- [x] Positive closing screen regardless of score
+- [x] No red marks, no harsh error sound anywhere in this flow — its own acceptance criterion, not inherited from Phase 6 *(runner drops correctness entirely; verified no feedback leak in-browser)*
+- [x] Each `assessment_item` references its target `skill_id` directly, so scoring routes straight to a per-skill starting level — no separate difficulty→skill lookup table needed
+- [x] Results summary — parent/specialist only, no child-facing version *(نتائج التشخيص screen on the picker; child sees only the closing celebration)*
 - [x] Tables: `assessments`, `assessment_versions`, `assessment_items`, `assessment_attempts`, `assessment_answers`, `assessment_results` *(in schema since the init migration — assessment API/UI still pending)*
-- [ ] E2E test: full assessment run → correct per-skill placement
+- [x] E2E test: full assessment run → correct per-skill placement *(browser run + curl: mixed answers → exact expected levels in child_skill_progress; idempotent resubmit)*
 
 ---
 

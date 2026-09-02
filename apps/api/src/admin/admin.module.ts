@@ -20,5 +20,6 @@ import { AdminAssetsController } from './admin-assets.controller';
     RoadmapsController,
   ],
   providers: [ValidationService, ExerciseTypesService, ExercisesService, RoadmapsService],
+  exports: [ValidationService],
 })
 export class AdminModule {}

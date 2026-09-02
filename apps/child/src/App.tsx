@@ -5,13 +5,16 @@ import { ChildHome } from "./screens/ChildHome";
 import { ChildPicker } from "./screens/ChildPicker";
 import { LoginScreen } from "./screens/LoginScreen";
 import { StartScreen } from "./screens/StartScreen";
+import { AssessmentResults } from "./screens/assessment-results";
 
-type Screen = "start" | "login" | "picker" | "childHome";
+type Screen = "start" | "login" | "picker" | "childHome" | "assessmentResults";
+
 
 export default function App() {
   const [auth, setAuth] = useState<AuthResponse | null>(() => loadStoredAuth());
   const [screen, setScreen] = useState<Screen>("start");
   const [activeChild, setActiveChild] = useState<Child | null>(null);
+  const [resultsChild, setResultsChild] = useState<Child | null>(null);
 
   const handleLoginSuccess = useCallback((result: AuthResponse): void => {
     persistAuth(result);
@@ -23,8 +26,23 @@ export default function App() {
     clearStoredAuth();
     setAuth(null);
     setActiveChild(null);
+    setResultsChild(null);
     setScreen("start");
   }, []);
+
+  if (screen === "assessmentResults" && resultsChild !== null && auth !== null) {
+    return (
+      <AssessmentResults
+        child={resultsChild}
+        token={auth.accessToken}
+        onAuthExpired={handleLeavePicker}
+        onBack={() => {
+          setResultsChild(null);
+          setScreen("picker");
+        }}
+      />
+    );
+  }
 
   if (screen === "childHome" && activeChild !== null && auth !== null) {
     return (
@@ -44,6 +62,10 @@ export default function App() {
         onChildSelected={(child) => {
           setActiveChild(child);
           setScreen("childHome");
+        }}
+        onShowResults={(child) => {
+          setResultsChild(child);
+          setScreen("assessmentResults");
         }}
         onAuthExpired={handleLeavePicker}
         onLogout={handleLeavePicker}

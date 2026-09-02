@@ -1,6 +1,12 @@
 import type {
   AdminStats,
   AgeGroup,
+  AssessmentCreatePayload,
+  AssessmentDetail,
+  AssessmentItem,
+  AssessmentItemCreatePayload,
+  AssessmentItemUpdatePayload,
+  AssessmentListItem,
   Asset,
   AssetType,
   AssetUploadResult,
@@ -270,6 +276,47 @@ export function cloneExercise(id: string): Promise<ExerciseDetail> {
 }
 
 export type { ExerciseVersionDetail };
+
+// ---------- Assessments (diagnostic) ----------
+
+export function listAssessments(): Promise<AssessmentListItem[]> {
+  return request<AssessmentListItem[]>("/admin/assessments");
+}
+
+export function getAssessment(id: string): Promise<AssessmentDetail> {
+  return request<AssessmentDetail>(`/admin/assessments/${id}`);
+}
+
+export function createAssessment(payload: AssessmentCreatePayload): Promise<AssessmentDetail> {
+  return request<AssessmentDetail>("/admin/assessments", { method: "POST", body: payload });
+}
+
+export function createAssessmentVersion(id: string): Promise<AssessmentDetail> {
+  return request<AssessmentDetail>(`/admin/assessments/${id}/versions`, { method: "POST" });
+}
+
+export function createAssessmentItem(
+  payload: AssessmentItemCreatePayload,
+): Promise<AssessmentItem> {
+  return request<AssessmentItem>("/admin/assessment-items", { method: "POST", body: payload });
+}
+
+export function updateAssessmentItem(
+  id: string,
+  payload: AssessmentItemUpdatePayload,
+): Promise<AssessmentItem> {
+  return request<AssessmentItem>(`/admin/assessment-items/${id}`, { method: "PATCH", body: payload });
+}
+
+export function deleteAssessmentItem(id: string): Promise<void> {
+  return request<void>(`/admin/assessment-items/${id}`, { method: "DELETE" });
+}
+
+export function publishAssessmentVersion(versionId: string): Promise<AssessmentDetail> {
+  return request<AssessmentDetail>(`/admin/assessment-versions/${versionId}/publish`, {
+    method: "POST",
+  });
+}
 
 // ---------- Roadmap ----------
 

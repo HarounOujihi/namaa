@@ -546,3 +546,122 @@ button {
 .feedback-emoji {
   font-size: 2rem;
 }
+
+/* Phase 4 diagnostic assessment */
+.assessment-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  background: linear-gradient(135deg, #fff8e1, #ffe0b2);
+  border-color: var(--accent);
+}
+
+.assessment-banner-title {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 800;
+}
+
+.assessment-banner-subtitle {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--ink-soft);
+}
+
+.assessment-banner .big-button {
+  min-width: 260px;
+}
+
+.assessment-runner {
+  justify-content: center;
+}
+
+.assessment-intro-note {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.assessment-progress {
+  width: min(520px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assessment-progress-label {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.assessment-progress-track {
+  height: 18px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 3px solid var(--border);
+  overflow: hidden;
+}
+
+.assessment-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--secondary);
+  transition: width 0.25s ease;
+}
+
+.assessment-next-button {
+  min-width: 260px;
+}
+
+.assessment-done-title {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.assessment-results {
+  justify-content: flex-start;
+}
+
+.assessment-results-child {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.assessment-results-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: min(520px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.assessment-result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 16px;
+}
+
+.assessment-result-skill {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.assessment-result-line {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--ink-soft);
+}

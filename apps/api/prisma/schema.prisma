@@ -575,6 +575,8 @@ model AssessmentResult {
   attempt       AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   skillId       String
   skill         Skill             @relation(fields: [skillId], references: [id])
+  correctCount  Int
+  totalCount    Int
   startingLevel Int
   createdAt     DateTime          @default(now())
 

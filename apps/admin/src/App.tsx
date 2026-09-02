@@ -5,6 +5,7 @@ import { LoginPage } from "@/features/auth/login-page";
 import { DashboardPage } from "@/features/dashboard/dashboard-page";
 import { ExerciseTypesPage } from "@/features/exercise-types/exercise-types-page";
 import { ExercisesPage } from "@/features/exercises/exercises-page";
+import { AssessmentsPage } from "@/features/assessments/assessments-page";
 import { RoadmapPage } from "@/features/roadmap/roadmap-page";
 import { AssetsPage } from "@/features/assets/assets-page";
 import { PlatformSoundsPage } from "@/features/sounds/platform-sounds-page";
@@ -34,6 +35,7 @@ export default function App() {
             <Route index element={<DashboardPage />} />
             <Route path="exercises" element={<ExercisesPage />} />
             <Route path="exercise-types" element={<ExerciseTypesPage />} />
+            <Route path="assessments" element={<AssessmentsPage />} />
             <Route path="roadmap" element={<RoadmapPage />} />
             <Route path="assets" element={<AssetsPage />} />
             <Route path="sounds" element={<PlatformSoundsPage />} />

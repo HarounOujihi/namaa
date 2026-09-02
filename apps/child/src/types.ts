@@ -97,6 +97,51 @@ export interface PlayAttemptResult {
   isSuccess: boolean;
 }
 
+export interface PlayAssessmentItem {
+  id: string;
+  order: number;
+  skill: { code: string; name: string };
+  typeCode: string;
+  configuration: unknown;
+  assetUrls: Record<string, string>;
+}
+
+export interface PlayAssessmentSkillResult {
+  skillCode: string;
+  skillName: string;
+  correct: number;
+  total: number;
+  startingLevel: number;
+}
+
+export interface PlayAssessment {
+  assessment: { id: string; name: string };
+  version: { id: string; version: number };
+  needsAssessment: boolean;
+  items: PlayAssessmentItem[];
+  lastResults: PlayAssessmentSkillResult[] | null;
+}
+
+export interface PlayAssessmentAttemptAnswer {
+  itemId: string;
+  answer: ExerciseAnswer;
+  responseTimeMs: number;
+}
+
+export interface PlayAssessmentAttemptInput {
+  childId: string;
+  clientAttemptId: string;
+  assessmentVersionId: string;
+  startedAt: string;
+  completedAt: string;
+  answers: PlayAssessmentAttemptAnswer[];
+}
+
+export interface PlayAssessmentAttemptResult {
+  results: PlayAssessmentSkillResult[];
+  duplicate: boolean;
+}
+
 // Platform sounds: url null means the app falls back to TTS of `text`
 export interface AppSoundEntry {
   url: string | null;

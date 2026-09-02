@@ -9,6 +9,7 @@ import {
   EXERCISE_TYPES,
   SAMPLE_EXERCISES,
   STAGE_ASSIGNMENTS,
+  ASSESSMENT_ITEMS,
 } from './seed-content';
 
 // The 9 canonical skills from the client brief (content bank levels 1-9).
@@ -192,11 +193,52 @@ async function seedContent() {
   console.log('Stage assignments applied');
 }
 
+async function seedAssessment() {
+  const existing = await prisma.assessment.findFirst({ include: { versions: true } });
+  if (existing?.versions.some((v) => v.status === 'PUBLISHED')) {
+    console.log('Diagnostic assessment already published — skipping');
+    return;
+  }
+  const assessment =
+    existing ?? (await prisma.assessment.create({ data: { name: 'الاختبار التشخيصي' } }));
+  const version = await prisma.assessmentVersion.create({
+    data: {
+      assessmentId: assessment.id,
+      version: (existing?.versions.length ?? 0) + 1,
+      status: 'PUBLISHED',
+      publishedAt: new Date(),
+    },
+  });
+  let order = 1;
+  for (const item of ASSESSMENT_ITEMS) {
+    const [skill, type] = await Promise.all([
+      prisma.skill.findUnique({ where: { code: item.skillCode } }),
+      prisma.exerciseType.findUnique({ where: { code: item.typeCode } }),
+    ]);
+    if (!skill || !type) throw new Error(`Assessment seed prerequisites missing for ${item.skillCode}/${item.typeCode}`);
+    const typeVersion = await prisma.exerciseTypeVersion.findFirst({
+      where: { exerciseTypeId: type.id },
+      orderBy: { version: 'desc' },
+    });
+    await prisma.assessmentItem.create({
+      data: {
+        assessmentVersionId: version.id,
+        order: order++,
+        skillId: skill.id,
+        exerciseTypeVersionId: typeVersion!.id,
+        configuration: item.configuration as Prisma.InputJsonValue,
+      },
+    });
+  }
+  console.log(`Seeded diagnostic assessment v${version.version} with ${ASSESSMENT_ITEMS.length} items`);
+}
+
 async function main() {
   await seedSuperAdmin();
   await seedSkills();
   await seedDefaultRoadmap();
   await seedContent();
+  await seedAssessment();
 }
 
 main()
