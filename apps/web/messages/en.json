@@ -163,6 +163,56 @@
       "loading": "Loading exercises…",
       "hiddenToast": "\"{title}\" is now hidden from the plan",
       "shownToast": "\"{title}\" is back in the plan"
+    },
+    "analytics": {
+      "title": "Analytics",
+      "subtitle": "A closer look at progress, training time and stumbling blocks",
+      "weeklyLevels": {
+        "title": "Weekly levels",
+        "description": "Each skill's level week by week since the first assessment",
+        "empty": "No weekly levels to show yet"
+      },
+      "time": {
+        "title": "Time by skill",
+        "description": "How training minutes are split across skills",
+        "empty": "No training time recorded yet",
+        "minutesUnit": "min"
+      },
+      "baseline": {
+        "title": "Baseline vs current",
+        "description": "Growth since the first diagnostic assessment",
+        "skill": "Skill",
+        "baseline": "Baseline",
+        "current": "Current",
+        "delta": "Change",
+        "improved": "Improved",
+        "declined": "Declined"
+      },
+      "letters": {
+        "title": "Difficult letters",
+        "description": "Letters most often mixed up — a little extra practice helps",
+        "times": "×{count}",
+        "empty": "No recurring letter mix-ups yet"
+      },
+      "reading": {
+        "title": "Reading",
+        "description": "Fluency and comprehension practice at a glance",
+        "attempts": "Attempts",
+        "avgDuration": "Average duration",
+        "successRate": "Success rate",
+        "empty": "No reading attempts yet"
+      },
+      "spelling": {
+        "title": "Spelling",
+        "description": "Missed exercises and where practice needs a gentle push",
+        "totalWrong": "Exercises missed",
+        "topExercises": "Most missed exercises",
+        "score": "{wrong} of {total}",
+        "empty": "No spelling attempts yet"
+      },
+      "stagnation": {
+        "body": "No level change in {skill} despite recent activity — {attempts, plural, one {# attempt} other {# attempts}} at {percent} success over the last two weeks; reviewing the plan may help"
+      }
     }
   },
   "settings": {

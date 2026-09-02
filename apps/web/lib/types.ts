@@ -141,5 +141,76 @@ export interface ChildSpecialist {
   since: string;
 }
 
+// ---------- Analytics (GET /children/:childId/analytics) ----------
+
+/** Carry-forward level of one skill for each week since its first event. */
+export interface WeeklyLevelPoint {
+  weekStart: string;
+  level: number;
+}
+
+export interface SkillWeeklyLevels {
+  skillCode: string;
+  name: string;
+  weeks: WeeklyLevelPoint[];
+}
+
+export interface SkillMinutes {
+  skillCode: string;
+  name: string;
+  minutes: number;
+}
+
+export interface BaselineComparisonRow {
+  skillCode: string;
+  name: string;
+  baselineLevel: number | null;
+  currentLevel: number | null;
+  delta: number | null;
+}
+
+export interface ReadingMetrics {
+  attempts: number;
+  avgDurationMs: number | null;
+  successRate: number | null;
+}
+
+export interface SpellingExerciseErrors {
+  title: string;
+  wrong: number;
+  total: number;
+}
+
+export interface SpellingErrors {
+  totalWrong: number;
+  byExercise: SpellingExerciseErrors[];
+}
+
+export interface DifficultLetter {
+  letter: string;
+  timesChosenWrong: number;
+}
+
+export type StagnationReason = "no_level_change_low_success";
+
+export interface StagnationAlert {
+  skillCode: string;
+  name: string;
+  reason: StagnationReason;
+  attempts14d: number;
+  successRate: number;
+}
+
+export interface ChildAnalytics {
+  childId: string;
+  weeklyLevels: SkillWeeklyLevels[];
+  timeDistribution: SkillMinutes[];
+  baselineComparison: BaselineComparisonRow[];
+  readingMetrics: ReadingMetrics;
+  spellingErrors: SpellingErrors;
+  difficultLetters: DifficultLetter[];
+  stagnation: StagnationAlert[];
+}
+
 
 export type AppLocale = "ar" | "en" | "fr";

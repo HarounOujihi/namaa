@@ -163,6 +163,56 @@
       "loading": "Chargement des exercices…",
       "hiddenToast": "« {title} » est masqué du plan",
       "shownToast": "« {title} » est de retour dans le plan"
+    },
+    "analytics": {
+      "title": "Analyses",
+      "subtitle": "Un regard plus proche sur les progrès, le temps d'entraînement et les difficultés",
+      "weeklyLevels": {
+        "title": "Niveaux hebdomadaires",
+        "description": "Le niveau de chaque compétence semaine par semaine depuis la première évaluation",
+        "empty": "Aucun niveau hebdomadaire à afficher pour l'instant"
+      },
+      "time": {
+        "title": "Temps par compétence",
+        "description": "Répartition des minutes d'entraînement entre les compétences",
+        "empty": "Aucun temps d'entraînement enregistré pour l'instant",
+        "minutesUnit": "min"
+      },
+      "baseline": {
+        "title": "Niveau initial vs actuel",
+        "description": "Le progrès réalisé depuis la première évaluation diagnostique",
+        "skill": "Compétence",
+        "baseline": "Initial",
+        "current": "Actuel",
+        "delta": "Évolution",
+        "improved": "En progrès",
+        "declined": "En recul"
+      },
+      "letters": {
+        "title": "Lettres difficiles",
+        "description": "Les lettres les plus souvent confondues — un peu d'entraînement supplémentaire aide",
+        "times": "×{count}",
+        "empty": "Aucune confusion de lettres récurrente pour l'instant"
+      },
+      "reading": {
+        "title": "Lecture",
+        "description": "Un aperçu des exercices de fluidité et de compréhension",
+        "attempts": "Tentatives",
+        "avgDuration": "Durée moyenne",
+        "successRate": "Taux de réussite",
+        "empty": "Aucune tentative de lecture pour l'instant"
+      },
+      "spelling": {
+        "title": "Orthographe",
+        "description": "Les exercices manqués et où l'entraînement mérite un petit coup de pouce",
+        "totalWrong": "Exercices manqués",
+        "topExercises": "Exercices les plus manqués",
+        "score": "{wrong} sur {total}",
+        "empty": "Aucune tentative d'orthographe pour l'instant"
+      },
+      "stagnation": {
+        "body": "Aucun changement de niveau en {skill} malgré l'activité — {attempts, plural, one {# tentative} other {# tentatives}} avec {percent} de réussite ces deux dernières semaines ; une révision du plan est conseillée"
+      }
     }
   },
   "settings": {

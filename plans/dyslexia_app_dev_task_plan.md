@@ -171,12 +171,12 @@ Storage:     S3-compatible object storage
 
 ## Phase 10 — Analytics & Reporting
 
-- [ ] Per-skill progress line chart, over weeks
-- [ ] Time-distribution pie chart across skills
-- [ ] Baseline-vs-current comparison table
-- [ ] Reading speed, spelling-error count, difficult letters/syllables
-- [ ] Stagnation alert on a plateaued skill
-- [ ] Compute every metric from raw `exercise_attempts` / `exercise_events` / `progression_decisions` — never store only the calculated number
+- [x] Per-skill progress line chart, over weeks *(weekly carry-forward levels from assessment + decisions, step chart with all skills)*
+- [x] Time-distribution pie chart across skills *(donut with % labels from raw attempt durations)*
+- [x] Baseline-vs-current comparison table *(diagnostic starting level vs current, delta chips — verified: ٣→٧ +٤ تحسّن)*
+- [x] Reading speed, spelling-error count, difficult letters/syllables *(reading avg-duration + success; spelling errors by exercise; difficult letters computed from wrong answers on letter-option exercises — syllables pending dedicated content types)*
+- [x] Stagnation alert on a plateaued skill *(≥5 attempts/14d, no level change, <60% success → amber alert with plain-language advice)*
+- [x] Compute every metric from raw `exercise_attempts` / `exercise_events` / `progression_decisions` — never store only the calculated number *(single /children/:id/analytics endpoint, zero stored aggregates)*
 
 ---
 

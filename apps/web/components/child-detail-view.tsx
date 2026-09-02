@@ -42,6 +42,7 @@ import {
 import { ErrorState } from "@/components/state-views";
 import { ActivityHistoryCard } from "@/components/activity-history-card";
 import { PlanCard } from "@/components/plan-card";
+import { ChildAnalyticsSection } from "@/components/child-analytics";
 import { ProgressCurveCard } from "@/components/progress-curve-card";
 import {
   getChildSettings,
@@ -649,6 +650,8 @@ export function ChildDetailView({ childId, auth }: { childId: string; auth: Auth
               <SpecialistsCard childId={childId} />
             </div>
           </div>
+
+          <ChildAnalyticsSection childId={childId} />
         </>
       )}
     </div>

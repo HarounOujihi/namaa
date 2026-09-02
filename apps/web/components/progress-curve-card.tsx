@@ -26,7 +26,7 @@ import type { ProgressPoint, SkillCurve } from "@/lib/types";
 import { useQuery } from "@/lib/use-query";
 
 /** Distinct hues for up to nine skill lines, readable on light and dark. */
-const PALETTE = [
+export const SKILL_PALETTE = [
   "#0ea5e9",
   "#10b981",
   "#f59e0b",
@@ -51,6 +51,7 @@ function buildRows(
   ].sort((a, b) => a.localeCompare(b));
   return dates.map((date) => {
     const row: Record<string, number | string | boolean | null> = { date };
+
     for (const skill of skills) {
       const sorted: ProgressPoint[] = [...skill.points].sort((a, b) =>
         a.date.localeCompare(b.date),
@@ -109,7 +110,7 @@ export function ProgressCurveCard({ childId }: { childId: string }) {
       Object.fromEntries(
         skills.map((skill, index) => [
           skill.code,
-          { label: skill.name, color: PALETTE[index % PALETTE.length] },
+          { label: skill.name, color: SKILL_PALETTE[index % SKILL_PALETTE.length] },
         ]),
       ),
     [skills],

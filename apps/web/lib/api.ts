@@ -3,6 +3,7 @@ import type {
   AppLocale,
   AuthResponse,
   Child,
+  ChildAnalytics,
   ChildPlan,
   ChildSettings,
   ChildSpecialist,
@@ -150,6 +151,10 @@ export function getChildActivities(childId: string, limit = 25): Promise<Activit
 
 export function getChildProgressCurve(childId: string): Promise<ProgressCurveData> {
   return request<ProgressCurveData>(`/children/${childId}/progress-curve`);
+}
+
+export function getChildAnalytics(childId: string): Promise<ChildAnalytics> {
+  return request<ChildAnalytics>(`/children/${childId}/analytics`);
 }
 
 export function getChildPlan(childId: string): Promise<ChildPlan> {
