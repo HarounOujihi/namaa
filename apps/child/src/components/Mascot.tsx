@@ -1,4 +1,9 @@
-export function Mascot() {
+export interface MascotProps {
+  /** Equipped scarf color — drawn as a worn band around the owl's neck. */
+  scarfColor?: string | null;
+}
+
+export function Mascot({ scarfColor = null }: MascotProps) {
   return (
     <svg className="mascot" viewBox="0 0 140 150" role="img" aria-label="بومة رحلتي">
       <path d="M34 46 L40 12 L62 36 Z" fill="#8a5a2b" />
@@ -14,6 +19,13 @@ export function Mascot() {
       <circle cx="56" cy="62" r="2.5" fill="#ffffff" />
       <circle cx="90" cy="62" r="2.5" fill="#ffffff" />
       <path d="M70 76 L80 86 L70 96 L60 86 Z" fill="#f5a623" />
+      {scarfColor !== null ? (
+        <g data-part="scarf">
+          <path d="M36 101 Q70 116 104 101 L104 112 Q70 127 36 112 Z" fill={scarfColor} />
+          <path d="M47 112 L36 134 L54 127 Z" fill={scarfColor} />
+          <path d="M36 101 Q70 116 104 101" stroke="rgba(0,0,0,0.18)" strokeWidth="2" fill="none" />
+        </g>
+      ) : null}
       <path
         d="M50 134 l-7 9 M50 134 l0 10 M50 134 l7 9"
         stroke="#f5a623"

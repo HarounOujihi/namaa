@@ -265,7 +265,14 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
         <JourneyMap
           stages={stages}
           completedItemIds={completedItemIds}
-          owlRingColor={rewards?.items.find((item) => item.equipped)?.color ?? null}
+          equippedItem={
+            rewards?.items.find((item) => item.equipped) !== undefined
+              ? (() => {
+                  const it = rewards.items.find((item) => item.equipped);
+                  return it !== undefined ? { code: it.code, color: it.color } : null;
+                })()
+              : null
+          }
           onOpenStage={handleOpenStage}
         />
       ) : null}

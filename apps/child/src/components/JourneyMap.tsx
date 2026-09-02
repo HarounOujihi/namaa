@@ -36,8 +36,8 @@ interface JourneyMapProps {
   stages: PlayStage[];
   completedItemIds: ReadonlySet<string>;
   onOpenStage: (stage: PlayStage) => void;
-  /** Color of the child's equipped customization item — rings the owl. */
-  owlRingColor?: string | null;
+  /** The child's equipped customization item — scarves are worn on the owl, halos glow around it. */
+  equippedItem?: { code: string; color: string } | null;
 }
 
 const STATUS_ARIA: Record<NodeStatus, string> = {
@@ -81,7 +81,7 @@ function roadPath(centers: Array<{ x: number; y: number }>): string {
  * The roadmap drawn as an island journey: a winding sandy road, one round stage
  * node per stop, and the owl mascot perched on the current stop.
  */
-export function JourneyMap({ stages, completedItemIds, onOpenStage, owlRingColor = null }: JourneyMapProps) {
+export function JourneyMap({ stages, completedItemIds, onOpenStage, equippedItem = null }: JourneyMapProps) {
   const mapRef = useRef<HTMLElement | null>(null);
   const [width, setWidth] = useState(0);
   const [rtl, setRtl] = useState(true);
@@ -304,9 +304,17 @@ export function JourneyMap({ stages, completedItemIds, onOpenStage, owlRingColor
                 <span
                   className="journey-owl"
                   aria-hidden="true"
-                  style={owlRingColor !== null ? { boxShadow: `0 0 0 5px ${owlRingColor}55, 0 0 22px ${owlRingColor}88` } : undefined}
+                  style={
+                    equippedItem !== null && equippedItem.code.startsWith("OWL_HALO")
+                      ? { boxShadow: `0 0 0 5px ${equippedItem.color}55, 0 0 22px ${equippedItem.color}88` }
+                      : undefined
+                  }
                 >
-                  <Mascot />
+                  <Mascot
+                    scarfColor={
+                      equippedItem !== null && equippedItem.code.startsWith("OWL_SCARF") ? equippedItem.color : null
+                    }
+                  />
                 </span>
               ) : null}
               <span className="journey-label" aria-hidden={row.status !== "soon"}>
