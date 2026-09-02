@@ -153,3 +153,9 @@ export interface AppSoundEntry {
 }
 
 export type AppSoundsMap = Record<string, AppSoundEntry>;
+
+// Progression engine: a gentler same-skill activity offered after repeated failure
+export interface PlayRecommendation {
+  skill: { code: string; name: string };
+  exercise: PlayExercise;
+}

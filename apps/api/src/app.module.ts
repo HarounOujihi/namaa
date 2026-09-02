@@ -11,6 +11,7 @@ import { AdminModule } from './admin/admin.module';
 import { PlayModule } from './play/play.module';
 import { SoundsModule } from './sounds/sounds.module';
 import { AssessmentModule } from './assessment/assessment.module';
+import { ProgressionModule } from './progression/progression.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AssessmentModule } from './assessment/assessment.module';
     PlayModule,
     SoundsModule,
     AssessmentModule,
+    ProgressionModule,
     InvitesModule,
     AssetsModule,
   ],

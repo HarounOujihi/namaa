@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { ApiError, getPlayAssessment, getPlayRoadmap } from "../api";
-import type { Child, PlayAssessment, PlayRoadmap, PlayStage, PlayStageItem } from "../types";
+import { ApiError, getPlayAssessment, getPlayRoadmap, getRecommendations } from "../api";
+import type { Child, PlayAssessment, PlayRecommendation, PlayRoadmap, PlayStage, PlayStageItem } from "../types";
 import { JourneyMap } from "../components/JourneyMap";
 import { speak } from "../speech";
 import { loadAppSounds, playAppSound } from "../app-sounds";
@@ -29,12 +29,16 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [completedItemIds, setCompletedItemIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [recommendations, setRecommendations] = useState<PlayRecommendation[]>([]);
 
   const loadHomeData = useCallback(async (silent = false): Promise<void> => {
     if (!silent) {
       setLoading(true);
     }
     setLoadError(null);
+    void getRecommendations(token, child.id)
+      .then((list) => setRecommendations(list))
+      .catch(() => setRecommendations([]));
     try {
       // The assessment banner is optional garnish: if its endpoint hiccups
       // the stations must still load, so only auth errors propagate from it.
@@ -105,10 +109,14 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
   };
 
   if (view.kind === "stage") {
+    const stageRecommendation =
+      recommendations.find((rec) => rec.skill.code === view.stage.items[0]?.exercise?.skill.code) ?? null;
     return (
       <StageScreen
         stage={view.stage}
         completedItemIds={completedItemIds}
+        recommendation={stageRecommendation}
+        onOpenRecommendation={(item) => setView({ kind: "exercise", stage: view.stage, item })}
         onBack={() => setView({ kind: "stations" })}
         onOpenItem={(item) => {
           if (item.exercise !== null) {

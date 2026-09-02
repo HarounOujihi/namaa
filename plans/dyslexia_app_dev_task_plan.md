@@ -116,14 +116,14 @@ Storage:     S3-compatible object storage
 
 ## Phase 5 — Roadmap & Progression Engine
 
-- [ ] Visual roadmap (island/path metaphor)
-- [ ] Progression engine as a **backend** service, never client-side only:
-  - [ ] evaluate each stage's configured mastery rule rather than a hardcoded "next stage" pointer
-  - [ ] on repeated failure → recommend an easier same-skill exercise
-  - [ ] on mastery → unlock the next eligible stage(s)
-- [ ] `progression_decisions` table: `child_id, skill_id, previous_level, new_level, reason, source_attempt_id, rule_id, created_at` — every level change is logged with why it happened, so the adaptive system stays debuggable
-- [ ] Tables: `child_skill_progress`, `roadmap_versions`, `roadmap_stages` (from Phase 2), `stage_items`
-- [ ] Unit tests on the rule engine: repeated failure → easier activity, consistent success → level up, mastery → unlock, wrong answer → no negative reward
+- [x] Visual roadmap (island/path metaphor) *(journey map: winding SVG road, owl on the current stage, locked/coming-soon states)*
+- [x] Progression engine as a **backend** service, never client-side only:
+  - [x] evaluate each stage's configured mastery rule rather than a hardcoded "next stage" pointer *(stage thresholds/min-accuracy/min-attempts from CMS config drive level-ups; unlock chain is a pure tested rule)*
+  - [x] on repeated failure → recommend an easier same-skill exercise *(3 consecutive failures → easiest not-yet-succeeded exercise offered as a 🌱 card; level unchanged — no punishment)*
+  - [x] on mastery → unlock the next eligible stage(s) *(all prior playable stages completed; empty stages never block)*
+- [x] `progression_decisions` table: `child_id, skill_id, previous_level, new_level, reason, source_attempt_id, rule_id, created_at` — every level change is logged with why it happened, so the adaptive system stays debuggable *(SKILL_LEVEL_UP_V1 + REPEATED_FAILURE_EASIER_V1 with human-readable reasons)*
+- [x] Tables: `child_skill_progress`, `roadmap_versions`, `roadmap_stages` (from Phase 2), `stage_items` *(child_skill_progress live-updated from every attempt since Phase 4 + engine)*
+- [x] Unit tests on the rule engine: repeated failure → easier activity, consistent success → level up, mastery → unlock, wrong answer → no negative reward *(17 vitest tests incl. one-promotion-per-streak and no-level-decrease)*
 
 ---
 

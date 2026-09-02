@@ -10,12 +10,15 @@ import { AssetsService } from '../assets/assets.service';
 import { AuthUser } from '../auth/auth-user.interface';
 import { collectAssetIds } from '../common/collect-asset-ids';
 import { SubmitAttemptDto } from './dto/attempt.dto';
+import { ProgressionService } from '../progression/progression.service';
+import { computeStageUnlocks } from '../progression/rules';
 
 @Injectable()
 export class PlayService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly assets: AssetsService,
+    private readonly progression: ProgressionService,
   ) {}
 
   /** A caller (parent/specialist session) may only reach children linked to them. */
@@ -107,14 +110,13 @@ export class PlayService {
       }),
     );
 
-    // Unlock chain by order: a stage is unlocked when every PRIOR playable
-    // stage is completed. Stages with no playable items never block the chain.
-    let allPriorCompleted = true;
+    const unlocks = new Map(
+      computeStageUnlocks(
+        stageViews.map((s) => ({ id: s.id, order: s.order, totalItems: s.totalItems, completedItems: s.completedItems })),
+      ).map((r) => [r.id, r.unlocked]),
+    );
     for (const stage of stageViews) {
-      stage.unlocked = allPriorCompleted;
-      if (stage.totalItems > 0 && !stage.completed) {
-        allPriorCompleted = false;
-      }
+      stage.unlocked = unlocks.get(stage.id) ?? false;
     }
 
     return {
@@ -206,6 +208,15 @@ export class PlayService {
       return created;
     });
 
+    // Adaptive progression (level-ups, easier-activity recommendations) runs
+    // after the attempt is durable; its own failures are non-fatal.
+    await this.progression.recordAttempt({
+      childId: dto.childId,
+      skillId: version.skillId,
+      attemptId: attempt.id,
+      correct: isSuccess,
+    });
+
     return {
       clientAttemptId: attempt.clientAttemptId,
       attemptNumber: attempt.attemptNumber,
@@ -214,6 +225,42 @@ export class PlayService {
       isSuccess,
       duplicate: false,
     };
+  }
+
+  /**
+   * One easier same-skill activity per struggling skill: the easiest
+   * (lowest difficulty) published exercise the child has not yet succeeded at.
+   */
+  async recommendations(childId: string) {
+    const skillIds = await this.progression.recommendedSkillIds(childId);
+    const out: { skill: { code: string; name: string }; exercise: Awaited<ReturnType<PlayService['publishedExercise']>> }[] = [];
+    for (const skillId of skillIds) {
+      const candidates = await this.prisma.exerciseVersion.findMany({
+        where: { status: 'PUBLISHED', skillId },
+        include: { difficultyLevel: true, skill: true },
+        orderBy: [{ difficultyLevel: { order: 'asc' } }, { createdAt: 'asc' }],
+      });
+      const seen = new Set<string>();
+      const succeeded = new Set(
+        (
+          await this.prisma.exerciseAttempt.findMany({
+            where: { childId, isSuccess: true, exerciseVersion: { skillId } },
+            select: { exerciseVersion: { select: { exerciseId: true } } },
+          })
+        ).map((r) => r.exerciseVersion.exerciseId),
+      );
+      for (const candidate of candidates) {
+        if (seen.has(candidate.exerciseId)) continue;
+        seen.add(candidate.exerciseId);
+        if (succeeded.has(candidate.exerciseId)) continue;
+        const exercise = await this.publishedExercise(candidate.exerciseId);
+        if (exercise) {
+          out.push({ skill: { code: candidate.skill.code, name: candidate.skill.name }, exercise });
+        }
+        break;
+      }
+    }
+    return out;
   }
 
   /** Latest PUBLISHED version of an exercise, with asset URLs resolved. */

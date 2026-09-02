@@ -41,6 +41,13 @@ export class PlayController {
       .then(() => this.play.roadmap(childId));
   }
 
+  @Get(':childId/recommendations')
+  recommendations(@CurrentUser() user: AuthUser, @Param('childId') childId: string) {
+    return this.play
+      .assertChildLinked(user, childId)
+      .then(() => this.play.recommendations(childId));
+  }
+
   @Post('attempts')
   @HttpCode(201)
   submitAttempt(@CurrentUser() user: AuthUser, @Body() dto: SubmitAttemptDto) {

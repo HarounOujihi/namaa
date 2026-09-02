@@ -12,6 +12,7 @@ import type {
   PlayRoadmap,
   RedeemInviteResponse,
   UpdateChildInput,
+  PlayRecommendation,
 } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
@@ -158,4 +159,8 @@ export function getAppSounds(token: string): Promise<AppSoundsMap> {
   return request<AppSoundsMap>("/play/sounds", { token }).then(
     (body: unknown) => (body as { sounds: AppSoundsMap }).sounds,
   );
+}
+
+export function getRecommendations(token: string, childId: string): Promise<PlayRecommendation[]> {
+  return request<PlayRecommendation[]>(`/play/${encodeURIComponent(childId)}/recommendations`, { token });
 }
