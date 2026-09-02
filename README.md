@@ -99,6 +99,10 @@ packages/
 
 `apps/api/.env` (see `.env.example`): `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `S3_ENDPOINT/S3_ACCESS_KEY/S3_SECRET_KEY/S3_BUCKET`, `PORT`. Uploads land in the MinIO docker volume locally; point the S3 vars at real object storage for deploys. Frontends take `VITE_API_URL` / `NEXT_PUBLIC_API_URL` (default `http://localhost:3000`).
 
+## Documentation
+
+- **[docs/SYSTEM.md](docs/SYSTEM.md)** — how everything works: the diagnostic placement, mastery rules & stage unlocking, per-skill levels and the progression engine, the rewarding system (stars/points/badges/shop), attempts & server-side evaluation, roles, and where each piece lives in the code.
+
 ## Status
 
 Phases 0–8 complete (identity & roles, CMS, exercise engine, diagnostic assessment, progression engine, gamification, parent portal, specialist workspace). Next per the internal plan: graphical Phaser games, analytics dashboards, Capacitor mobile packaging with offline sync, production hardening.
