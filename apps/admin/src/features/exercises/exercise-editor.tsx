@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { JsonEditor } from "@/components/json-editor";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { hasVisualEditor, VisualConfigEditor } from "./visual-config";
 import { PreviewExerciseDialog } from "@/components/preview-exercise-dialog";
 import { AudioManagerDialog } from "./audio-manager-dialog";
 import { SimpleSelect, type SelectOption } from "@/components/simple-select";
@@ -115,6 +117,7 @@ export function ExerciseEditor({ exerciseId, onClose, onChanged }: ExerciseEdito
   const [ageGroupId, setAgeGroupId] = useState(NO_AGE_GROUP);
   const [exerciseTypeVersionId, setExerciseTypeVersionId] = useState("");
   const [configText, setConfigText] = useState("{}");
+  const [configTab, setConfigTab] = useState<"visual" | "json">("visual");
   const [snapshot, setSnapshot] = useState<ExerciseVersionDetail | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -424,17 +427,51 @@ export function ExerciseEditor({ exerciseId, onClose, onChanged }: ExerciseEdito
                 </div>
                 <Separator />
                 <div className="grid gap-2">
-                  <Label htmlFor="exercise-configuration">Configuration (JSON)</Label>
-                  <JsonEditor
-                    id="exercise-configuration"
-                    value={configText}
-                    onChange={setConfigText}
-                    error={configResult.ok ? null : configResult.error}
-                    rows={10}
-                  />
-                  {hint !== null ? (
-                    <p className="text-xs text-muted-foreground">{hint}</p>
-                  ) : null}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="exercise-configuration">Configuration</Label>
+                    {hint !== null ? (
+                      <p className="text-xs text-muted-foreground">{hint}</p>
+                    ) : null}
+                  </div>
+                  <Tabs
+                    value={configTab}
+                    onValueChange={(tab) => {
+                      if (tab === "visual" && !configResult.ok) {
+                        toast.error("Fix the JSON errors before switching to the visual editor");
+                        return;
+                      }
+                      setConfigTab(tab);
+                    }}
+                  >
+                    <TabsList>
+                      <TabsTrigger value="visual">Visual editor</TabsTrigger>
+                      <TabsTrigger value="json">JSON (advanced)</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="visual" className="mt-3">
+                      {configResult.ok && hasVisualEditor(selectedType?.code ?? "") ? (
+                        <VisualConfigEditor
+                          typeCode={selectedType?.code ?? ""}
+                          configuration={configResult.value}
+                          onChange={(next) => setConfigText(JSON.stringify(next, null, 2))}
+                        />
+                      ) : (
+                        <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                          {configResult.ok
+                            ? "No visual editor for this exercise type yet — use the JSON tab."
+                            : "The configuration JSON is invalid — fix it in the JSON tab first."}
+                        </div>
+                      )}
+                    </TabsContent>
+                    <TabsContent value="json" className="mt-3">
+                      <JsonEditor
+                        id="exercise-configuration"
+                        value={configText}
+                        onChange={setConfigText}
+                        error={configResult.ok ? null : configResult.error}
+                        rows={10}
+                      />
+                    </TabsContent>
+                  </Tabs>
                 </div>
                 {validationErrors.length > 0 ? (
                   <ul className="space-y-1 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">

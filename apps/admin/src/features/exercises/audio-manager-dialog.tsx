@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { EraserIcon, UploadIcon } from "lucide-react";
+import { AudioLinesIcon, EraserIcon, UploadIcon } from "lucide-react";
 import { toast } from "sonner";
 import { listAssets, uploadAsset } from "@/api";
 import type { Asset } from "@/types";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState } from "@/components/page-header";
-import { SimpleSelect, type SelectOption } from "@/components/simple-select";
+import { AssetLibraryDialog } from "@/components/asset-library-dialog";
 import { formatBytes, parseJsonObjectText, resolveAssetUrl } from "@/lib/format";
 import { getErrorMessage, useQuery } from "@/lib/use-query";
 
@@ -131,6 +131,8 @@ export function AudioManagerDialog({
   const [uploadingPath, setUploadingPath] = useState<string | null>(null);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const uploadTargetRef = useRef<string | null>(null);
+  // The audio path whose "Choose from library" picker is currently open.
+  const [libraryPath, setLibraryPath] = useState<string | null>(null);
 
   // Only hit the API while the dialog is actually open.
   const { data, loading, error, reload } = useQuery(
@@ -174,15 +176,6 @@ export function AudioManagerDialog({
       next.set(display, choice);
       return next;
     });
-  }
-
-  function assetOptions(): SelectOption[] {
-    return assets.map((asset) => ({
-      value: asset.id,
-      label: asset.originalName !== null && asset.originalName !== ""
-        ? `${asset.originalName} · ${asset.mimeType}`
-        : `${shortId(asset.id)} · ${asset.mimeType}`,
-    }));
   }
 
   async function handleUpload(path: AudioPath, file: File): Promise<void> {
@@ -301,21 +294,15 @@ export function AudioManagerDialog({
           </p>
         ) : null}
         <div className="flex flex-wrap items-center gap-2">
-          <SimpleSelect
-            value={choice.kind === "set" ? choice.assetId : null}
-            onValueChange={(assetId) =>
-              setChoice(
-                path.display,
-                assetId === path.currentId ? KEEP : { kind: "set", assetId },
-              )
-            }
-            options={assetOptions()}
-            placeholder={assets.length === 0 ? "No audio assets" : "Select existing…"}
-            disabled={assets.length === 0}
+          <Button
+            type="button"
+            variant="secondary"
             size="sm"
-            className="w-64"
-            ariaLabel={`Select existing audio asset for ${path.display}`}
-          />
+            onClick={() => setLibraryPath(path.display)}
+          >
+            <AudioLinesIcon />
+            Choose from library
+          </Button>
           <Button
             type="button"
             variant="secondary"
@@ -405,6 +392,29 @@ export function AudioManagerDialog({
           </DialogFooter>
         ) : null}
       </DialogContent>
+      <AssetLibraryDialog
+        open={libraryPath !== null}
+        onOpenChange={(next) => {
+          if (!next) {
+            setLibraryPath(null);
+          }
+        }}
+        type="AUDIO"
+        title="Audio library"
+        onSelect={(selectedAssets) => {
+          const asset = selectedAssets[0];
+          const target = libraryPath;
+          if (asset === undefined || target === null) {
+            return;
+          }
+          // Track the asset locally so the row preview resolves even though
+          // this dialog's own list was fetched before the library opened.
+          setUploaded((prev) => (prev.some((a) => a.id === asset.id) ? prev : [...prev, asset]));
+          setChoice(target, asset.id === paths.find((p) => p.display === target)?.currentId
+            ? KEEP
+            : { kind: "set", assetId: asset.id });
+        }}
+      />
     </Dialog>
   );
 }

@@ -1,6 +1,7 @@
-import { useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useState } from "react";
+import { AudioLinesIcon } from "lucide-react";
 import { EmptyState, ErrorState, PageHeader } from "@/components/page-header";
-import { SimpleSelect, type SelectOption } from "@/components/simple-select";
+import { AssetLibraryDialog } from "@/components/asset-library-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,9 +24,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { listAppSounds, listAssets, updateAppSound, uploadAsset } from "@/api";
+import { listAppSounds, updateAppSound } from "@/api";
 import type { AppSound } from "@/types";
-import { formatBytes, formatDate, resolveAssetUrl } from "@/lib/format";
+import { formatBytes, resolveAssetUrl } from "@/lib/format";
 import { getErrorMessage, useQuery } from "@/lib/use-query";
 import { toast } from "sonner";
 
@@ -38,28 +39,23 @@ const PLAY_CONTEXT: Record<string, string> = {
 
 interface SoundCardProps {
   sound: AppSound;
-  assetOptions: readonly SelectOption[];
   busy: boolean;
   onBind: (sound: AppSound, assetId: string) => Promise<boolean>;
-  onUpload: (sound: AppSound, file: File) => Promise<boolean>;
   onSaveText: (sound: AppSound, text: string) => Promise<boolean>;
   onUnbind: (sound: AppSound) => Promise<boolean>;
 }
 
 function SoundCard({
   sound,
-  assetOptions,
   busy,
   onBind,
-  onUpload,
   onSaveText,
   onUnbind,
 }: SoundCardProps) {
-  const [showPicker, setShowPicker] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [confirmUnbind, setConfirmUnbind] = useState(false);
   const [text, setText] = useState(sound.textFallback);
   const [syncedText, setSyncedText] = useState(sound.textFallback);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (sound.textFallback !== syncedText) {
     setSyncedText(sound.textFallback);
@@ -67,28 +63,6 @@ function SoundCard({
   }
 
   const playContext = PLAY_CONTEXT[sound.key] ?? "at an app-defined moment";
-  const pickerOpen = showPicker || sound.asset === null;
-
-  async function handleSelectAsset(assetId: string): Promise<void> {
-    const ok = await onBind(sound, assetId);
-    if (ok) {
-      setShowPicker(false);
-    }
-  }
-
-  async function handleFileChange(event: ChangeEvent<HTMLInputElement>): Promise<void> {
-    const file = event.target.files === null ? null : event.target.files[0];
-    if (fileInputRef.current !== null) {
-      fileInputRef.current.value = "";
-    }
-    if (file === null) {
-      return;
-    }
-    const ok = await onUpload(sound, file);
-    if (ok) {
-      setShowPicker(false);
-    }
-  }
 
   async function handleSaveText(): Promise<void> {
     const trimmed = text.trim();
@@ -125,8 +99,9 @@ function SoundCard({
               <Badge variant="outline">{formatBytes(sound.asset.sizeBytes)}</Badge>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" disabled={busy} onClick={() => setShowPicker((open) => !open)}>
-                {pickerOpen ? "Cancel" : "Replace"}
+              <Button variant="secondary" size="sm" disabled={busy} onClick={() => setLibraryOpen(true)}>
+                <AudioLinesIcon />
+                Choose from library
               </Button>
               <Button variant="outline" size="sm" disabled={busy} onClick={() => setConfirmUnbind(true)}>
                 Unbind (use TTS)
@@ -134,38 +109,16 @@ function SoundCard({
             </div>
           </div>
         ) : (
-          <p className="rounded-lg border border-dashed px-3 py-2 text-xs text-muted-foreground">
-            Not set — TTS speaks the fallback text
-          </p>
-        )}
-
-        {pickerOpen ? (
-          <div className="grid gap-3 rounded-lg border bg-muted/30 p-3">
-            <div className="grid gap-1.5">
-              <Label htmlFor={`sound-asset-${sound.key}`}>Audio asset</Label>
-              <SimpleSelect
-                id={`sound-asset-${sound.key}`}
-                value={sound.asset === null ? null : sound.asset.id}
-                onValueChange={(assetId) => void handleSelectAsset(assetId)}
-                options={assetOptions}
-                placeholder="Choose an uploaded audio file…"
-                ariaLabel={`Audio asset for ${sound.label}`}
-                disabled={busy || assetOptions.length === 0}
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor={`sound-upload-${sound.key}`}>Or upload a new file</Label>
-              <Input
-                ref={fileInputRef}
-                id={`sound-upload-${sound.key}`}
-                type="file"
-                accept="audio/*"
-                disabled={busy}
-                onChange={(event) => void handleFileChange(event)}
-              />
-            </div>
+          <div className="space-y-3">
+            <p className="rounded-lg border border-dashed px-3 py-2 text-xs text-muted-foreground">
+              Not set — TTS speaks the fallback text
+            </p>
+            <Button variant="secondary" size="sm" disabled={busy} onClick={() => setLibraryOpen(true)}>
+              <AudioLinesIcon />
+              Choose from library
+            </Button>
           </div>
-        ) : null}
+        )}
 
         <div className="grid gap-1.5">
           <Label htmlFor={`sound-text-${sound.key}`}>TTS fallback text (Arabic)</Label>
@@ -188,6 +141,18 @@ function SoundCard({
         </div>
       </CardContent>
 
+      <AssetLibraryDialog
+        open={libraryOpen}
+        onOpenChange={setLibraryOpen}
+        type="AUDIO"
+        title="Audio library"
+        onSelect={(selectedAssets) => {
+          const asset = selectedAssets[0];
+          if (asset !== undefined) {
+            void onBind(sound, asset.id);
+          }
+        }}
+      />
       <AlertDialog
         open={confirmUnbind}
         onOpenChange={(open) => (!open ? setConfirmUnbind(false) : undefined)}
@@ -218,7 +183,6 @@ function SoundCard({
 
 export function PlatformSoundsPage() {
   const soundsQuery = useQuery(listAppSounds, []);
-  const assetsQuery = useQuery(() => listAssets("AUDIO"), []);
 
   const [overrides, setOverrides] = useState<Record<string, AppSound>>({});
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -228,17 +192,6 @@ export function PlatformSoundsPage() {
       ? null
       : soundsQuery.data.map((sound) => overrides[sound.key] ?? sound);
   const busy = busyKey !== null;
-
-  const assetOptions = useMemo<SelectOption[]>(
-    () =>
-      (assetsQuery.data ?? []).map((asset) => ({
-        value: asset.id,
-        label: asset.originalName !== null && asset.originalName !== ""
-          ? `${asset.originalName} · ${asset.mimeType}`
-          : `${asset.mimeType} · ${formatBytes(asset.sizeBytes)} · ${formatDate(asset.createdAt)}`,
-      })),
-    [assetsQuery.data],
-  );
 
   async function runMutation(
     key: string,
@@ -270,21 +223,6 @@ export function PlatformSoundsPage() {
     );
   }
 
-  async function handleUpload(sound: AppSound, file: File): Promise<boolean> {
-    const ok = await runMutation(
-      sound.key,
-      async () => {
-        const uploaded = await uploadAsset(file, "AUDIO");
-        return updateAppSound(sound.key, { assetId: uploaded.id });
-      },
-      `Audio uploaded and bound to "${sound.label}"`,
-    );
-    if (ok) {
-      assetsQuery.reload();
-    }
-    return ok;
-  }
-
   async function handleSaveText(sound: AppSound, text: string): Promise<boolean> {
     return runMutation(
       sound.key,
@@ -307,14 +245,6 @@ export function PlatformSoundsPage() {
         title="Platform Sounds"
         description="App-level audio with Arabic TTS fallback — used by the child app for welcome, celebration and encouragement moments."
       />
-      {assetsQuery.error !== null ? (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          <span>Could not load audio assets — you can still upload a file below.</span>
-          <Button variant="outline" size="sm" onClick={assetsQuery.reload}>
-            Retry
-          </Button>
-        </div>
-      ) : null}
 
       {soundsQuery.error !== null ? (
         <ErrorState
@@ -352,10 +282,8 @@ export function PlatformSoundsPage() {
               <SoundCard
                 key={sound.key}
                 sound={sound}
-                assetOptions={assetOptions}
                 busy={busy}
                 onBind={handleBind}
-                onUpload={handleUpload}
                 onSaveText={handleSaveText}
                 onUnbind={handleUnbind}
               />
