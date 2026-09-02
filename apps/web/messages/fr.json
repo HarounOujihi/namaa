@@ -44,7 +44,18 @@
     "viewChild": "Voir les détails",
     "summaryError": "Impossible de charger le résumé de la semaine",
     "noChildrenTitle": "Aucun enfant lié à votre compte pour l'instant",
-    "noChildrenHint": "Activez un code d'invitation reçu de votre spécialiste pour lier votre enfant et suivre ses progrès"
+    "noChildrenHint": "Activez un code d'invitation reçu de votre spécialiste pour lier votre enfant et suivre ses progrès",
+    "specialistSubtitle": "Votre suivi en un coup d'œil",
+    "caseloadError": "Impossible de charger votre suivi",
+    "statusProgressing": "En progression",
+    "statusAttention": "À surveiller",
+    "reasonNotStarted": "Pas encore commencé",
+    "reasonInactive": "Inactif depuis 7 jours ou plus",
+    "reasonStruggling": "En difficulté récemment",
+    "lastActivity": "Dernière activité",
+    "noActivityYet": "Aucune activité pour l'instant",
+    "noCaseloadTitle": "Aucun enfant dans votre suivi pour l'instant",
+    "noCaseloadHint": "Créez un profil d'enfant et partagez le code d'invitation avec son parent pour commencer le suivi"
   },
   "invite": {
     "title": "Vous avez un code d'invitation ?",
@@ -58,6 +69,24 @@
     "invalid": "Code invalide — vérifiez-le et réessayez",
     "claimed": "Ce code a déjà été utilisé"
   },
+  "addChild": {
+    "title": "Ajouter un enfant",
+    "description": "Créez le profil, puis partagez le code d'invitation avec le parent",
+    "action": "Nouvel enfant",
+    "fullName": "Nom complet",
+    "fullNamePlaceholder": "Sara Ahmed",
+    "birthDate": "Date de naissance",
+    "gradeLevel": "Niveau (facultatif)",
+    "submit": "Créer le profil",
+    "pending": "Création…",
+    "createdTitle": "Profil créé",
+    "createdHint": "Donnez ce code au parent — il l'utilisera une seule fois pour lier l'enfant à son compte",
+    "codeLabel": "Code d'invitation",
+    "copy": "Copier le code",
+    "copied": "Code copié",
+    "done": "Terminé",
+    "createdToast": "{name} a été ajouté à votre suivi"
+  },
   "child": {
     "back": "Tableau de bord",
     "age": "Âge : {years, plural, =0 {moins d'un an} one {# an} other {# ans}}",
@@ -66,7 +95,8 @@
     "missingHint": "Retournez au tableau de bord et choisissez un enfant",
     "backHome": "Retour au tableau de bord",
     "notFoundTitle": "Enfant introuvable",
-    "notFoundHint": "Cet enfant n'est peut-être pas lié à votre compte",
+    "notFoundHint": "Cet enfant est peut-être pas lié à votre compte",
+    "report": "Imprimer le rapport",
     "skills": {
       "title": "Niveaux par compétence",
       "skill": "Compétence",
@@ -75,7 +105,9 @@
       "successRate": "Taux de réussite",
       "notStarted": "Non commencé",
       "levelValue": "Niveau {level}",
-      "empty": "Aucune compétence à afficher pour l'instant"
+      "empty": "Aucune compétence à afficher pour l'instant",
+      "adjustLevel": "Ajuster le niveau de {skill}",
+      "levelSaved": "Niveau de {skill} défini à {level}"
     },
     "mostImproved": {
       "title": "Compétence la plus améliorée cette semaine",
@@ -100,6 +132,37 @@
       "title": "Spécialistes suivants",
       "since": "Suivi depuis le {since}",
       "empty": "Aucun spécialiste lié à cet enfant pour l'instant"
+    },
+    "history": {
+      "title": "Activité récente",
+      "date": "Date",
+      "exercise": "Exercice",
+      "skill": "Compétence",
+      "result": "Résultat",
+      "correct": "Réussi",
+      "incorrect": "Manqué",
+      "stars": "Étoiles",
+      "duration": "Durée",
+      "empty": "Aucune activité enregistrée pour l'instant",
+      "attemptOf": "Tentative {number}"
+    },
+    "curve": {
+      "title": "Évolution des niveaux",
+      "description": "Niveau de chaque compétence, du diagnostic initial à chaque changement de niveau",
+      "empty": "Pas encore assez d'historique pour tracer la courbe"
+    },
+    "plan": {
+      "title": "Personnalisation du plan",
+      "description": "Masquez les exercices à écarter pour cet enfant ; réaffichez-les à tout moment",
+      "hiddenTitle": "Exercices masqués",
+      "hiddenEmpty": "Aucun exercice masqué",
+      "hiddenOn": "Masqué le {date}",
+      "show": "Afficher",
+      "hide": "Masquer",
+      "choose": "Choisir un exercice",
+      "loading": "Chargement des exercices…",
+      "hiddenToast": "« {title} » est masqué du plan",
+      "shownToast": "« {title} » est de retour dans le plan"
     }
   },
   "settings": {
@@ -113,5 +176,13 @@
     "save": "Enregistrer les paramètres",
     "saving": "Enregistrement…",
     "saved": "Paramètres enregistrés"
+  },
+  "report": {
+    "title": "Rapport de suivi",
+    "print": "Imprimer",
+    "backToChild": "Retour à l'enfant",
+    "generatedOn": "Généré le {date}",
+    "activitiesTitle": "Activités récentes",
+    "footer": "Rihlati — Rapport de suivi"
   }
 }

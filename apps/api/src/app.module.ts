@@ -14,6 +14,7 @@ import { AssessmentModule } from './assessment/assessment.module';
 import { ProgressionModule } from './progression/progression.module';
 import { RewardsModule } from './rewards/rewards.module';
 import { ParentModule } from './parent/parent.module';
+import { SpecialistModule } from './specialist/specialist.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ParentModule } from './parent/parent.module';
     ProgressionModule,
     RewardsModule,
     ParentModule,
+    SpecialistModule,
     InvitesModule,
     AssetsModule,
   ],

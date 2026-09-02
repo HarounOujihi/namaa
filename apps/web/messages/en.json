@@ -44,7 +44,18 @@
     "viewChild": "View details",
     "summaryError": "Could not load the weekly summary",
     "noChildrenTitle": "No children linked to your account yet",
-    "noChildrenHint": "Redeem an invite code from your specialist to link your child and start following their progress"
+    "noChildrenHint": "Redeem an invite code from your specialist to link your child and start following their progress",
+    "specialistSubtitle": "Your caseload at a glance",
+    "caseloadError": "Could not load your caseload",
+    "statusProgressing": "Progressing",
+    "statusAttention": "Needs attention",
+    "reasonNotStarted": "Not started yet",
+    "reasonInactive": "Inactive for 7+ days",
+    "reasonStruggling": "Struggling recently",
+    "lastActivity": "Last activity",
+    "noActivityYet": "No activity yet",
+    "noCaseloadTitle": "No children in your care yet",
+    "noCaseloadHint": "Create a child profile and share the invite code with their parent to start following up"
   },
   "invite": {
     "title": "Have a specialist invite code?",
@@ -58,6 +69,24 @@
     "invalid": "Invalid code — check it and try again",
     "claimed": "This code has already been used"
   },
+  "addChild": {
+    "title": "Add a child",
+    "description": "Create a profile, then share the invite code with the parent",
+    "action": "New child",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "Sara Ahmed",
+    "birthDate": "Date of birth",
+    "gradeLevel": "Grade (optional)",
+    "submit": "Create profile",
+    "pending": "Creating…",
+    "createdTitle": "Profile created",
+    "createdHint": "Give this code to the parent — they will use it once to link the child to their account",
+    "codeLabel": "Invite code",
+    "copy": "Copy code",
+    "copied": "Code copied",
+    "done": "Done",
+    "createdToast": "{name} was added to your care"
+  },
   "child": {
     "back": "Dashboard",
     "age": "Age: {years, plural, =0 {under one} one {# year} other {# years}}",
@@ -67,6 +96,7 @@
     "backHome": "Back to dashboard",
     "notFoundTitle": "Child not found",
     "notFoundHint": "This child may not be linked to your account",
+    "report": "Print report",
     "skills": {
       "title": "Levels by skill",
       "skill": "Skill",
@@ -75,7 +105,9 @@
       "successRate": "Success rate",
       "notStarted": "Not started",
       "levelValue": "Level {level}",
-      "empty": "No skills to show yet"
+      "empty": "No skills to show yet",
+      "adjustLevel": "Adjust level for {skill}",
+      "levelSaved": "{skill} level set to {level}"
     },
     "mostImproved": {
       "title": "Most improved this week",
@@ -100,6 +132,37 @@
       "title": "Following specialists",
       "since": "Following since {since}",
       "empty": "No specialist linked to this child yet"
+    },
+    "history": {
+      "title": "Recent activity",
+      "date": "Date",
+      "exercise": "Exercise",
+      "skill": "Skill",
+      "result": "Result",
+      "correct": "Correct",
+      "incorrect": "Incorrect",
+      "stars": "Stars",
+      "duration": "Duration",
+      "empty": "No activity recorded yet",
+      "attemptOf": "Attempt {number}"
+    },
+    "curve": {
+      "title": "Progress over time",
+      "description": "Level per skill, from the diagnostic assessment through every level change",
+      "empty": "Not enough history to draw a curve yet"
+    },
+    "plan": {
+      "title": "Plan customization",
+      "description": "Hide exercises this child should skip; show them again anytime",
+      "hiddenTitle": "Hidden exercises",
+      "hiddenEmpty": "No hidden exercises",
+      "hiddenOn": "Hidden on {date}",
+      "show": "Show",
+      "hide": "Hide",
+      "choose": "Choose an exercise",
+      "loading": "Loading exercises…",
+      "hiddenToast": "\"{title}\" is now hidden from the plan",
+      "shownToast": "\"{title}\" is back in the plan"
     }
   },
   "settings": {
@@ -113,5 +176,13 @@
     "save": "Save settings",
     "saving": "Saving…",
     "saved": "Settings saved"
+  },
+  "report": {
+    "title": "Follow-up report",
+    "print": "Print",
+    "backToChild": "Back to child",
+    "generatedOn": "Generated on {date}",
+    "activitiesTitle": "Recent activities",
+    "footer": "Rihlati — Follow-up report"
   }
 }

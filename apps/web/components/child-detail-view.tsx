@@ -7,6 +7,8 @@ import {
   LoaderCircleIcon,
   MailIcon,
   MinusIcon,
+  PlusIcon,
+  PrinterIcon,
   SparklesIcon,
   TrendingDownIcon,
   TrendingUpIcon,
@@ -38,11 +40,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ErrorState } from "@/components/state-views";
+import { ActivityHistoryCard } from "@/components/activity-history-card";
+import { PlanCard } from "@/components/plan-card";
+import { ProgressCurveCard } from "@/components/progress-curve-card";
 import {
   getChildSettings,
   getChildSpecialists,
   getChildSummary,
   listChildren,
+  setChildSkillLevel,
   updateChildSettings,
 } from "@/lib/api";
 import {
@@ -53,7 +59,7 @@ import {
   initialsOf,
   useApiErrorMessage,
 } from "@/lib/format";
-import type { AuthResponse, ChildSettings, WeeklySummary } from "@/lib/types";
+import type { AuthResponse, ChildSettings, SkillProgressRow, WeeklySummary } from "@/lib/types";
 import { useQuery, type QueryState } from "@/lib/use-query";
 
 /** Visual ceiling for the level progress bar (levels can exceed it on paper). */
@@ -85,10 +91,50 @@ function Trend({ current, previous }: { current: number; previous: number }) {
   );
 }
 
-function SkillsCard({ summary }: { summary: QueryState<WeeklySummary> }) {
+function SkillsCard({
+  summary,
+  childId,
+  canEditLevel,
+}: {
+  summary: QueryState<WeeklySummary>;
+  childId: string;
+  canEditLevel: boolean;
+}) {
   const locale = useLocale();
   const t = useTranslations("child.skills");
   const apiErrorMessage = useApiErrorMessage();
+  // Optimistic per-skill level overrides applied on top of the loaded summary.
+  const [overrides, setOverrides] = useState<Record<string, number>>({});
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  async function adjustLevel(skill: SkillProgressRow, delta: number): Promise<void> {
+    const displayed = overrides[skill.skillId] ?? skill.level;
+    const next = Math.min(10, Math.max(1, (displayed ?? 0) + delta));
+    if (displayed !== null && next === displayed) {
+      return;
+    }
+    setOverrides((prev) => ({ ...prev, [skill.skillId]: next }));
+    setPendingId(skill.skillId);
+    try {
+      await setChildSkillLevel(childId, skill.skillId, next);
+      toast.success(
+        t("levelSaved", { skill: skill.name, level: formatNumber(next, locale) }),
+      );
+    } catch (err) {
+      setOverrides((prev) => {
+        const reverted = { ...prev };
+        if (skill.level === null) {
+          delete reverted[skill.skillId];
+        } else {
+          reverted[skill.skillId] = skill.level;
+        }
+        return reverted;
+      });
+      toast.error(apiErrorMessage(err));
+    } finally {
+      setPendingId(null);
+    }
+  }
 
   return (
     <Card>
@@ -118,31 +164,86 @@ function SkillsCard({ summary }: { summary: QueryState<WeeklySummary> }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {summary.data?.skills.map((skill) => (
-                <TableRow key={skill.code}>
-                  <TableCell className="font-medium">{skill.name}</TableCell>
-                  <TableCell>
-                    {skill.level === null ? (
-                      <span className="text-sm text-muted-foreground">{t("notStarted")}</span>
-                    ) : (
-                      <div className="flex w-44 flex-col gap-1.5">
-                        <span className="text-xs text-muted-foreground">
-                          {t("levelValue", { level: formatNumber(skill.level, locale) })}
+              {summary.data?.skills.map((skill) => {
+                const displayed = overrides[skill.skillId] ?? skill.level;
+                const pending = pendingId === skill.skillId;
+                return (
+                  <TableRow key={skill.code}>
+                    <TableCell className="font-medium">{skill.name}</TableCell>
+                    <TableCell>
+                      {displayed === null && !canEditLevel ? (
+                        <span className="text-sm text-muted-foreground">
+                          {t("notStarted")}
                         </span>
-                        <Progress
-                          value={(Math.min(skill.level, MAX_SKILL_LEVEL) / MAX_SKILL_LEVEL) * 100}
-                        />
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-end tabular-nums">
-                    {formatNumber(skill.attempts, locale)}
-                  </TableCell>
-                  <TableCell className="text-end tabular-nums">
-                    {skill.successRate === null ? "—" : formatPercent(skill.successRate, locale)}
-                  </TableCell>
-                </TableRow>
-              ))}
+                      ) : (
+                        <div className="flex w-52 flex-col gap-1.5">
+                          <div
+                            className="flex items-center gap-2"
+                            role={canEditLevel ? "group" : undefined}
+                            aria-label={
+                              canEditLevel
+                                ? t("adjustLevel", { skill: skill.name })
+                                : undefined
+                            }
+                          >
+                            {canEditLevel ? (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="icon-xs"
+                                  disabled={pending || (displayed !== null && displayed <= 1)}
+                                  onClick={() => void adjustLevel(skill, -1)}
+                                >
+                                  {pending ? (
+                                    <LoaderCircleIcon className="animate-spin" />
+                                  ) : (
+                                    <MinusIcon />
+                                  )}
+                                  <span className="sr-only">−</span>
+                                </Button>
+                                <span className="w-7 text-center text-sm font-medium tabular-nums">
+                                  {displayed === null ? "—" : formatNumber(displayed, locale)}
+                                </span>
+                                <Button
+                                  variant="outline"
+                                  size="icon-xs"
+                                  disabled={pending || (displayed !== null && displayed >= 10)}
+                                  onClick={() => void adjustLevel(skill, 1)}
+                                >
+                                  <PlusIcon />
+                                  <span className="sr-only">+</span>
+                                </Button>
+                              </>
+                            ) : null}
+                            <span className="text-xs text-muted-foreground">
+                              {displayed === null
+                                ? t("notStarted")
+                                : t("levelValue", {
+                                    level: formatNumber(displayed, locale),
+                                  })}
+                            </span>
+                          </div>
+                          {displayed !== null ? (
+                            <Progress
+                              value={
+                                (Math.min(displayed, MAX_SKILL_LEVEL) / MAX_SKILL_LEVEL) * 100
+                              }
+                            />
+                          ) : null}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-end tabular-nums">
+                      {formatNumber(skill.attempts, locale)}
+                    </TableCell>
+                    <TableCell className="text-end tabular-nums">
+                      {skill.successRate === null
+                        ? "—"
+                        : formatPercent(skill.successRate, locale)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}
@@ -505,7 +606,7 @@ export function ChildDetailView({ childId, auth }: { childId: string; auth: Auth
                 ) : null}
                 <AvatarFallback>{initialsOf(child.fullName)}</AvatarFallback>
               </Avatar>
-              <div className="flex min-w-0 flex-col gap-1">
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <h1 className="font-heading truncate text-2xl font-semibold">{child.fullName}</h1>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   {child.gradeLevel ? (
@@ -519,17 +620,32 @@ export function ChildDetailView({ childId, auth }: { childId: string; auth: Auth
                   </span>
                 </div>
               </div>
+              <Link
+                href={`/child/report?id=${childId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={buttonVariants({ variant: "outline", size: "sm", className: "shrink-0 self-start" })}
+              >
+                <PrinterIcon />
+                {t("report")}
+              </Link>
             </CardContent>
           </Card>
 
           <div className="grid items-start gap-4 lg:grid-cols-3">
             <div className="flex flex-col gap-4 lg:col-span-2">
-              <SkillsCard summary={summaryQuery} />
+              <SkillsCard summary={summaryQuery} childId={childId} canEditLevel={!isParent} />
+              <ProgressCurveCard childId={childId} />
+              <ActivityHistoryCard childId={childId} />
               <ComparisonCard summary={summaryQuery} />
             </div>
             <div className="flex flex-col gap-4">
               <MostImprovedCard summary={summaryQuery} />
-              {isParent ? <SettingsCard childId={childId} query={settingsQuery} /> : null}
+              {isParent ? (
+                <SettingsCard childId={childId} query={settingsQuery} />
+              ) : (
+                <PlanCard childId={childId} />
+              )}
               <SpecialistsCard childId={childId} />
             </div>
           </div>

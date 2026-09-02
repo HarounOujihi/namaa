@@ -25,8 +25,24 @@ export function formatPercent(fraction: number, locale: string): string {
 }
 
 /** Locale-aware calendar date for display strings. */
-export function formatDate(iso: string, locale: string, style: "long" | "medium"): string {
+export function formatDate(
+  iso: string,
+  locale: string,
+  style: "long" | "medium" | "short",
+): string {
   return new Intl.DateTimeFormat(numberLocale(locale), { dateStyle: style }).format(new Date(iso));
+}
+
+/** Duration in `mm:ss` (locale digits), for activity history rows. */
+export function formatDuration(ms: number, locale: string): string {
+  const totalSeconds = Math.round(ms / 1000);
+  const minutes = new Intl.NumberFormat(numberLocale(locale)).format(
+    Math.floor(totalSeconds / 60),
+  );
+  const seconds = new Intl.NumberFormat(numberLocale(locale), {
+    minimumIntegerDigits: 2,
+  }).format(totalSeconds % 60);
+  return `${minutes}:${seconds}`;
 }
 
 export function initialsOf(fullName: string): string {
@@ -46,7 +62,6 @@ export function ageInYears(birthDate: string, now = new Date()): number {
   }
   return age;
 }
-
 /**
  * Maps an API failure to a user-facing message: network failures and unknown
  * shapes get localized strings, server-provided messages pass through.

@@ -160,12 +160,12 @@ Storage:     S3-compatible object storage
 
 ## Phase 9 — Specialist Dashboard (multi-language)
 
-- [ ] Shares Phase 8's i18n/locale setup — same Next.js app, role-scoped routes
-- [ ] Child list with quick status indicator
-- [ ] Per-child detail: skill levels, activity history, progress curve
-- [ ] Roadmap customization: enable/disable activities, adjust starting difficulty
-- [ ] PDF report export
-- [ ] "Add child" flow (unclaimed profile + invite code)
+- [x] Shares Phase 8's i18n/locale setup — same Next.js app, role-scoped routes *(same shell, role-gated sections, ar/en/fr parity)*
+- [x] Child list with quick status indicator *(specialist overview: progressing / needs-attention with reason — not_started, inactive ≥7d, struggling <40% — computed from raw attempts)*
+- [x] Per-child detail: skill levels, activity history, progress curve *(skills table + inline level stepper, activity history table, Recharts level timeline from assessment + progression decisions)*
+- [x] Roadmap customization: enable/disable activities, adjust starting difficulty *(child_plan_overrides: hidden exercises vanish from that child's roadmap; manual level adjusts logged as MANUAL_OVERRIDE)*
+- [x] PDF report export *(print-optimized report page → browser print-to-PDF, zero deps; verified nav-free with full skills table)*
+- [x] "Add child" flow (unclaimed profile + invite code) *(specialist dialog → POST /children → invite code with copy button)*
 
 ---
 

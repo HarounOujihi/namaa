@@ -121,6 +121,7 @@ model ChildProfile {
   rewardTransactions   RewardTransaction[]
   progressionDecisions ProgressionDecision[]
   settings             ChildSetting?
+  planOverrides        ChildPlanOverride[]
 
   @@map("child_profiles")
 }
@@ -370,6 +371,8 @@ model ExerciseTypeVersion {
 model Exercise {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
+
+  planOverrides ChildPlanOverride[]
 
   versions   ExerciseVersion[]
   stageItems StageItem[]
@@ -718,6 +721,25 @@ model ChildSetting {
   updatedAt           DateTime @updatedAt
 
   @@map("child_settings")
+}
+
+// =========================================================================
+// PLAN OVERRIDES (specialist-managed)
+// Per-child visibility of specific exercises: a hidden exercise never appears
+// in that child's roadmap, without touching content or other children.
+
+model ChildPlanOverride {
+  id          String   @id @default(cuid())
+  childId     String
+  child       ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+  exerciseId  String
+  exercise    Exercise @relation(fields: [exerciseId], references: [id])
+  hidden      Boolean  @default(true)
+  updatedBy   UserRole
+  updatedAt   DateTime @updatedAt
+
+  @@unique([childId, exerciseId])
+  @@map("child_plan_overrides")
 }
 
 // =========================================================================

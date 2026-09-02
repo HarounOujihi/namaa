@@ -166,6 +166,7 @@ export class ParentService {
         ? { code: mostImproved.skill.code, name: mostImproved.skill.name, delta: mostImproved.delta }
         : null,
       skills: skills.map((skill) => ({
+        skillId: skill.id,
         code: skill.code,
         name: skill.name,
         level: progressBySkill.get(skill.id)?.currentLevel ?? null,

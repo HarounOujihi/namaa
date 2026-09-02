@@ -58,6 +58,16 @@ export class PlayService {
       return { child: { id: child.id, fullName: child.fullName }, roadmap: { id: roadmap.id, name: roadmap.name }, stages: [] };
     }
 
+    // Specialist plan overrides: hidden exercises never reach this child.
+    const hiddenIds = new Set(
+      (
+        await this.prisma.childPlanOverride.findMany({
+          where: { childId, hidden: true },
+          select: { exerciseId: true },
+        })
+      ).map((o) => o.exerciseId),
+    );
+
     // Successful exercises for this child — powers stage unlocking.
     // v0 progression gate: a stage is completed when every playable item has
     // at least one successful attempt (the Phase 5 rule engine replaces this).
@@ -79,7 +89,7 @@ export class PlayService {
                 exercise: await this.publishedExercise(si.exerciseId!),
               })),
           )
-        ).filter((si) => si.exercise !== null);
+        ).filter((si) => si.exercise !== null && !hiddenIds.has(si.exercise.id));
         const completedItems = items.filter(
           (si) => si.exercise !== null && succeededExerciseIds.has(si.exercise.id),
         ).length;

@@ -1,10 +1,17 @@
 import type {
+  ActivityRow,
   AppLocale,
   AuthResponse,
   Child,
+  ChildPlan,
   ChildSettings,
   ChildSpecialist,
+  CreateChildPayload,
+  CreateChildResult,
+  ProgressCurveData,
   RedeemResult,
+  RoadmapExerciseOption,
+  SpecialistOverviewRow,
   WeeklySummary,
 } from "./types";
 
@@ -125,6 +132,72 @@ export function updateChildSettings(
 
 export function getChildSpecialists(childId: string): Promise<ChildSpecialist[]> {
   return request<ChildSpecialist[]>(`/children/${childId}/specialists`);
+}
+
+// ---------- Specialist care data (reads: PARENT|SPECIALIST, writes: SPECIALIST) ----------
+
+export function createChild(payload: CreateChildPayload): Promise<CreateChildResult> {
+  return request<CreateChildResult>("/children", { method: "POST", body: payload });
+}
+
+export function getSpecialistOverview(): Promise<SpecialistOverviewRow[]> {
+  return request<SpecialistOverviewRow[]>("/specialist/overview");
+}
+
+export function getChildActivities(childId: string, limit = 25): Promise<ActivityRow[]> {
+  return request<ActivityRow[]>(`/children/${childId}/activities?limit=${limit}`);
+}
+
+export function getChildProgressCurve(childId: string): Promise<ProgressCurveData> {
+  return request<ProgressCurveData>(`/children/${childId}/progress-curve`);
+}
+
+export function getChildPlan(childId: string): Promise<ChildPlan> {
+  return request<ChildPlan>(`/children/${childId}/plan`);
+}
+
+export function setExerciseVisibility(
+  childId: string,
+  exerciseId: string,
+  hidden: boolean,
+): Promise<unknown> {
+  return request<unknown>(`/children/${childId}/plan/visibility`, {
+    method: "PUT",
+    body: { exerciseId, hidden },
+  });
+}
+
+export function setChildSkillLevel(
+  childId: string,
+  skillId: string,
+  level: number,
+): Promise<{ skillId: string; level: number }> {
+  return request<{ skillId: string; level: number }>(`/children/${childId}/skill-level`, {
+    method: "PUT",
+    body: { skillId, level },
+  });
+}
+
+/** Roadmap exercises flattened to picker options (stage → item → exercise). */
+export function getChildRoadmapExercises(
+  childId: string,
+): Promise<RoadmapExerciseOption[]> {
+  return request<{
+    stages: Array<{
+      name: string;
+      items: Array<{ exercise?: { id: string; title: string } }>;
+    }>;
+  }>(`/play/${childId}/roadmap`).then((data) =>
+    data.stages.flatMap((stage) =>
+      stage.items
+        .filter((item) => item.exercise != null)
+        .map((item) => ({
+          id: item.exercise!.id,
+          title: item.exercise!.title,
+          stageName: stage.name,
+        })),
+    ),
+  );
 }
 
 // ---------- Invites (parent only) ----------
