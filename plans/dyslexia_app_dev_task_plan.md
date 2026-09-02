@@ -52,7 +52,7 @@ Cache/Queue: Redis
 Storage:     S3-compatible object storage
 ```
 
-- [ ] One backend for everything. `apps/web` does not get its own API routes — the child app needs offline sync and can't depend on a server anyway, so there's one source of truth for all three frontends.
+- [x] One backend for everything. `apps/web` does not get its own API routes — the child app needs offline sync and can't depend on a server anyway, so there's one source of truth for all three frontends.
 
 ---
 
@@ -109,7 +109,7 @@ Storage:     S3-compatible object storage
 - [ ] No red marks, no harsh error sound anywhere in this flow — its own acceptance criterion, not inherited from Phase 6
 - [ ] Each `assessment_item` references its target `skill_id` directly, so scoring routes straight to a per-skill starting level — no separate difficulty→skill lookup table needed
 - [ ] Results summary — parent/specialist only, no child-facing version
-- [ ] Tables: `assessments`, `assessment_versions`, `assessment_items`, `assessment_attempts`, `assessment_answers`, `assessment_results`
+- [x] Tables: `assessments`, `assessment_versions`, `assessment_items`, `assessment_attempts`, `assessment_answers`, `assessment_results` *(in schema since the init migration — assessment API/UI still pending)*
 - [ ] E2E test: full assessment run → correct per-skill placement
 
 ---
@@ -208,11 +208,11 @@ Storage:     S3-compatible object storage
 
 ## Cross-cutting — Security
 
-- [ ] Child (active profile, not a login role): activity access only, no admin/diagnostic data
-- [ ] Parent: own linked children only; sole holder of profile edit/delete rights
-- [ ] Specialist: assigned children only (via `specialist_children`); can customize plan, cannot edit/delete core profile data
-- [ ] Super Admin: platform/content management only
-- [ ] All of the above enforced server-side
+- [x] Child (active profile, not a login role): activity access only, no admin/diagnostic data
+- [x] Parent: own linked children only; sole holder of profile edit/delete rights
+- [x] Specialist: assigned children only (via `specialist_children`); can customize plan, cannot edit/delete core profile data
+- [x] Super Admin: platform/content management only
+- [x] All of the above enforced server-side *(verified: admin routes 403 for parents, child edits 403 for specialists, play 403 for unlinked children)*
 
 ## Cross-cutting — Multi-language scope (final)
 
