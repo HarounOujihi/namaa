@@ -263,6 +263,25 @@ body {
   gap: 12px;
 }
 
+.picker-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.picker-title {
+  margin: 0;
+  font-size: clamp(1.4rem, 5vw, 1.8rem);
+  font-weight: 800;
+}
+
+.picker-subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
 .child-grid {
   list-style: none;
   margin: 0;
@@ -293,7 +312,28 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+
+.child-tap:active {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .child-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .child-card {
+    transition: transform 140ms ease, border-color 140ms ease;
+  }
+}
+
+.child-grade {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
 }
 
 .child-name {
@@ -303,8 +343,8 @@ body {
 }
 
 .avatar {
-  width: 104px;
-  height: 104px;
+  width: 92px;
+  height: 92px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -838,4 +878,46 @@ body {
 .big-button.danger {
   background: #c62828;
   border-color: #a71d1d;
+}
+
+
+/* Add-child ghost tile inside the picker grid */
+.add-tile {
+  border-style: dashed;
+  background: transparent;
+  box-shadow: none;
+}
+
+.add-tile:hover {
+  border-color: var(--accent);
+}
+
+.add-tile-plus {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: var(--bg);
+  border: 3px dashed var(--border);
+}
+
+.add-tile .child-tap {
+  gap: 10px;
+}
+
+@media (max-width: 420px) {
+  .avatar {
+    width: 84px;
+    height: 84px;
+    font-size: 2.8rem;
+  }
+  .add-tile-plus {
+    width: 60px;
+    height: 60px;
+    font-size: 1.8rem;
+  }
 }

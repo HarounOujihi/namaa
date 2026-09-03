@@ -59,7 +59,10 @@ export function ChildPicker({ auth, onChildSelected, onShowResults, onAuthExpire
   return (
     <main className="screen picker-screen">
       <header className="picker-header">
-        <h1 className="screen-title">من يلعب اليوم؟</h1>
+        <div className="picker-heading">
+          <h1 className="picker-title">من يلعب اليوم؟</h1>
+          <p className="picker-subtitle">اختر ملفك للبدء باللعب</p>
+        </div>
         <button type="button" className="text-button" onClick={onLogout}>
           خروج
         </button>
@@ -86,6 +89,9 @@ export function ChildPicker({ auth, onChildSelected, onShowResults, onAuthExpire
               <button type="button" className="child-tap" onClick={() => handleCardTap(child)}>
                 <Avatar child={child} />
                 <span className="child-name">{child.fullName}</span>
+                {child.gradeLevel !== null && child.gradeLevel !== "" ? (
+                  <span className="child-grade">{child.gradeLevel}</span>
+                ) : null}
               </button>
               <div className="child-actions">
                 <button
@@ -109,19 +115,27 @@ export function ChildPicker({ auth, onChildSelected, onShowResults, onAuthExpire
               </div>
             </li>
           ))}
+        {isParent ? (
+          <li className="child-card add-tile">
+            <button type="button" className="child-tap" onClick={() => setDialog({ kind: "add" })}>
+              <span className="add-tile-plus" aria-hidden>
+                ＋
+              </span>
+              <span className="child-name">إضافة طفل</span>
+              <span className="child-grade">عضو جديد في الرحلة</span>
+            </button>
+          </li>
+        ) : null}
         </ul>
       ) : null}
 
-      <div className="picker-actions">
-        <button type="button" className="big-button" onClick={() => setDialog({ kind: "add" })}>
-          ➕ إضافة طفل جديد
-        </button>
-        {isParent ? (
+      {isParent ? (
+        <div className="picker-actions">
           <button type="button" className="text-button" onClick={() => setDialog({ kind: "redeem" })}>
             لديك رمز من مختص؟
           </button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {dialog.kind === "add" ? (
         <AddChildDialog
