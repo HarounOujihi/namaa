@@ -3,7 +3,6 @@ import { ApiError, listChildren } from "../api";
 import type { AuthResponse, Child } from "../types";
 import { Avatar } from "../components/Avatar";
 import { AddChildDialog } from "../components/AddChildDialog";
-import { DeleteChildDialog } from "../components/DeleteChildDialog";
 import { EditChildDialog } from "../components/EditChildDialog";
 import { InviteCodeDialog } from "../components/InviteCodeDialog";
 import { RedeemInviteDialog } from "../components/RedeemInviteDialog";
@@ -22,8 +21,7 @@ type PickerDialog =
   | { kind: "add" }
   | { kind: "invite"; code: string }
   | { kind: "redeem" }
-  | { kind: "edit"; child: Child }
-  | { kind: "delete"; child: Child };
+  | { kind: "edit"; child: Child };
 
 export function ChildPicker({ auth, onChildSelected, onShowResults, onAuthExpired, onLogout }: ChildPickerProps) {
   const [children, setChildren] = useState<Child[]>([]);
@@ -99,24 +97,14 @@ export function ChildPicker({ auth, onChildSelected, onShowResults, onAuthExpire
                   📊
                 </button>
                 {isParent ? (
-                  <>
-                    <button
-                      type="button"
-                      className="icon-button compact"
-                      aria-label={`تعديل ${child.fullName}`}
-                      onClick={() => setDialog({ kind: "edit", child })}
-                    >
-                      ✏
-                    </button>
-                    <button
-                      type="button"
-                      className="icon-button compact danger"
-                      aria-label={`حذف ${child.fullName}`}
-                      onClick={() => setDialog({ kind: "delete", child })}
-                    >
-                      🗑
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    className="icon-button compact"
+                    aria-label={`إدارة ملف ${child.fullName}`}
+                    onClick={() => setDialog({ kind: "edit", child })}
+                  >
+                    ⚙️
+                  </button>
                 ) : null}
               </div>
             </li>
@@ -174,18 +162,7 @@ export function ChildPicker({ auth, onChildSelected, onShowResults, onAuthExpire
           }}
         />
       ) : null}
-      {dialog.kind === "delete" ? (
-        <DeleteChildDialog
-          token={auth.accessToken}
-          child={dialog.child}
-          onAuthExpired={onAuthExpired}
-          onCancel={() => setDialog({ kind: "none" })}
-          onDeleted={() => {
-            setDialog({ kind: "none" });
-            void refreshChildren();
-          }}
-        />
-      ) : null}
+
     </main>
   );
 }

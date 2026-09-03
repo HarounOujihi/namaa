@@ -683,3 +683,64 @@ body {
   font-size: 1.1rem;
   color: var(--ink-soft);
 }
+
+/* Child settings dialog (picker + goodnight shortcut) */
+.field-hint {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--primary);
+}
+
+.dialog-saved {
+  margin: 0;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2e7d32;
+}
+
+.goodnight-parent-link {
+  background: none;
+  border: none;
+  padding: 8px;
+  margin-top: 6px;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Manage-child dialog sections */
+.dialog-section-title {
+  margin: 6px 0 -4px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+.dialog-danger-zone {
+  border-top: 2px dashed var(--border);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.big-button.danger {
+  background: #c62828;
+  border-color: #a71d1d;
+}

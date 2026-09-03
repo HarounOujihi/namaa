@@ -16,6 +16,7 @@ import { AssessmentRunner } from "./assessment-runner";
 import { ExerciseRunner } from "./ExerciseRunner";
 import { RewardsScreen } from "./RewardsScreen";
 import { StageScreen } from "./StageScreen";
+import { ChildSettingsDialog } from "../components/ChildSettingsDialog";
 
 interface ChildHomeProps {
   child: Child;
@@ -40,6 +41,7 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
 
   const [recommendations, setRecommendations] = useState<PlayRecommendation[]>([]);
   const [dailyLimitReached, setDailyLimitReached] = useState(false);
+  const [showLimitDialog, setShowLimitDialog] = useState(false);
   const limitRef = useRef<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -58,6 +60,19 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
     setRewards(data);
   }, []);
 
+  const reloadSettings = useCallback((): void => {
+    void getChildSettings(token, child.id)
+      .then((settings) => {
+        limitRef.current = settings.dailyLimitMinutes;
+        if (settings.dailyLimitMinutes !== null) {
+          setDailyLimitReached(minutesToday(child.id) >= settings.dailyLimitMinutes);
+        } else {
+          setDailyLimitReached(false);
+        }
+      })
+      .catch(() => undefined);
+  }, [token, child.id]);
+
   const loadHomeData = useCallback(async (silent = false): Promise<void> => {
     if (!silent) {
       setLoading(true);
@@ -66,14 +81,7 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
     void getRecommendations(token, child.id)
       .then((list) => setRecommendations(list))
       .catch(() => setRecommendations([]));
-    void getChildSettings(token, child.id)
-      .then((settings) => {
-        limitRef.current = settings.dailyLimitMinutes;
-        if (settings.dailyLimitMinutes !== null) {
-          setDailyLimitReached(minutesToday(child.id) >= settings.dailyLimitMinutes);
-        }
-      })
-      .catch(() => undefined);
+    void reloadSettings();
     void refreshRewards();
     try {
       // The assessment banner is optional garnish: if its endpoint hiccups
@@ -117,16 +125,31 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
 
   useEffect(() => {
     // Gentle screen-time accounting: one tick per minute while the journey is
-    // open, persisted per child per day. When the parent's limit is reached a
+    // open AND VISIBLE, persisted per child per day. Hidden tabs are paused —
+    // idle time never burns the quota. When the parent's limit is reached a
     // soft goodnight screen appears — never a harsh lock.
-    const tracker = window.setInterval(() => {
+    const check = () => {
       const limit = limitRef.current;
-      tickMinute(child.id);
       if (limit !== null && minutesToday(child.id) >= limit) {
         setDailyLimitReached(true);
       }
+    };
+    const tracker = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        tickMinute(child.id);
+        check();
+      }
     }, 60_000);
-    return () => window.clearInterval(tracker);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        check();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(tracker);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [child.id]);
 
   const handleExerciseDone = (stage: PlayStage, item: PlayStageItem): void => {
@@ -241,7 +264,19 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
           <button type="button" className="big-button" onClick={onExit}>
             إلى اللقاء 👋
           </button>
+          <button type="button" className="goodnight-parent-link" onClick={() => setShowLimitDialog(true)}>
+            ولي الأمر: تعديل الحد اليومي
+          </button>
         </div>
+        {showLimitDialog ? (
+          <ChildSettingsDialog
+            token={token}
+            child={child}
+            onAuthExpired={onAuthExpired}
+            onClose={() => setShowLimitDialog(false)}
+            onSaved={reloadSettings}
+          />
+        ) : null}
       </main>
     );
   }

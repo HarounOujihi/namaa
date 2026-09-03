@@ -3,12 +3,56 @@ import { ApiError, getPlayAssessment } from "../api";
 import type { Child, PlayAssessmentSkillResult } from "../types";
 import { Avatar } from "../components/Avatar";
 import { toArabicIndic } from "../arabic";
+import "./assessment-results.css";
 
 interface AssessmentResultsProps {
   child: Child;
   token: string;
   onAuthExpired: () => void;
   onBack: () => void;
+}
+
+/* Ring geometry lives in a 72×72 viewBox; radius 30 with an 8px stroke
+   leaves a comfortable center for the fraction. */
+const RING_RADIUS = 30;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+/** Therapeutic tone by score: comfortable → green, growing → amber, fresh start → soft blue. Never red. */
+function toneClassFor(correct: number, total: number): string {
+  const percent = total > 0 ? (correct / total) * 100 : 0;
+  if (percent >= 75) {
+    return "tone-green";
+  }
+  if (percent >= 40) {
+    return "tone-amber";
+  }
+  return "tone-blue";
+}
+
+/** Circular SVG score ring: the arc covers the correct share, the fraction sits in the middle. */
+function ScoreRing({ correct, total }: { correct: number; total: number }) {
+  const fraction = total > 0 ? Math.min(1, Math.max(0, correct / total)) : 0;
+  const dash = RING_CIRCUMFERENCE * fraction;
+  return (
+    <div className="score-ring">
+      <svg viewBox="0 0 72 72" aria-hidden="true" focusable="false">
+        <circle className="score-ring-track" cx="36" cy="36" r={RING_RADIUS} />
+        {fraction > 0 ? (
+          <circle
+            className="score-ring-fill"
+            cx="36"
+            cy="36"
+            r={RING_RADIUS}
+            strokeDasharray={`${dash.toFixed(2)} ${RING_CIRCUMFERENCE.toFixed(2)}`}
+          />
+        ) : null}
+      </svg>
+      <span className="score-ring-label" dir="ltr">
+        {toArabicIndic(correct)}
+        <small>/{toArabicIndic(total)}</small>
+      </span>
+    </div>
+  );
 }
 
 /** Parent/specialist view of the child's latest diagnostic results per skill. */
@@ -38,19 +82,31 @@ export function AssessmentResults({ child, token, onAuthExpired, onBack }: Asses
     void loadResults();
   }, [loadResults]);
 
+  const totalCorrect =
+    results?.reduce((sum, result) => sum + result.correct, 0) ?? 0;
+  const totalItems = results?.reduce((sum, result) => sum + result.total, 0) ?? 0;
+
   return (
     <main className="screen assessment-results">
-      <header className="play-header">
-        <button type="button" className="text-button" onClick={onBack}>
-          رجوع
-        </button>
-        <h1 className="screen-title">نتائج التشخيص</h1>
+      <header className="results-top">
+        <div className="results-top-row">
+          <button type="button" className="text-button" onClick={onBack}>
+            رجوع
+          </button>
+          <h1 className="results-title">نتائج التشخيص</h1>
+          <span className="results-top-tail" aria-hidden="true" />
+        </div>
       </header>
 
-      <div className="assessment-results-child">
-        <Avatar child={child} />
-        <span className="child-name">{child.fullName}</span>
-      </div>
+      <section className="results-child">
+        <div className="results-child-medal">
+          <Avatar child={child} />
+        </div>
+        <div className="results-child-copy">
+          <p className="results-child-name">{child.fullName}</p>
+          <p className="results-child-caption">نتائج الاختبار التشخيصي</p>
+        </div>
+      </section>
 
       {loading ? <p className="status-text">جارٍ التحميل…</p> : null}
       {!loading && loadError !== null ? (
@@ -65,23 +121,66 @@ export function AssessmentResults({ child, token, onAuthExpired, onBack }: Asses
       ) : null}
 
       {!loading && loadError === null && (results === null || results.length === 0) ? (
-        <p className="status-text">لم يُجرِ الطفل الاختبار بعد</p>
+        <div className="card results-empty">
+          <span className="results-empty-emoji" aria-hidden="true">
+            🌱
+          </span>
+          <p className="status-text">لم يُجرِ الطفل الاختبار بعد</p>
+          <p className="results-empty-hint">عند إجراء الاختبار التشخيصي ستظهر النتائج هنا</p>
+        </div>
       ) : null}
 
       {!loading && loadError === null && results !== null && results.length > 0 ? (
-        <ul className="assessment-results-list">
-          {results.map((result) => (
-            <li key={result.skillCode} className="card assessment-result-card">
-              <h2 className="assessment-result-skill">{result.skillName}</h2>
-              <p className="assessment-result-line">
-                أجاب بشكل صحيح على {toArabicIndic(result.correct)} من {toArabicIndic(result.total)}
+        <div className="results-body">
+          <section className="results-hero" aria-label="ملخص نتيجة الاختبار">
+            <span className="results-hero-spark is-top" aria-hidden="true">
+              ✦
+            </span>
+            <span className="results-hero-spark is-bottom" aria-hidden="true">
+              ✨
+            </span>
+            <p className="results-hero-fraction">
+              <span className="results-hero-correct">{toArabicIndic(totalCorrect)}</span>
+              <span className="results-hero-of">من</span>
+              <span className="results-hero-total">{toArabicIndic(totalItems)}</span>
+            </p>
+            <div className="results-hero-copy">
+              <p className="results-hero-caption">إجابة صحيحة في الاختبار كامل</p>
+              <p className="results-hero-note">
+                هذه نقطة البداية لرحلة {child.fullName} — المستويات تتطور مع اللعب
               </p>
-              <p className="assessment-result-line">
-                المستوى الابتدائي: {toArabicIndic(result.startingLevel)}
-              </p>
-            </li>
-          ))}
-        </ul>
+            </div>
+          </section>
+
+          <ul className="results-grid">
+            {results.map((result, index) => (
+              <li
+                key={result.skillCode}
+                className={`results-skill ${toneClassFor(result.correct, result.total)}`}
+                style={{ animationDelay: `${Math.min(index, 7) * 60}ms` }}
+              >
+                <ScoreRing correct={result.correct} total={result.total} />
+                <div className="results-skill-copy">
+                  <h2 className="results-skill-name">{result.skillName}</h2>
+                  <p className="level-badge">
+                    <span className="level-badge-text">
+                      المستوى الابتدائي: {toArabicIndic(result.startingLevel)}
+                    </span>
+                    <span className="level-dots" aria-hidden="true">
+                      {[1, 2, 3].map((step) => (
+                        <span key={step} className={step <= result.startingLevel ? "level-dot is-on" : "level-dot"} />
+                      ))}
+                    </span>
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <p className="results-footnote">
+            المستوى الابتدائي يحدد نقطة الانطلاق فقط — التقدم يقاس باللعب المنتظم
+          </p>
+        </div>
       ) : null}
     </main>
   );

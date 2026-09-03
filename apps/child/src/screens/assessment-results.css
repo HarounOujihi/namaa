@@ -1,0 +1,447 @@
+/* AssessmentResults — the parent/specialist view of the child's diagnostic.
+   A slim sticky way back, the child's identity medallion, one warm hero card
+   answering "how did the whole test go?" with a single big fraction, then a
+   wall of skill cards — each with a circular score ring and a starting-level
+   badge. Warm greens, ambers and soft blues only: a starting point, never a
+   failure. */
+
+.assessment-results {
+  /* therapeutic tones: growth green, effort amber, fresh-start blue — never red */
+  --res-green: #4f9d69;
+  --res-amber: #d99c3f;
+  --res-blue: #5e93c4;
+  --res-line: #f3dcc8;
+  --res-soft: #fdf1e3;
+}
+
+/* ── sticky slim header, mirroring the rewards top bar ────────────────── */
+
+.results-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  width: 100%;
+  padding: 6px 0 8px;
+  background: var(--bg);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  box-shadow: 0 6px 14px rgba(93, 64, 55, 0.08);
+}
+
+/* One row: رجوع on one end, the title centered, a spacer balancing the far end. */
+.results-top-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Slimmer than the global 64px text button, still a 44px touch target. */
+.results-top-row .text-button {
+  min-height: 44px;
+  padding: 4px 12px;
+  justify-self: start;
+}
+
+.results-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 4.5vw, 1.7rem);
+  text-align: center;
+}
+
+.results-top-tail {
+  justify-self: end;
+}
+
+.results-top-row .text-button:focus-visible {
+  outline: 3px solid var(--secondary);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+/* ── child identity: a gold medallion, the name, a small caption ──────── */
+
+.results-child {
+  width: min(640px, 100%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  background: var(--card);
+  border: 3px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 6px 16px rgba(93, 64, 55, 0.08);
+}
+
+/* a soft gold ring framing the avatar medallion */
+.results-child-medal {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  padding: 3px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffe3b8, #ffd280);
+  display: flex;
+}
+
+/* the global avatar is a 104px picker tile — shrink it to fit the row */
+.results-child-medal .avatar {
+  width: 100%;
+  height: 100%;
+  font-size: 2rem;
+  border: 0;
+  box-shadow: none;
+}
+
+.results-child-copy {
+  min-width: 0;
+}
+
+.results-child-name {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.4;
+  overflow-wrap: break-word;
+}
+
+.results-child-caption {
+  margin: 2px 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+/* ── body: hero + skill grid + footnote stay within a readable column ─── */
+
+.results-body {
+  width: min(640px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ── hero: the whole test in one warm glance ──────────────────────────── */
+
+.results-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: clamp(18px, 5vw, 28px) clamp(16px, 4vw, 26px);
+  border: 3px solid #ffd9ae;
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(90% 150% at 88% 0%, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0) 58%),
+    linear-gradient(135deg, #ffeeda 0%, #ffe3c2 52%, #ffd8b0 100%);
+  box-shadow: 0 10px 24px rgba(245, 166, 35, 0.2);
+  overflow: clip;
+}
+
+/* decorative sparks only — never announced */
+.results-hero-spark {
+  position: absolute;
+  font-size: 1.3rem;
+  opacity: 0.7;
+}
+
+.results-hero-spark.is-top {
+  top: 10px;
+  inset-inline-start: 14px;
+}
+
+.results-hero-spark.is-bottom {
+  bottom: 10px;
+  inset-inline-end: 16px;
+}
+
+/* the single biggest number on the screen: correct من total */
+.results-hero-fraction {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  line-height: 1.1;
+}
+
+.results-hero-correct {
+  font-size: clamp(2.8rem, 12vw, 3.6rem);
+  font-weight: 900;
+  color: var(--ink);
+}
+
+.results-hero-of {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.results-hero-total {
+  font-size: clamp(1.7rem, 7vw, 2.2rem);
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+.results-hero-caption {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.results-hero-note {
+  margin: 4px 0 0;
+  max-width: 42ch;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  line-height: 1.8;
+}
+
+/* ── skill cards: score ring + name + starting-level badge ────────────── */
+
+.results-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+/* tone vars drive the ring arc and the level badge per score band */
+.results-skill.tone-green {
+  --tone: var(--res-green);
+  --tone-soft: #e9f4ed;
+}
+
+.results-skill.tone-amber {
+  --tone: var(--res-amber);
+  --tone-soft: #faf1de;
+}
+
+.results-skill.tone-blue {
+  --tone: var(--res-blue);
+  --tone-soft: #e9f1f8;
+}
+
+.results-skill {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 14px;
+  background: var(--card);
+  border: 3px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(93, 64, 55, 0.06);
+}
+
+.results-skill-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.results-skill-name {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.45;
+  overflow-wrap: break-word;
+}
+
+/* the circular score ring: track + arc share one currentColor */
+.score-ring {
+  position: relative;
+  flex-shrink: 0;
+  width: 76px;
+  height: 76px;
+  color: var(--tone);
+}
+
+.score-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.score-ring-track {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 8;
+  opacity: 0.18;
+}
+
+.score-ring-fill {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 8;
+  stroke-linecap: round;
+}
+
+/* fraction centered inside; dir=ltr keeps correct before total */
+.score-ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.score-ring-label small {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+/* starting-level badge: a soft pill with three segments filled to the level */
+.level-badge {
+  margin: 0;
+  width: fit-content;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--tone-soft);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.level-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.level-dot {
+  width: 16px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(93, 64, 55, 0.14);
+}
+
+.level-dot.is-on {
+  background: var(--tone);
+}
+
+/* ── positive framing footnote ────────────────────────────────────────── */
+
+.results-footnote {
+  margin: 0;
+  padding: 12px 18px;
+  border: 2px solid var(--res-line);
+  border-radius: var(--radius-md);
+  background: var(--res-soft);
+  color: var(--ink-soft);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.8;
+  text-align: center;
+}
+
+/* ── empty state: nothing wrong, nothing taken yet ────────────────────── */
+
+.results-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.results-empty-emoji {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.results-empty-hint {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+/* ── desktop: two skill columns and a side-by-side hero ───────────────── */
+
+@media (min-width: 640px) {
+  .results-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .score-ring {
+    width: 84px;
+    height: 84px;
+  }
+
+  .results-hero {
+    flex-direction: row;
+    justify-content: center;
+    text-align: start;
+    gap: clamp(18px, 4vw, 32px);
+  }
+
+  .results-hero-copy {
+    flex: 1;
+  }
+}
+
+/* ── motion: a gentle rise for the hero, capped pop-in for the cards ──── */
+
+@keyframes results-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes results-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.results-child,
+.results-hero {
+  animation: results-rise 0.45s ease-out both;
+}
+
+.results-skill {
+  animation: results-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .results-child,
+  .results-hero,
+  .results-skill {
+    animation: none;
+  }
+}

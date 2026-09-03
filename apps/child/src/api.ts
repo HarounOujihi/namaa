@@ -200,3 +200,15 @@ export function getRecommendations(token: string, childId: string): Promise<Play
 export function getChildSettings(token: string, childId: string): Promise<ChildSettings> {
   return request<ChildSettings>(`/children/${encodeURIComponent(childId)}/settings`, { token });
 }
+
+export function updateChildSettings(
+  token: string,
+  childId: string,
+  input: { dailyLimitMinutes?: number | null; reminderEnabled?: boolean; reminderTime?: string | null },
+): Promise<ChildSettings> {
+  return request<ChildSettings>(`/children/${encodeURIComponent(childId)}/settings`, {
+    method: "PUT",
+    token,
+    body: input,
+  });
+}
