@@ -12,6 +12,21 @@ export interface AuthResponse {
   user: User;
 }
 
+// ---------- Admin users ----------
+
+export interface AdminUser extends User {
+  locale: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface UserCreatePayload {
+  email: string;
+  password: string;
+  fullName: string;
+  role: Role;
+}
+
 export interface ValidationError {
   path: string;
   message: string;

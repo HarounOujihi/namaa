@@ -9,6 +9,7 @@ import { AssessmentsPage } from "@/features/assessments/assessments-page";
 import { RoadmapPage } from "@/features/roadmap/roadmap-page";
 import { AssetsPage } from "@/features/assets/assets-page";
 import { PlatformSoundsPage } from "@/features/sounds/platform-sounds-page";
+import { UsersPage } from "@/features/users/users-page";
 import { AuthProvider, useAuth } from "@/lib/auth";
 
 function RequireAuth({ children }: { children: React.ReactElement }) {
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="roadmap" element={<RoadmapPage />} />
             <Route path="assets" element={<AssetsPage />} />
             <Route path="sounds" element={<PlatformSoundsPage />} />
+            <Route path="users" element={<UsersPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

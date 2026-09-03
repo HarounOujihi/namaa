@@ -103,6 +103,17 @@ export function login(email: string, password: string): Promise<AuthResponse> {
   return request<AuthResponse>("/auth/login", { method: "POST", body: { email, password } });
 }
 
+export function register(
+  fullName: string,
+  email: string,
+  password: string,
+): Promise<AuthResponse> {
+  return request<AuthResponse>("/auth/register", {
+    method: "POST",
+    body: { fullName, email, password, role: "PARENT" },
+  });
+}
+
 export function updateLocale(locale: AppLocale): Promise<{ locale: AppLocale }> {
   return request<{ locale: AppLocale }>("/auth/locale", { method: "PUT", body: { locale } });
 }

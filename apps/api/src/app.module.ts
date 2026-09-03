@@ -16,6 +16,7 @@ import { RewardsModule } from './rewards/rewards.module';
 import { ParentModule } from './parent/parent.module';
 import { SpecialistModule } from './specialist/specialist.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { UsersAdminModule } from './users-admin/users-admin.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     ParentModule,
     SpecialistModule,
     AnalyticsModule,
+    UsersAdminModule,
     InvitesModule,
     AssetsModule,
   ],

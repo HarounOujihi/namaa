@@ -20,15 +20,26 @@
     "retry": "Try again"
   },
   "login": {
-    "title": "Care Portal",
-    "subtitle": "Enter your email and password to continue",
     "email": "Email",
     "emailPlaceholder": "name@example.com",
     "password": "Password",
     "passwordPlaceholder": "••••••••",
-    "submit": "Sign in",
     "pending": "Signing in…",
-    "invalid": "Invalid credentials"
+    "invalid": "Invalid credentials",
+    "signup": {
+      "link": "Create a new account",
+      "title": "New parent account",
+      "subtitle": "Create your account to follow your child's journey",
+      "fullName": "Full name",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "backToLogin": "Sign in",
+      "emailTaken": "This email is already registered",
+      "passwordHint": "At least 8 characters"
+    },
+    "title": "Care Portal",
+    "subtitle": "Enter your email and password to continue",
+    "submit": "Sign in"
   },
   "dashboard": {
     "greeting": "Welcome, {name}",

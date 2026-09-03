@@ -1,5 +1,6 @@
 import type {
   AdminStats,
+  AdminUser,
   AgeGroup,
   AssessmentCreatePayload,
   AssessmentDetail,
@@ -25,9 +26,11 @@ import type {
   RoadmapStage,
   RoadmapStageItem,
   RoadmapSummary,
+  Role,
   Skill,
   StageUpdatePayload,
   User,
+  UserCreatePayload,
   ValidationResult,
   AppSound,
   AppSoundUpdatePayload,
@@ -392,5 +395,34 @@ export function updateAppSound(key: string, payload: AppSoundUpdatePayload): Pro
   return request<AppSound>(`/admin/app-sounds/${encodeURIComponent(key)}`, {
     method: "PUT",
     body: payload,
+  });
+}
+
+// ---------- Admin users ----------
+
+export interface UserFilters {
+  q?: string;
+  role?: Role;
+}
+
+export function listUsers(filters: UserFilters = {}): Promise<AdminUser[]> {
+  return request<AdminUser[]>(`/admin/users${encodeQuery({ q: filters.q, role: filters.role })}`);
+}
+
+export function createUser(payload: UserCreatePayload): Promise<AdminUser> {
+  return request<AdminUser>("/admin/users", { method: "POST", body: payload });
+}
+
+export function setUserActive(id: string, active: boolean): Promise<AdminUser> {
+  return request<AdminUser>(`/admin/users/${id}/active`, {
+    method: "PATCH",
+    body: { active },
+  });
+}
+
+export function resetUserPassword(id: string, password: string): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>(`/admin/users/${id}/password`, {
+    method: "PUT",
+    body: { password },
   });
 }

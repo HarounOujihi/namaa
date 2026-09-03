@@ -9,6 +9,8 @@ const STATUS_CLASS: Record<string, string> = {
   REVIEW: "border-amber-500/30 bg-amber-500/15 text-amber-700 dark:text-amber-400",
   PUBLISHED: "border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
   ARCHIVED: "border-transparent bg-muted/60 text-muted-foreground/70",
+  ACTIVE: "border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  INACTIVE: "border-transparent bg-muted/60 text-muted-foreground/70",
 };
 
 export function StatusBadge({ status, className }: { status: string; className?: string }) {

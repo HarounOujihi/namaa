@@ -20,15 +20,26 @@
     "retry": "Réessayer"
   },
   "login": {
-    "title": "Portail de suivi",
-    "subtitle": "Entrez votre e-mail et votre mot de passe pour continuer",
     "email": "E-mail",
     "emailPlaceholder": "nom@exemple.com",
     "password": "Mot de passe",
     "passwordPlaceholder": "••••••••",
-    "submit": "Connexion",
     "pending": "Connexion…",
-    "invalid": "Identifiants invalides"
+    "invalid": "Identifiants invalides",
+    "signup": {
+      "link": "Créer un compte",
+      "title": "Nouveau compte parent",
+      "subtitle": "Créez votre compte pour suivre le parcours de votre enfant",
+      "fullName": "Nom complet",
+      "submit": "Créer le compte",
+      "haveAccount": "Vous avez déjà un compte ?",
+      "backToLogin": "Connexion",
+      "emailTaken": "Cet e-mail est déjà enregistré",
+      "passwordHint": "Au moins 8 caractères"
+    },
+    "title": "Portail de suivi",
+    "subtitle": "Entrez votre e-mail et mot de passe",
+    "submit": "Connexion"
   },
   "dashboard": {
     "greeting": "Bienvenue, {name}",

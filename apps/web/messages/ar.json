@@ -20,15 +20,26 @@
     "retry": "إعادة المحاولة"
   },
   "login": {
-    "title": "بوابة المتابعة",
-    "subtitle": "أدخل بريدك الإلكتروني وكلمة المرور للمتابعة",
     "email": "البريد الإلكتروني",
     "emailPlaceholder": "name@example.com",
     "password": "كلمة المرور",
     "passwordPlaceholder": "••••••••",
-    "submit": "دخول",
     "pending": "جارٍ الدخول…",
-    "invalid": "بيانات الدخول غير صحيحة"
+    "invalid": "بيانات الدخول غير صحيحة",
+    "signup": {
+      "link": "إنشاء حساب جديد",
+      "title": "حساب ولي أمر جديد",
+      "subtitle": "أنشئ حسابك لمتابعة رحلة طفلك",
+      "fullName": "الاسم الكامل",
+      "submit": "إنشاء الحساب",
+      "haveAccount": "لدي حساب بالفعل",
+      "backToLogin": "تسجيل الدخول",
+      "emailTaken": "هذا البريد مسجل بالفعل",
+      "passwordHint": "٨ أحرف على الأقل"
+    },
+    "title": "بوابة المتابعة",
+    "subtitle": "أدخل بريدك وكلمة المرور للمتابعة",
+    "submit": "دخول"
   },
   "dashboard": {
     "greeting": "أهلاً بك، {name}",
