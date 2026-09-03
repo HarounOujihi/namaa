@@ -104,7 +104,7 @@ export function EditChildDialog({ token, child, onAuthExpired, onSaved, onCancel
   return (
     <Dialog title={`إدارة ملف ${child.fullName}`} onClose={onCancel}>
       <form className="form" onSubmit={handleSubmit}>
-        <h3 className="dialog-section-title">البيانات الأساسية</h3>
+        <h3 className="dialog-section-title"><span aria-hidden>👤</span>البيانات الأساسية</h3>
         <label className="field">
           <span className="field-label">الاسم الكامل</span>
           <input
@@ -123,7 +123,7 @@ export function EditChildDialog({ token, child, onAuthExpired, onSaved, onCancel
           />
         </label>
 
-        <h3 className="dialog-section-title">وقت الاستخدام</h3>
+        <h3 className="dialog-section-title"><span aria-hidden>⏰</span>وقت الاستخدام</h3>
         <label className="field">
           <span className="field-label">الحد اليومي (بالدقائق)</span>
           <input

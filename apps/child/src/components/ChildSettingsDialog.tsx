@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { ApiError, getChildSettings, updateChildSettings } from "../api";
+import { Dialog } from "./Dialog";
 import type { Child } from "../types";
 
 interface ChildSettingsDialogProps {
@@ -91,10 +92,7 @@ export function ChildSettingsDialog({ token, child, onClose, onSaved, onAuthExpi
   );
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <div className="dialog" role="dialog" aria-label={`إعدادات ${child.fullName}`} onClick={(e) => e.stopPropagation()}>
-        <h2 className="dialog-title">إعدادات {child.fullName}</h2>
-
+    <Dialog title={`إعدادات ${child.fullName}`} onClose={onClose}>
         {loading ? <p className="status-text">جارٍ التحميل…</p> : null}
         {error !== null ? (
           <p className="form-error" role="alert">
@@ -160,7 +158,6 @@ export function ChildSettingsDialog({ token, child, onClose, onSaved, onAuthExpi
             </div>
           </form>
         ) : null}
-      </div>
-    </div>
+    </Dialog>
   );
 }
