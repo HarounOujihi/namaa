@@ -2,21 +2,23 @@
   "name": "@dyslexia/exercise-core",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && esbuild src/index.ts --bundle --platform=node --format=cjs --target=node18 --outfile=dist/index.cjs",
     "test": "vitest run"
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
-  }
+  },
+  "type": "module"
 }

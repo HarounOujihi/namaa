@@ -8,3 +8,4 @@ dist/
 .DS_Store
 .~lock.*
 *.log
+deploy.secrets.env
