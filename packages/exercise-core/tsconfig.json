@@ -12,7 +12,8 @@
     "rootDir": "./src",
     "noEmit": false,
     "declarationMap": true,
-    "types": []
+    "types": [],
+    "emitDeclarationOnly": true
   },
   "include": [
     "src"
