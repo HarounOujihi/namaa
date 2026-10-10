@@ -106,3 +106,50 @@ packages/
 ## Status
 
 Phases 0–8 complete (identity & roles, CMS, exercise engine, diagnostic assessment, progression engine, gamification, parent portal, specialist workspace). Next per the internal plan: graphical Phaser games, analytics dashboards, Capacitor mobile packaging with offline sync, production hardening.
+
+
+---
+
+## Production Deployment (Vercel + Neon + S3)
+
+The platform is deployed on **Vercel** (4 projects from the `main` branch) with a **Neon PostgreSQL** database and an **S3-compatible storage** bucket for uploaded assets.
+
+### Production URLs
+
+| App | URL |
+|---|---|
+| 🧒 Child app | https://namaa-6ren.vercel.app |
+| 👨‍👩‍👧 Parent/Specialist portal | https://namaa-web-ruby.vercel.app |
+| 🛠 Admin CMS | https://namaa-admin-five.vercel.app |
+| 🔌 API + Swagger | https://namaa-steel.vercel.app · /docs |
+
+### Production credentials
+
+| Role | Email | Password |
+|---|---|---|
+| Super Admin | `admin@dyslexia.local` | `ChangeMe!123` |
+| Parent | `parent1@test.com` | `password123` |
+| Specialist | `spec1@test.com` | `password123` |
+
+> ⚠️ Rotate these before real users.
+
+### Database (Neon)
+
+```
+DATABASE_URL=postgresql://neondb_owner:npg_FCodayIn8G9H@ep-calm-moon-b41rfr2v-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
+```
+
+All 9 migrations are applied and the database is seeded (1 super admin, 9 skills, 9 roadmap stages, 7 exercise types, 9 exercises, 8 assessment items, 9 badges, 5 customization items).
+
+### Asset storage (S3-compatible)
+
+| Variable | Value |
+|---|---|
+| `S3_ENDPOINT` | `https://s3.mahd.cloud/mahd` |
+| `S3_BUCKET` | `pub-sawi` |
+
+Assets (exercise audio/images, avatars, platform sounds) are stored as **keys only** — presigned URLs are generated per request. Removing storage doesn't break the app: the engine falls back to Arabic TTS and emoji avatars.
+
+### Redeploying
+
+Pushes to `main` auto-deploy all four Vercel projects. To manually trigger: Vercel dashboard → project → Redeploy (or `vercel redeploy <url>` via CLI).
