@@ -427,18 +427,18 @@ export function resetUserPassword(id: string, password: string): Promise<{ ok: b
   });
 }
 
-export function createRoadmap(name: string, order?: number): Promise<unknown> {
-  return request<unknown>("/admin/roadmaps", { method: "POST", body: { name, order: order ?? 0 } });
+export function createRoadmap(name: string, order?: number): Promise<RoadmapDetail> {
+  return request<RoadmapDetail>("/admin/roadmaps", { method: "POST", body: { name, order } });
 }
 
-export function toggleRoadmapActive(id: string, isActive: boolean): Promise<unknown> {
-  return request<unknown>(`/admin/roadmaps/${id}`, { method: "PATCH", body: { isActive } });
+export function updateRoadmap(id: string, payload: { name?: string; order?: number; isActive?: boolean }): Promise<RoadmapDetail> {
+  return request<RoadmapDetail>(`/admin/roadmaps/${id}`, { method: "PUT", body: payload });
 }
 
-export function createRoadmapVersion(id: string): Promise<unknown> {
-  return request<unknown>(`/admin/roadmaps/${id}/versions`, { method: "POST" });
+export function createRoadmapVersion(id: string): Promise<RoadmapDetail> {
+  return request<RoadmapDetail>(`/admin/roadmaps/${id}/versions`, { method: "POST" });
 }
 
-export function publishRoadmapVersion(versionId: string): Promise<unknown> {
-  return request<unknown>(`/admin/roadmap-versions/${versionId}/publish`, { method: "POST" });
+export function publishRoadmapVersion(versionId: string): Promise<RoadmapDetail> {
+  return request<RoadmapDetail>(`/admin/roadmap-versions/${versionId}/publish`, { method: "POST" });
 }

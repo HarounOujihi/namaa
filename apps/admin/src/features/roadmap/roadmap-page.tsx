@@ -19,6 +19,8 @@ import {
 import { SimpleSelect } from "@/components/simple-select";
 import { StatusBadge } from "@/components/status-badge";
 import {
+  createRoadmap,
+  updateRoadmap,
   addStageItem,
   deleteStageItem,
   getRoadmap,
@@ -44,6 +46,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import type { FormEvent } from "react";
 
 function parseOptionalNumber(text: string): number | null | undefined {
   if (text.trim() === "") {
@@ -424,13 +427,13 @@ function StageCard({
 
 function StageRail({
   roadmapName,
-  isDefault,
+  isActive,
   version,
   stages,
   onJump,
 }: {
   roadmapName: string;
-  isDefault: boolean;
+  isActive: boolean;
   version: RoadmapVersion;
   stages: RoadmapStage[];
   onJump: (stageId: string) => void;
@@ -446,7 +449,7 @@ function StageRail({
               v{version.version}
             </Badge>
             <StatusBadge status={version.status} />
-            {isDefault ? <Badge variant="outline">Default</Badge> : null}
+            {isActive ? <Badge variant="outline">Active</Badge> : null}
           </div>
           {version.publishedAt !== null ? (
             <p className="mt-2 text-xs text-muted-foreground">
@@ -511,6 +514,7 @@ export function RoadmapPage() {
     reload: reloadRoadmaps,
   } = useQuery(() => listRoadmaps(), []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
     if (roadmaps === null) {
@@ -543,7 +547,7 @@ export function RoadmapPage() {
 
   const roadmapOptions = (roadmaps ?? []).map((summary) => ({
     value: summary.id,
-    label: summary.isDefault ? `${summary.name} · Default` : summary.name,
+    label: summary.isActive ? `${summary.name}` : `${summary.name} (inactive)`,
   }));
   const refreshing = roadmapsLoading || roadmapLoading;
 
@@ -580,13 +584,30 @@ export function RoadmapPage() {
             <RefreshCwIcon className={cn(refreshing && "animate-spin")} />
             Refresh
           </Button>
+          {roadmap !== null && !roadmapLoading ? (
+            <ToggleActiveButton
+              id={roadmap.id}
+              isActive={roadmap.isActive}
+              onDone={() => reloadRoadmap()}
+            />
+          ) : null}
+          <Button type="button" onClick={() => setShowCreate(true)}>
+            <PlusIcon />
+            New roadmap
+          </Button>
         </div>
       </div>
 
       {roadmapsError !== null ? <ErrorState message={roadmapsError} onRetry={reloadRoadmaps} /> : null}
       {roadmapsError === null && roadmapsLoading ? <RoadmapSkeleton /> : null}
+      {showCreate ? (
+        <CreateRoadmapDialog
+          onClose={() => setShowCreate(false)}
+          onCreated={(id) => { setShowCreate(false); setSelectedId(id); reloadRoadmaps(); }}
+        />
+      ) : null}
       {roadmapsError === null && !roadmapsLoading && roadmaps !== null ? (
-        roadmaps.length === 0 ? (
+        roadmaps.length === 0? (
           <EmptyState
             title="No roadmaps yet"
             description="Roadmaps are created by the platform; none exist so far."
@@ -596,7 +617,7 @@ export function RoadmapPage() {
             {roadmap !== null && version !== null ? (
               <StageRail
                 roadmapName={roadmap.name}
-                isDefault={roadmap.isDefault}
+                isActive={roadmap.isActive}
                 version={version}
                 stages={stages}
                 onJump={handleJump}
@@ -661,5 +682,67 @@ export function RoadmapPage() {
         )
       ) : null}
     </div>
+  );
+}
+
+
+function CreateRoadmapDialog({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
+  const [name, setName] = useState("");
+  const [pending, setPending] = useState(false);
+
+  async function handleCreate(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+    if (pending || name.trim().length < 2) return;
+    setPending(true);
+    try {
+      const created = await createRoadmap(name.trim());
+      toast.success("Roadmap created");
+      onCreated(created.id);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="dialog-backdrop" onClick={onClose}>
+      <div className="dialog" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <h2 className="dialog-title">New roadmap</h2>
+        <form className="form" onSubmit={handleCreate}>
+          <div className="field">
+            <span className="field-label">Name</span>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} autoFocus />
+          </div>
+          <div className="dialog-actions">
+            <button type="button" className="big-button secondary" onClick={onClose}>Cancel</button>
+            <button type="submit" className="big-button" disabled={pending || name.trim().length < 2}>
+              {pending ? "Creating…" : "Create"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function ToggleActiveButton({ id, isActive, onDone }: { id: string; isActive: boolean; onDone: () => void }) {
+  const [pending, setPending] = useState(false);
+  async function handleToggle(): Promise<void> {
+    if (pending) return;
+    setPending(true);
+    try {
+      await updateRoadmap(id, { isActive: !isActive });
+      onDone();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setPending(false);
+    }
+  }
+  return (
+    <button type="button" className="text-button" onClick={() => void handleToggle()} disabled={pending}>
+      {pending ? "…" : isActive ? "Deactivate" : "Activate"}
+    </button>
   );
 }

@@ -177,7 +177,7 @@ export interface ValidationResult {
 export interface RoadmapSummary {
   id: string;
   name: string;
-  isDefault: boolean;
+  isActive: boolean;
 }
 
 export interface RoadmapStageItem {
@@ -208,7 +208,7 @@ export interface RoadmapVersion {
 export interface RoadmapDetail {
   id: string;
   name: string;
-  isDefault: boolean;
+  isActive: boolean;
   versions: RoadmapVersion[];
 }
 
