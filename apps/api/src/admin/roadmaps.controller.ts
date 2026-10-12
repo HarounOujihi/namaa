@@ -6,8 +6,8 @@ import {
   HttpCode,
   Param,
   Patch,
-  Put,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
@@ -48,15 +48,10 @@ export class RoadmapsController {
     return this.roadmaps.update(id, dto);
   }
 
-  @Post('roadmaps/:id/versions')
-  @HttpCode(201)
-  createVersion(@Param('id') id: string) {
-    return this.roadmaps.createVersion(id);
-  }
-
-  @Post('roadmap-versions/:id/publish')
-  publishVersion(@Param('id') id: string) {
-    return this.roadmaps.publishVersion(id);
+  @Delete('roadmaps/:id')
+  @HttpCode(204)
+  removeRoadmap(@Param('id') id: string) {
+    return this.roadmaps.removeRoadmap(id);
   }
 
   @Patch('roadmaps/:id/active')
@@ -69,9 +64,32 @@ export class RoadmapsController {
     return this.roadmaps.reorder(id, dto.order);
   }
 
+  @Post('roadmaps/:id/versions')
+  @HttpCode(201)
+  createVersion(@Param('id') id: string) {
+    return this.roadmaps.createVersion(id);
+  }
+
+  @Post('roadmap-versions/:id/publish')
+  publishVersion(@Param('id') id: string) {
+    return this.roadmaps.publishVersion(id);
+  }
+
+  @Post('roadmap-versions/:id/stages')
+  @HttpCode(201)
+  addStage(@Param('id') versionId: string, @Body() dto: { name: string }) {
+    return this.roadmaps.addStage(versionId, dto);
+  }
+
   @Patch('stages/:id')
   patchStage(@Param('id') id: string, @Body() dto: StagePatchDto) {
     return this.roadmaps.patchStage(id, dto);
+  }
+
+  @Delete('stages/:id')
+  @HttpCode(204)
+  removeStage(@Param('id') id: string) {
+    return this.roadmaps.removeStage(id);
   }
 
   @Post('stages/:id/items')

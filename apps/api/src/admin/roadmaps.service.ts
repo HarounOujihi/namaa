@@ -225,5 +225,27 @@ export class RoadmapsService {
       data: { order: dto.order },
     });
   }
+
+  async addStage(versionId: string, dto: { name: string }) {
+    const rv = await this.prisma.roadmapVersion.findUnique({ where: { id: versionId } });
+    if (!rv) throw new NotFoundException('Roadmap version not found');
+    if (rv.status !== 'DRAFT') throw new BadRequestException('Only DRAFT versions can be edited');
+    const last = await this.prisma.roadmapStage.findFirst({
+      where: { roadmapVersionId: versionId },
+      orderBy: { order: 'desc' },
+      select: { order: true },
+    });
+    return this.prisma.roadmapStage.create({
+      data: { roadmapVersionId: versionId, name: dto.name, order: (last?.order ?? 0) + 1, masteryThreshold: 0.8 },
+    });
+  }
+
+  async removeStage(stageId: string): Promise<void> {
+    await this.prisma.roadmapStage.delete({ where: { id: stageId } });
+  }
+
+  async removeRoadmap(roadmapId: string): Promise<void> {
+    await this.prisma.roadmap.delete({ where: { id: roadmapId } });
+  }
 }
 

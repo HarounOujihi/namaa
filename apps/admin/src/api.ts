@@ -442,3 +442,15 @@ export function createRoadmapVersion(id: string): Promise<RoadmapDetail> {
 export function publishRoadmapVersion(versionId: string): Promise<RoadmapDetail> {
   return request<RoadmapDetail>(`/admin/roadmap-versions/${versionId}/publish`, { method: "POST" });
 }
+
+export function addRoadmapStage(versionId: string, name: string): Promise<unknown> {
+  return request<unknown>(`/admin/roadmap-versions/${versionId}/stages`, { method: "POST", body: { name } });
+}
+
+export function removeRoadmapStage(stageId: string): Promise<void> {
+  return request<void>(`/admin/stages/${stageId}`, { method: "DELETE" });
+}
+
+export function deleteRoadmap(roadmapId: string): Promise<void> {
+  return request<void>(`/admin/roadmaps/${roadmapId}`, { method: "DELETE" });
+}

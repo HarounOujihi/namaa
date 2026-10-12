@@ -38,6 +38,8 @@ import {
   publishRoadmapVersion,
   updateStage,
   updateStageItemOrder,
+  deleteRoadmap,
+  addRoadmapStage,
 } from "@/api";
 import type {
   ExerciseListItem,
@@ -872,6 +874,20 @@ function RoadmapDetailView({ roadmapId, onBack }: { roadmapId: string; onBack: (
           .filter((candidate) => candidate.status === "DRAFT")
           .sort((a, b) => b.version - a.version)[0] ?? null;
 
+  async function handleDeleteRoadmap(): Promise<void> {
+    if (versionBusy) return;
+    setVersionBusy(true);
+    try {
+      await deleteRoadmap(roadmapId);
+      toast.success("Roadmap deleted");
+      onBack();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setVersionBusy(false);
+    }
+  }
+
   async function handleNewVersion(): Promise<void> {
     if (versionBusy || roadmap === null) {
       return;
@@ -970,6 +986,9 @@ function RoadmapDetailView({ roadmapId, onBack }: { roadmapId: string; onBack: (
             <RefreshCwIcon className={cn(roadmapLoading && "animate-spin")} />
             Refresh
           </Button>
+          <Button type="button" variant="destructive" disabled={versionBusy} onClick={() => void handleDeleteRoadmap()}>
+            Delete roadmap
+          </Button>
         </div>
       </div>
 
@@ -1010,7 +1029,7 @@ function RoadmapDetailView({ roadmapId, onBack }: { roadmapId: string; onBack: (
               {stages.length === 0 ? (
                 <EmptyState
                   title="No stages in this version"
-                  description="Stages are defined when the roadmap version is authored."
+                  description="Use the Add stage button below to create one."
                 />
               ) : (
                 stages.map((stage) => (
@@ -1022,6 +1041,21 @@ function RoadmapDetailView({ roadmapId, onBack }: { roadmapId: string; onBack: (
                   />
                 ))
               )}
+              {draft !== null ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    const name = window.prompt("Stage name");
+                    if (name !== null && name.trim().length >= 1) {
+                      void addRoadmapStage(version.id, name.trim()).then(() => reloadRoadmap());
+                    }
+                  }}
+                >
+                  + Add stage
+                </Button>
+              ) : null}
             </div>
           </div>
         )
