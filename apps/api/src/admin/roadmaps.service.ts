@@ -13,6 +13,91 @@ export class RoadmapsService {
     });
   }
 
+  async create(dto: { name: string; order?: number }) {
+    const roadmap = await this.prisma.roadmap.create({
+      data: { name: dto.name, order: dto.order ?? 0, isActive: true },
+      include: { _count: { select: { versions: true } } },
+    });
+    await this.prisma.roadmapVersion.create({
+      data: { roadmapId: roadmap.id, version: 1, status: 'DRAFT' },
+    });
+    return this.get(roadmap.id);
+  }
+
+  async update(id: string, dto: { name?: string; order?: number; isActive?: boolean }) {
+    await this.prisma.roadmap.update({ where: { id }, data: dto });
+    return this.get(id);
+  }
+
+  async createVersion(roadmapId: string) {
+    const latest = await this.prisma.roadmapVersion.findFirst({
+      where: { roadmapId },
+      orderBy: { version: 'desc' },
+      include: { stages: { include: { stageItems: true, requiredSkills: true, prerequisites: true } } },
+    });
+    if (!latest) throw new NotFoundException('Roadmap has no versions');
+    const version = await this.prisma.roadmapVersion.create({
+      data: { roadmapId, version: latest.version + 1, status: 'DRAFT' },
+    });
+    for (const stage of latest.stages) {
+      const newStage = await this.prisma.roadmapStage.create({
+        data: {
+          roadmapVersionId: version.id, name: stage.name, order: stage.order,
+          masteryThreshold: stage.masteryThreshold, minAccuracy: stage.minAccuracy,
+          minSuccessfulAttempts: stage.minSuccessfulAttempts,
+        },
+      });
+      for (const rs of stage.requiredSkills) {
+        await this.prisma.roadmapStageSkill.create({ data: { roadmapStageId: newStage.id, skillId: rs.skillId } });
+      }
+      for (const si of stage.stageItems) {
+        await this.prisma.stageItem.create({ data: { roadmapStageId: newStage.id, exerciseId: si.exerciseId, order: si.order, itemType: si.itemType } });
+      }
+      // prerequisites
+      for (const prereq of stage.prerequisites) {
+        const prevStage = await this.prisma.roadmapStage.findFirst({
+          where: { roadmapVersionId: version.id, order: prereq.order },
+        });
+        if (prevStage) {
+          await this.prisma.roadmapStage.update({
+            where: { id: newStage.id },
+            data: { prerequisites: { connect: [{ id: prevStage.id }] } },
+          });
+        }
+      }
+    }
+    return this.get(roadmapId);
+  }
+
+  async publishVersion(versionId: string) {
+    const version = await this.prisma.roadmapVersion.findUnique({
+      where: { id: versionId },
+      include: { stages: true },
+    });
+    if (!version) throw new NotFoundException('Version not found');
+    if (version.stages.length === 0) throw new BadRequestException('Cannot publish a version with no stages');
+    await this.prisma.$transaction([
+      this.prisma.roadmapVersion.updateMany({
+        where: { roadmapId: version.roadmapId, status: 'PUBLISHED' },
+        data: { status: 'ARCHIVED' },
+      }),
+      this.prisma.roadmapVersion.update({
+        where: { id: versionId },
+        data: { status: 'PUBLISHED', publishedAt: new Date() },
+      }),
+    ]);
+    return this.get(version.roadmapId);
+  }
+
+  async toggleActive(roadmapId: string, active: boolean) {
+    await this.prisma.roadmap.update({ where: { id: roadmapId }, data: { isActive: active } });
+    return this.get(roadmapId);
+  }
+
+  async reorder(roadmapId: string, order: number) {
+    await this.prisma.roadmap.update({ where: { id: roadmapId }, data: { order } });
+  }
+
   async get(id: string) {
     const roadmap = await this.prisma.roadmap.findUnique({
       where: { id },

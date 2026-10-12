@@ -426,3 +426,19 @@ export function resetUserPassword(id: string, password: string): Promise<{ ok: b
     body: { password },
   });
 }
+
+export function createRoadmap(name: string, order?: number): Promise<unknown> {
+  return request<unknown>("/admin/roadmaps", { method: "POST", body: { name, order: order ?? 0 } });
+}
+
+export function toggleRoadmapActive(id: string, isActive: boolean): Promise<unknown> {
+  return request<unknown>(`/admin/roadmaps/${id}`, { method: "PATCH", body: { isActive } });
+}
+
+export function createRoadmapVersion(id: string): Promise<unknown> {
+  return request<unknown>(`/admin/roadmaps/${id}/versions`, { method: "POST" });
+}
+
+export function publishRoadmapVersion(versionId: string): Promise<unknown> {
+  return request<unknown>(`/admin/roadmap-versions/${versionId}/publish`, { method: "POST" });
+}

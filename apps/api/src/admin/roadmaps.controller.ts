@@ -6,6 +6,7 @@ import {
   HttpCode,
   Param,
   Patch,
+  Put,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -13,6 +14,7 @@ import { UserRole } from '@prisma/client';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RoadmapsService } from './roadmaps.service';
 import { StageItemCreateDto, StageItemOrderDto, StagePatchDto } from './dto/admin.dto';
+import { CreateRoadmapDto, UpdateRoadmapDto } from './dto/roadmap.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -30,9 +32,41 @@ export class RoadmapsController {
     return this.roadmaps.list();
   }
 
+  @Post('roadmaps')
+  @HttpCode(201)
+  create(@Body() dto: CreateRoadmapDto) {
+    return this.roadmaps.create(dto);
+  }
+
   @Get('roadmaps/:id')
   get(@Param('id') id: string) {
     return this.roadmaps.get(id);
+  }
+
+  @Put('roadmaps/:id')
+  update(@Param('id') id: string, @Body() dto: UpdateRoadmapDto) {
+    return this.roadmaps.update(id, dto);
+  }
+
+  @Post('roadmaps/:id/versions')
+  @HttpCode(201)
+  createVersion(@Param('id') id: string) {
+    return this.roadmaps.createVersion(id);
+  }
+
+  @Post('roadmap-versions/:id/publish')
+  publishVersion(@Param('id') id: string) {
+    return this.roadmaps.publishVersion(id);
+  }
+
+  @Patch('roadmaps/:id/active')
+  toggleActive(@Param('id') id: string, @Body() dto: { isActive: boolean }) {
+    return this.roadmaps.toggleActive(id, dto.isActive);
+  }
+
+  @Patch('roadmaps/:id/order')
+  reorder(@Param('id') id: string, @Body() dto: { order: number }) {
+    return this.roadmaps.reorder(id, dto.order);
   }
 
   @Patch('stages/:id')
