@@ -59,11 +59,11 @@ async function seedSkills() {
 
 async function seedDefaultRoadmap() {
   const existing = await prisma.roadmap.findFirst({
-    where: { isDefault: true },
+    where: { versions: { some: { status: 'PUBLISHED' } } },
     include: { versions: true },
   });
   if (existing?.versions.some((v) => v.status === 'PUBLISHED')) {
-    console.log('Default roadmap already published — skipping');
+    console.log('Roadmap already published — skipping');
     return;
   }
 
@@ -71,7 +71,7 @@ async function seedDefaultRoadmap() {
   const roadmap =
     existing ??
     (await prisma.roadmap.create({
-      data: { name: 'الرحلة العلاجية', isDefault: true },
+      data: { name: 'الرحلة العلاجية', order: 1, isActive: true },
     }));
   const version = await prisma.roadmapVersion.create({
     data: {

@@ -29,6 +29,13 @@ export class PlayController {
     private readonly sounds: SoundsService,
   ) {}
 
+  @Get(':childId/roadmaps')
+  roadmaps(@CurrentUser() user: AuthUser, @Param('childId') childId: string) {
+    return this.play
+      .assertChildLinked(user, childId)
+      .then(() => this.play.activeRoadmaps(childId));
+  }
+
   @Get('sounds')
   async platformSounds() {
     return { sounds: await this.sounds.soundsForApp() };

@@ -50,7 +50,7 @@ export class RoadmapsService {
     return {
       id: roadmap.id,
       name: roadmap.name,
-      isDefault: roadmap.isDefault,
+      isActive: roadmap.isActive,
       versions: roadmap.versions.map((v) => ({
         id: v.id,
         version: v.version,

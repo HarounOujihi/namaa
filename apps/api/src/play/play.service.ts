@@ -29,6 +29,97 @@ export class PlayService {
     return this.childAccess.assertLinked(user, childId);
   }
 
+  /** All active roadmaps with their stages — the child picks one to play. */
+  async activeRoadmaps(childId: string) {
+    const child = await this.prisma.childProfile.findUnique({ where: { id: childId } });
+    if (!child) {
+      throw new NotFoundException('Child not found');
+    }
+
+    const roadmaps = await this.prisma.roadmap.findMany({
+      where: { isActive: true },
+      orderBy: { order: 'asc' },
+      include: {
+        versions: {
+          where: { status: 'PUBLISHED' },
+          orderBy: { version: 'desc' },
+          take: 1,
+          include: { stages: { orderBy: { order: 'asc' }, include: { stageItems: { orderBy: { order: 'asc' } } } } },
+        },
+      },
+    });
+
+    const successRows = await this.prisma.exerciseAttempt.findMany({
+      where: { childId, isSuccess: true },
+      select: { exerciseVersion: { select: { exerciseId: true } } },
+    });
+    const succeededExerciseIds = new Set(successRows.map((r) => r.exerciseVersion.exerciseId));
+
+    const hiddenIds = new Set(
+      (
+        await this.prisma.childPlanOverride.findMany({
+          where: { childId, hidden: true },
+          select: { exerciseId: true },
+        })
+      ).map((o) => o.exerciseId),
+    );
+
+    const out = [];
+    for (const roadmap of roadmaps) {
+      const version = roadmap.versions[0];
+      if (!version) continue;
+
+      const stageViews = await Promise.all(
+        version.stages.map(async (stage) => {
+          const items = (
+            await Promise.all(
+              stage.stageItems
+                .filter((si) => si.exerciseId !== null)
+                .map(async (si) => ({
+                  id: si.id,
+                  order: si.order,
+                  exercise: await this.publishedExercise(si.exerciseId!),
+                })),
+            )
+          ).filter((si) => si.exercise !== null && !hiddenIds.has(si.exercise.id));
+
+          const completedItems = items.filter(
+            (si) => si.exercise !== null && succeededExerciseIds.has(si.exercise.id),
+          ).length;
+          return {
+            id: stage.id,
+            name: stage.name,
+            order: stage.order,
+            mastery: { threshold: stage.masteryThreshold, minAccuracy: stage.minAccuracy, minSuccessfulAttempts: stage.minSuccessfulAttempts },
+            items,
+            completedItems,
+            totalItems: items.length,
+            completed: items.length > 0 && completedItems === items.length,
+            unlocked: false,
+          };
+        }),
+      );
+
+      let allPriorCompleted = true;
+      for (const stage of stageViews) {
+        stage.unlocked = allPriorCompleted;
+        if (stage.totalItems > 0 && !stage.completed) allPriorCompleted = false;
+      }
+
+      out.push({
+        id: roadmap.id,
+        name: roadmap.name,
+        order: roadmap.order,
+        stages: stageViews,
+      });
+    }
+
+    return {
+      child: { id: child.id, fullName: child.fullName },
+      roadmaps: out,
+    };
+  }
+
   async roadmap(childId: string) {
     const child = await this.prisma.childProfile.findUnique({ where: { id: childId } });
     if (!child) {
@@ -36,7 +127,8 @@ export class PlayService {
     }
 
     const roadmap = await this.prisma.roadmap.findFirst({
-      where: { isDefault: true },
+      where: { isActive: true },
+      orderBy: { order: 'asc' },
     });
     if (!roadmap) {
       return { child: { id: child.id, fullName: child.fullName }, roadmap: null, stages: [] };
