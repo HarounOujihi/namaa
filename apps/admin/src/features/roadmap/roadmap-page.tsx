@@ -19,13 +19,23 @@ import {
 import { SimpleSelect } from "@/components/simple-select";
 import { StatusBadge } from "@/components/status-badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   createRoadmap,
   updateRoadmap,
   addStageItem,
   deleteStageItem,
+  createRoadmapVersion,
   getRoadmap,
   listExercises,
   listRoadmaps,
+  publishRoadmapVersion,
   updateStage,
   updateStageItemOrder,
 } from "@/api";
@@ -33,11 +43,13 @@ import type {
   ExerciseListItem,
   RoadmapStage,
   RoadmapStageItem,
+  RoadmapSummary,
   RoadmapVersion,
 } from "@/types";
 import { getErrorMessage, useQuery } from "@/lib/use-query";
 import { cn } from "@/lib/utils";
 import {
+  ArrowLeftIcon,
   ChevronDownIcon,
   ChevronUpIcon,
   LoaderCircleIcon,
@@ -47,6 +59,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { FormEvent } from "react";
+
+/** Runtime shape of GET /admin/roadmaps — richer than the shared summary type. */
+interface RoadmapListItem extends RoadmapSummary {
+  order: number;
+  createdAt: string;
+  _count: { versions: number };
+}
 
 function parseOptionalNumber(text: string): number | null | undefined {
   if (text.trim() === "") {
@@ -506,198 +525,112 @@ function RoadmapSkeleton() {
   );
 }
 
-export function RoadmapPage() {
-  const {
-    data: roadmaps,
-    loading: roadmapsLoading,
-    error: roadmapsError,
-    reload: reloadRoadmaps,
-  } = useQuery(() => listRoadmaps(), []);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showCreate, setShowCreate] = useState(false);
-
-  useEffect(() => {
-    if (roadmaps === null) {
-      return;
-    }
-    if (selectedId !== null && !roadmaps.some((roadmap) => roadmap.id === selectedId)) {
-      setSelectedId(roadmaps.length === 0 ? null : roadmaps[0].id);
-      return;
-    }
-    if (selectedId === null && roadmaps.length > 0) {
-      setSelectedId(roadmaps[0].id);
-    }
-  }, [roadmaps, selectedId]);
-
-  const {
-    data: roadmap,
-    loading: roadmapLoading,
-    error: roadmapError,
-    reload: reloadRoadmap,
-  } = useQuery(
-    () => (selectedId === null ? Promise.resolve(null) : getRoadmap(selectedId)),
-    [selectedId],
-  );
-  const { data: exercises, reload: reloadExercises } = useQuery(() => listExercises(), []);
-
-  const { version, isPublished } =
-    roadmap === null ? { version: null, isPublished: true } : pickVersion(roadmap.versions);
-  const stages =
-    version === null ? [] : [...version.stages].sort((a, b) => a.order - b.order);
-
-  const roadmapOptions = (roadmaps ?? []).map((summary) => ({
-    value: summary.id,
-    label: summary.isActive ? `${summary.name}` : `${summary.name} (inactive)`,
-  }));
-  const refreshing = roadmapsLoading || roadmapLoading;
-
-  function handleRefresh(): void {
-    reloadRoadmaps();
-    reloadRoadmap();
-    reloadExercises();
-  }
-
-  function handleJump(stageId: string): void {
-    document.getElementById(`stage-${stageId}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
+function RoadmapListCard({
+  entry,
+  index,
+  total,
+  busy,
+  onOpen,
+  onToggleActive,
+  onMove,
+}: {
+  entry: RoadmapListItem;
+  index: number;
+  total: number;
+  busy: boolean;
+  onOpen: () => void;
+  onToggleActive: () => void;
+  onMove: (direction: -1 | 1) => void;
+}) {
   return (
-    <div className="mx-auto max-w-6xl">
-      <div className="sticky top-14 z-10 -mx-4 mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-b bg-background/95 px-4 py-3 backdrop-blur lg:-mx-6 lg:h-16 lg:flex-nowrap lg:items-center lg:px-6 lg:py-0">
-        <div className="min-w-0 flex-1 basis-40">
-          <h1 className="text-lg font-semibold tracking-tight">Roadmap</h1>
-          <p className="hidden truncate text-xs text-muted-foreground sm:block">
-            Arrange therapy stages, mastery rules and the exercises each stage contains.
+    <Card className={cn("gap-0 py-0", !entry.isActive && "opacity-70")}>
+      <div className="flex items-start gap-3 px-4 py-4">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold tabular-nums text-primary">
+          {entry.order}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <CardTitle className="truncate text-base font-semibold">{entry.name}</CardTitle>
+            {entry.isActive ? (
+              <Badge className="bg-emerald-600 text-white">Active</Badge>
+            ) : (
+              <Badge variant="secondary">Inactive</Badge>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {entry._count.versions} {entry._count.versions === 1 ? "version" : "versions"} · created{" "}
+            {new Date(entry.createdAt).toLocaleDateString("en-GB", { dateStyle: "medium" })}
           </p>
         </div>
-        <div className="flex w-full items-center gap-2 sm:w-auto">
-          <SimpleSelect
-            value={selectedId}
-            onValueChange={setSelectedId}
-            options={roadmapOptions}
-            placeholder={roadmapOptions.length === 0 ? "No roadmaps" : "Select roadmap…"}
-            disabled={roadmapOptions.length === 0}
-            ariaLabel="Select roadmap"
-            className="min-w-0 flex-1 sm:w-56 sm:flex-none"
-          />
-          <Button type="button" variant="outline" onClick={handleRefresh} disabled={refreshing}>
-            <RefreshCwIcon className={cn(refreshing && "animate-spin")} />
-            Refresh
+      </div>
+      <div className="flex items-center gap-1 border-t bg-muted/40 px-3 py-2">
+        <Button type="button" size="sm" onClick={onOpen}>
+          Open
+        </Button>
+        <Button type="button" size="sm" variant="outline" disabled={busy} onClick={onToggleActive}>
+          {entry.isActive ? "Deactivate" : "Activate"}
+        </Button>
+        <div className="ml-auto flex items-center gap-0.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            aria-label={`Move ${entry.name} up`}
+            disabled={index === 0 || busy}
+            onClick={() => onMove(-1)}
+          >
+            <ChevronUpIcon />
           </Button>
-          {roadmap !== null && !roadmapLoading ? (
-            <ToggleActiveButton
-              id={roadmap.id}
-              isActive={roadmap.isActive}
-              onDone={() => reloadRoadmap()}
-            />
-          ) : null}
-          <Button type="button" onClick={() => setShowCreate(true)}>
-            <PlusIcon />
-            New roadmap
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            aria-label={`Move ${entry.name} down`}
+            disabled={index === total - 1 || busy}
+            onClick={() => onMove(1)}
+          >
+            <ChevronDownIcon />
           </Button>
         </div>
       </div>
-
-      {roadmapsError !== null ? <ErrorState message={roadmapsError} onRetry={reloadRoadmaps} /> : null}
-      {roadmapsError === null && roadmapsLoading ? <RoadmapSkeleton /> : null}
-      {showCreate ? (
-        <CreateRoadmapDialog
-          onClose={() => setShowCreate(false)}
-          onCreated={(id) => { setShowCreate(false); setSelectedId(id); reloadRoadmaps(); }}
-        />
-      ) : null}
-      {roadmapsError === null && !roadmapsLoading && roadmaps !== null ? (
-        roadmaps.length === 0? (
-          <EmptyState
-            title="No roadmaps yet"
-            description="Roadmaps are created by the platform; none exist so far."
-          />
-        ) : (
-          <div className="grid items-start gap-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
-            {roadmap !== null && version !== null ? (
-              <StageRail
-                roadmapName={roadmap.name}
-                isActive={roadmap.isActive}
-                version={version}
-                stages={stages}
-                onJump={handleJump}
-              />
-            ) : (
-              <div className="hidden lg:block" />
-            )}
-
-            <div className="min-w-0 space-y-6">
-              {roadmapError !== null ? (
-                <ErrorState message={roadmapError} onRetry={reloadRoadmap} />
-              ) : null}
-              {roadmapError === null && roadmapLoading ? (
-                <div className="space-y-6">
-                  <Skeleton className="h-56 w-full" />
-                  <Skeleton className="h-56 w-full" />
-                </div>
-              ) : null}
-              {roadmapError === null && !roadmapLoading && roadmap !== null ? (
-                version === null ? (
-                  <EmptyState
-                    title="No versions yet"
-                    description="This roadmap has no versions to display."
-                  />
-                ) : (
-                  <>
-                    <p className="text-xs text-muted-foreground lg:hidden">
-                      v{version.version} · {version.status.charAt(0) + version.status.slice(1).toLowerCase()}
-                      {version.publishedAt !== null
-                        ? ` · Published ${new Date(version.publishedAt).toLocaleDateString("en-GB", { dateStyle: "medium" })}`
-                        : ""}
-                    </p>
-                    {!isPublished ? (
-                      <p
-                        className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400"
-                        role="status"
-                      >
-                        This roadmap has no published version — showing the latest{" "}
-                        {version.status.toLowerCase()} version.
-                      </p>
-                    ) : null}
-                    {stages.length === 0 ? (
-                      <EmptyState
-                        title="No stages in this version"
-                        description="Stages are defined when the roadmap version is authored."
-                      />
-                    ) : (
-                      stages.map((stage) => (
-                        <StageCard
-                          key={stage.id}
-                          stage={stage}
-                          exercises={exercises ?? []}
-                          onChanged={reloadRoadmap}
-                        />
-                      ))
-                    )}
-                  </>
-                )
-              ) : null}
-            </div>
-          </div>
-        )
-      ) : null}
-    </div>
+    </Card>
   );
 }
 
-
-function CreateRoadmapDialog({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
+function CreateRoadmapDialog({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: (id: string) => void;
+}) {
   const [name, setName] = useState("");
+  const [order, setOrder] = useState("");
   const [pending, setPending] = useState(false);
+
+  function handleClose(): void {
+    setName("");
+    setOrder("");
+    onClose();
+  }
 
   async function handleCreate(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (pending || name.trim().length < 2) return;
+    if (pending || name.trim().length < 2) {
+      return;
+    }
+    const parsedOrder = parseOptionalNumber(order);
+    if (parsedOrder === undefined) {
+      return;
+    }
     setPending(true);
     try {
-      const created = await createRoadmap(name.trim());
+      const created = await createRoadmap(name.trim(), parsedOrder ?? undefined);
       toast.success("Roadmap created");
       onCreated(created.id);
+      handleClose();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -706,33 +639,70 @@ function CreateRoadmapDialog({ onClose, onCreated }: { onClose: () => void; onCr
   }
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <div className="dialog" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-        <h2 className="dialog-title">New roadmap</h2>
-        <form className="form" onSubmit={handleCreate}>
-          <div className="field">
-            <span className="field-label">Name</span>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} autoFocus />
+    <Dialog open={open} onOpenChange={(next) => (!next ? onClose() : undefined)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>New roadmap</DialogTitle>
+          <DialogDescription>
+            Create a roadmap and start authoring its first version.
+          </DialogDescription>
+        </DialogHeader>
+        <form className="grid gap-4" onSubmit={(event) => void handleCreate(event)}>
+          <div className="grid gap-1.5">
+            <Label htmlFor="roadmap-name">Name</Label>
+            <Input
+              id="roadmap-name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              required
+              minLength={2}
+              autoFocus
+            />
           </div>
-          <div className="dialog-actions">
-            <button type="button" className="big-button secondary" onClick={onClose}>Cancel</button>
-            <button type="submit" className="big-button" disabled={pending || name.trim().length < 2}>
+          <div className="grid gap-1.5">
+            <Label htmlFor="roadmap-order">Order (optional)</Label>
+            <Input
+              id="roadmap-order"
+              type="number"
+              min={1}
+              value={order}
+              onChange={(event) => setOrder(event.target.value)}
+              placeholder="Appended last when empty"
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={pending || name.trim().length < 2}>
+              {pending ? <LoaderCircleIcon className="animate-spin" /> : null}
               {pending ? "Creating…" : "Create"}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-function ToggleActiveButton({ id, isActive, onDone }: { id: string; isActive: boolean; onDone: () => void }) {
+function ToggleActiveButton({
+  id,
+  isActive,
+  onDone,
+}: {
+  id: string;
+  isActive: boolean;
+  onDone: () => void;
+}) {
   const [pending, setPending] = useState(false);
   async function handleToggle(): Promise<void> {
-    if (pending) return;
+    if (pending) {
+      return;
+    }
     setPending(true);
     try {
       await updateRoadmap(id, { isActive: !isActive });
+      toast.success(isActive ? "Roadmap deactivated" : "Roadmap activated");
       onDone();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -741,8 +711,321 @@ function ToggleActiveButton({ id, isActive, onDone }: { id: string; isActive: bo
     }
   }
   return (
-    <button type="button" className="text-button" onClick={() => void handleToggle()} disabled={pending}>
-      {pending ? "…" : isActive ? "Deactivate" : "Activate"}
-    </button>
+    <Button
+      type="button"
+      variant="outline"
+      disabled={pending}
+      onClick={() => void handleToggle()}
+    >
+      {pending ? <LoaderCircleIcon className="animate-spin" /> : null}
+      {isActive ? "Deactivate" : "Activate"}
+    </Button>
+  );
+}
+
+export function RoadmapPage() {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+
+  const {
+    data: roadmapsRaw,
+    loading: roadmapsLoading,
+    error: roadmapsError,
+    reload: reloadRoadmaps,
+  } = useQuery(async () => (await listRoadmaps()) as RoadmapListItem[], []);
+
+  if (selectedId !== null) {
+    return (
+      <RoadmapDetailView
+        roadmapId={selectedId}
+        onBack={() => {
+          setSelectedId(null);
+          reloadRoadmaps();
+        }}
+      />
+    );
+  }
+
+  const roadmaps =
+    roadmapsRaw === null ? null : [...roadmapsRaw].sort((a, b) => a.order - b.order);
+
+  async function handleToggle(entry: RoadmapListItem): Promise<void> {
+    try {
+      await updateRoadmap(entry.id, { isActive: !entry.isActive });
+      toast.success(entry.isActive ? "Roadmap deactivated" : "Roadmap activated");
+      reloadRoadmaps();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  }
+
+  async function handleMove(index: number, direction: -1 | 1): Promise<void> {
+    if (roadmaps === null) {
+      return;
+    }
+    const current = roadmaps[index];
+    const target = roadmaps[index + direction];
+    if (current === undefined || target === undefined) {
+      return;
+    }
+    try {
+      await updateRoadmap(current.id, { order: target.order });
+      await updateRoadmap(target.id, { order: current.order });
+      toast.success("Roadmap order updated");
+      reloadRoadmaps();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+      reloadRoadmaps();
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-6xl">
+      <div className="sticky top-14 z-10 -mx-4 mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-b bg-background/95 px-4 py-3 backdrop-blur lg:-mx-6 lg:h-16 lg:flex-nowrap lg:items-center lg:px-6 lg:py-0">
+        <div className="min-w-0 flex-1 basis-40">
+          <h1 className="text-lg font-semibold tracking-tight">Roadmaps</h1>
+          <p className="hidden truncate text-xs text-muted-foreground sm:block">
+            Manage therapy roadmaps, their versions and stage content.
+          </p>
+        </div>
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={reloadRoadmaps}
+            disabled={roadmapsLoading}
+          >
+            <RefreshCwIcon className={cn(roadmapsLoading && "animate-spin")} />
+            Refresh
+          </Button>
+          <Button type="button" onClick={() => setShowCreate(true)}>
+            <PlusIcon />
+            New roadmap
+          </Button>
+        </div>
+      </div>
+
+      {roadmapsError !== null ? (
+        <ErrorState message={roadmapsError} onRetry={reloadRoadmaps} />
+      ) : null}
+      {roadmapsError === null && roadmapsLoading ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+      ) : null}
+      {roadmapsError === null && !roadmapsLoading && roadmaps !== null ? (
+        roadmaps.length === 0 ? (
+          <EmptyState
+            title="No roadmaps yet"
+            description="Create the first roadmap to start arranging therapy stages."
+          />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {roadmaps.map((entry, index) => (
+              <RoadmapListCard
+                key={entry.id}
+                entry={entry}
+                index={index}
+                total={roadmaps.length}
+                busy={roadmapsLoading}
+                onOpen={() => setSelectedId(entry.id)}
+                onToggleActive={() => void handleToggle(entry)}
+                onMove={(direction) => void handleMove(index, direction)}
+              />
+            ))}
+          </div>
+        )
+      ) : null}
+
+      <CreateRoadmapDialog
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        onCreated={(id) => {
+          reloadRoadmaps();
+          setSelectedId(id);
+        }}
+      />
+    </div>
+  );
+}
+
+function RoadmapDetailView({ roadmapId, onBack }: { roadmapId: string; onBack: () => void }) {
+  const {
+    data: roadmap,
+    loading: roadmapLoading,
+    error: roadmapError,
+    reload: reloadRoadmap,
+  } = useQuery(() => getRoadmap(roadmapId), [roadmapId]);
+  const { data: exercises, reload: reloadExercises } = useQuery(() => listExercises(), []);
+  const [versionBusy, setVersionBusy] = useState(false);
+
+  const { version, isPublished } =
+    roadmap === null ? { version: null, isPublished: true } : pickVersion(roadmap.versions);
+  const stages = version === null ? [] : [...version.stages].sort((a, b) => a.order - b.order);
+  const draft =
+    roadmap === null
+      ? null
+      : [...roadmap.versions]
+          .filter((candidate) => candidate.status === "DRAFT")
+          .sort((a, b) => b.version - a.version)[0] ?? null;
+
+  async function handleNewVersion(): Promise<void> {
+    if (versionBusy || roadmap === null) {
+      return;
+    }
+    setVersionBusy(true);
+    try {
+      await createRoadmapVersion(roadmap.id);
+      toast.success("New draft version created from the latest version");
+      reloadRoadmap();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setVersionBusy(false);
+    }
+  }
+
+  async function handlePublish(): Promise<void> {
+    if (versionBusy || draft === null) {
+      return;
+    }
+    setVersionBusy(true);
+    try {
+      await publishRoadmapVersion(draft.id);
+      toast.success("Draft version published");
+      reloadRoadmap();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setVersionBusy(false);
+    }
+  }
+
+  function handleRefresh(): void {
+    reloadRoadmap();
+    reloadExercises();
+  }
+
+  function handleJump(stageId: string): void {
+    document
+      .getElementById(`stage-${stageId}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  return (
+    <div className="mx-auto max-w-6xl">
+      <div className="sticky top-14 z-10 -mx-4 mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-b bg-background/95 px-4 py-3 backdrop-blur lg:-mx-6 lg:h-16 lg:flex-nowrap lg:items-center lg:px-6 lg:py-0">
+        <Button type="button" variant="ghost" size="icon-sm" aria-label="Back to roadmaps" onClick={onBack}>
+          <ArrowLeftIcon />
+        </Button>
+        <div className="min-w-0 flex-1 basis-40">
+          <div className="flex items-center gap-2">
+            <h1 className="truncate text-lg font-semibold tracking-tight">
+              {roadmap === null ? "Roadmap" : roadmap.name}
+            </h1>
+            {roadmap !== null ? (
+              roadmap.isActive ? (
+                <Badge className="bg-emerald-600 text-white">Active</Badge>
+              ) : (
+                <Badge variant="secondary">Inactive</Badge>
+              )
+            ) : null}
+            {version !== null && roadmapLoading === false ? (
+              <span className="flex items-center gap-1.5">
+                <Badge variant="secondary" className="tabular-nums">
+                  v{version.version}
+                </Badge>
+                <StatusBadge status={version.status} />
+              </span>
+            ) : null}
+          </div>
+          <p className="hidden truncate text-xs text-muted-foreground sm:block">
+            Arrange therapy stages, mastery rules and the exercises each stage contains.
+          </p>
+        </div>
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          {roadmap !== null ? (
+            <ToggleActiveButton
+              id={roadmap.id}
+              isActive={roadmap.isActive}
+              onDone={reloadRoadmap}
+            />
+          ) : null}
+          <Button type="button" variant="outline" disabled={versionBusy} onClick={() => void handleNewVersion()}>
+            {versionBusy ? <LoaderCircleIcon className="animate-spin" /> : <PlusIcon />}
+            New version
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={versionBusy || draft === null}
+            onClick={() => void handlePublish()}
+          >
+            Publish draft
+          </Button>
+          <Button type="button" variant="outline" onClick={handleRefresh} disabled={roadmapLoading}>
+            <RefreshCwIcon className={cn(roadmapLoading && "animate-spin")} />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {roadmapError !== null ? <ErrorState message={roadmapError} onRetry={reloadRoadmap} /> : null}
+      {roadmapError === null && roadmapLoading ? <RoadmapSkeleton /> : null}
+      {roadmapError === null && !roadmapLoading && roadmap !== null ? (
+        version === null ? (
+          <EmptyState
+            title="No versions yet"
+            description="This roadmap has no versions to display."
+          />
+        ) : (
+          <div className="grid items-start gap-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
+            <StageRail
+              roadmapName={roadmap.name}
+              isActive={roadmap.isActive}
+              version={version}
+              stages={stages}
+              onJump={handleJump}
+            />
+
+            <div className="min-w-0 space-y-6">
+              <p className="text-xs text-muted-foreground lg:hidden">
+                v{version.version} · {version.status.charAt(0) + version.status.slice(1).toLowerCase()}
+                {version.publishedAt !== null
+                  ? ` · Published ${new Date(version.publishedAt).toLocaleDateString("en-GB", { dateStyle: "medium" })}`
+                  : ""}
+              </p>
+              {!isPublished ? (
+                <p
+                  className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400"
+                  role="status"
+                >
+                  This roadmap has no published version — showing the latest{" "}
+                  {version.status.toLowerCase()} version.
+                </p>
+              ) : null}
+              {stages.length === 0 ? (
+                <EmptyState
+                  title="No stages in this version"
+                  description="Stages are defined when the roadmap version is authored."
+                />
+              ) : (
+                stages.map((stage) => (
+                  <StageCard
+                    key={stage.id}
+                    stage={stage}
+                    exercises={exercises ?? []}
+                    onChanged={reloadRoadmap}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        )
+      ) : null}
+    </div>
   );
 }

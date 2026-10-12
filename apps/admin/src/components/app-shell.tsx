@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   { to: "/exercises", label: "Exercises", icon: DumbbellIcon },
   { to: "/exercise-types", label: "Exercise Types", icon: ShapesIcon },
   { to: "/assessments", label: "Assessments", icon: ClipboardListIcon },
-  { to: "/roadmap", label: "Roadmap", icon: RouteIcon },
+  { to: "/roadmaps", label: "Roadmaps", icon: RouteIcon },
   { to: "/assets", label: "Assets", icon: PaperclipIcon },
   { to: "/sounds", label: "Platform Sounds", icon: Volume2Icon },
   { to: "/users", label: "Users", icon: UserIcon },

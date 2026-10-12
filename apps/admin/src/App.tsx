@@ -37,7 +37,7 @@ export default function App() {
             <Route path="exercises" element={<ExercisesPage />} />
             <Route path="exercise-types" element={<ExerciseTypesPage />} />
             <Route path="assessments" element={<AssessmentsPage />} />
-            <Route path="roadmap" element={<RoadmapPage />} />
+            <Route path="roadmaps" element={<RoadmapPage />} />
             <Route path="assets" element={<AssetsPage />} />
             <Route path="sounds" element={<PlatformSoundsPage />} />
             <Route path="users" element={<UsersPage />} />
