@@ -12,7 +12,7 @@ import type {
   PlayEquipResult,
   PlayPurchaseResult,
   PlayRewards,
-  PlayRoadmap,
+  PlayRoadmapsResponse,
   RedeemInviteResponse,
   UpdateChildInput,
   PlayRecommendation,
@@ -129,8 +129,8 @@ export function redeemInvite(token: string, code: string): Promise<RedeemInviteR
   });
 }
 
-export function getPlayRoadmap(token: string, childId: string): Promise<PlayRoadmap> {
-  return request<PlayRoadmap>(`/play/${encodeURIComponent(childId)}/roadmap`, { token });
+export function getPlayRoadmaps(token: string, childId: string): Promise<PlayRoadmapsResponse> {
+  return request<PlayRoadmapsResponse>(`/play/${encodeURIComponent(childId)}/roadmaps`, { token });
 }
 
 export function getPlayAssessment(token: string, childId: string): Promise<PlayAssessment> {

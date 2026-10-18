@@ -72,10 +72,16 @@ export interface PlayStage {
   unlocked: boolean;
 }
 
-export interface PlayRoadmap {
-  child: { id: string; fullName: string };
-  roadmap: { id: string; name: string };
+export interface PlayRoadmapSummary {
+  id: string;
+  name: string;
+  order: number;
   stages: PlayStage[];
+}
+
+export interface PlayRoadmapsResponse {
+  child: { id: string; fullName: string };
+  roadmaps: PlayRoadmapSummary[];
 }
 
 export interface PlayAttemptAnswer {
