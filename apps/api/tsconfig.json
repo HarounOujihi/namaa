@@ -15,5 +15,5 @@
     "strictPropertyInitialization": false,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "prisma/seed.ts"]
+  "include": ["src/**/*.ts", "prisma/seed.ts", "prisma/seed-test-roadmaps.ts"]
 }

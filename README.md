@@ -92,6 +92,7 @@ packages/
 | `pnpm dev` / `pnpm build` | Run / build all workspaces (Turborepo) |
 | `pnpm db:migrate` / `pnpm db:seed` / `pnpm db:studio` | Prisma workflow |
 | `pnpm --filter api test` | Progression-engine unit tests (17) |
+| `pnpm --filter api db:seed:test-roadmaps` | Add 3 published "(تجريبية)" roadmaps built from existing published exercises (idempotent; delete from the CMS) |
 | `pnpm --filter @dyslexia/exercise-core test` | Evaluator + Arabic-utils tests (32) |
 | `pnpm infra:up` / `pnpm infra:down` | Docker dev infra |
 
