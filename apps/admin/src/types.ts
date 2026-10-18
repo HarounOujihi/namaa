@@ -174,10 +174,72 @@ export interface ValidationResult {
   errors: ValidationError[];
 }
 
-export interface RoadmapSummary {
+export interface RoadmapCategoryRef {
   id: string;
   name: string;
+}
+
+/** Fields shared by GET /admin/roadmaps items and GET /admin/roadmaps/:id. */
+interface RoadmapBase {
+  id: string;
+  name: string;
+  order: number;
   isActive: boolean;
+  createdAt: string;
+  description: string | null;
+  categoryId: string | null;
+  category: RoadmapCategoryRef | null;
+  coverAssetId: string | null;
+  coverUrl: string | null;
+  hasPublishedVersion: boolean;
+}
+
+export interface RoadmapSummary extends RoadmapBase {
+  _count: { versions: number };
+}
+
+export interface RoadmapCreatePayload {
+  name: string;
+  order?: number;
+  description?: string;
+  categoryId?: string;
+  coverAssetId?: string;
+}
+
+/** Any subset; `null` clears the nullable fields. */
+export interface RoadmapUpdatePayload {
+  name?: string;
+  order?: number;
+  isActive?: boolean;
+  description?: string | null;
+  categoryId?: string | null;
+  coverAssetId?: string | null;
+}
+
+export interface AdminRoadmapCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  coverAssetId: string | null;
+  coverUrl: string | null;
+  order: number;
+  roadmapCount: number;
+  createdAt: string;
+}
+
+export interface RoadmapCategoryCreatePayload {
+  name: string;
+  description?: string;
+  coverAssetId?: string;
+  order?: number;
+}
+
+/** Any subset; `null` clears description / cover. */
+export interface RoadmapCategoryUpdatePayload {
+  name?: string;
+  description?: string | null;
+  coverAssetId?: string | null;
+  order?: number;
 }
 
 export interface RoadmapStageItem {
@@ -205,10 +267,7 @@ export interface RoadmapVersion {
   stages: RoadmapStage[];
 }
 
-export interface RoadmapDetail {
-  id: string;
-  name: string;
-  isActive: boolean;
+export interface RoadmapDetail extends RoadmapBase {
   versions: RoadmapVersion[];
 }
 

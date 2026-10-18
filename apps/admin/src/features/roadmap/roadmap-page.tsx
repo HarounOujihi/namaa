@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { EmptyState, ErrorState } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { SimpleSelect } from "@/components/simple-select";
+import { SimpleSelect, type SelectOption } from "@/components/simple-select";
 import { StatusBadge } from "@/components/status-badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,7 @@ import {
   createRoadmapVersion,
   getRoadmap,
   listExercises,
+  listRoadmapCategories,
   listRoadmaps,
   publishRoadmapVersion,
   updateStage,
@@ -42,31 +44,44 @@ import {
   addRoadmapStage,
 } from "@/api";
 import type {
+  AdminRoadmapCategory,
   ExerciseListItem,
+  RoadmapCategoryRef,
+  RoadmapDetail,
   RoadmapStage,
   RoadmapStageItem,
   RoadmapSummary,
+  RoadmapUpdatePayload,
   RoadmapVersion,
 } from "@/types";
-import { getErrorMessage, useQuery } from "@/lib/use-query";
+import { getErrorMessage, useQuery, type QueryState } from "@/lib/use-query";
 import { cn } from "@/lib/utils";
+import {
+  CoverImage,
+  CoverImageField,
+  type CoverValue,
+} from "@/features/roadmap-categories/cover-image";
+import { swapOrderUpdates } from "@/features/roadmap-categories/ordering";
 import {
   ArrowLeftIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  FolderIcon,
   LoaderCircleIcon,
+  PencilIcon,
   PlusIcon,
   RefreshCwIcon,
+  TriangleAlertIcon,
   XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { FormEvent } from "react";
 
-/** Runtime shape of GET /admin/roadmaps — richer than the shared summary type. */
-interface RoadmapListItem extends RoadmapSummary {
-  order: number;
-  createdAt: string;
-  _count: { versions: number };
+const FILTER_ALL = "__all__";
+/** Select value standing for "no category" (filter and the details form). */
+const NO_CATEGORY = "__none__";
+
+function formatShortDate(value: string): string {
+  return new Date(value).toLocaleDateString("en-GB", { dateStyle: "medium" });
 }
 
 function parseOptionalNumber(text: string): number | null | undefined {
@@ -527,58 +542,116 @@ function RoadmapSkeleton() {
   );
 }
 
+function CategoryBadge({ category }: { category: RoadmapCategoryRef | null }) {
+  return category === null ? (
+    <Badge variant="outline" className="text-muted-foreground">
+      Uncategorized
+    </Badge>
+  ) : (
+    <Badge variant="secondary" className="max-w-full" title={category.name}>
+      <FolderIcon />
+      <span className="truncate">{category.name}</span>
+    </Badge>
+  );
+}
+
+/** An unpublished roadmap never reaches the child app — make that impossible to miss. */
+function DraftOnlyBadge() {
+  return (
+    <Badge
+      className="border-amber-500/40 bg-amber-500/15 text-amber-800 dark:text-amber-300"
+      title="No published version yet: children can't see this roadmap until a version is published."
+    >
+      <TriangleAlertIcon />
+      Draft only — hidden from children
+    </Badge>
+  );
+}
+
+function InactiveBadge() {
+  return (
+    <Badge variant="secondary" title="Inactive roadmaps are hidden from children.">
+      Inactive
+    </Badge>
+  );
+}
+
 function RoadmapListCard({
   entry,
-  index,
-  total,
+  isFirst,
+  isLast,
   busy,
   onOpen,
+  onEdit,
   onToggleActive,
   onMove,
 }: {
-  entry: RoadmapListItem;
-  index: number;
-  total: number;
+  entry: RoadmapSummary;
+  isFirst: boolean;
+  isLast: boolean;
   busy: boolean;
   onOpen: () => void;
+  onEdit: () => void;
   onToggleActive: () => void;
   onMove: (direction: -1 | 1) => void;
 }) {
   return (
-    <Card className={cn("gap-0 py-0", !entry.isActive && "opacity-70")}>
-      <div className="flex items-start gap-3 px-4 py-4">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold tabular-nums text-primary">
-          {entry.order}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <CardTitle className="truncate text-base font-semibold">{entry.name}</CardTitle>
-            {entry.isActive ? (
-              <Badge className="bg-emerald-600 text-white">Active</Badge>
-            ) : (
-              <Badge variant="secondary">Inactive</Badge>
-            )}
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {entry._count.versions} {entry._count.versions === 1 ? "version" : "versions"} · created{" "}
-            {new Date(entry.createdAt).toLocaleDateString("en-GB", { dateStyle: "medium" })}
-          </p>
+    <Card className="gap-0 py-0">
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`Open ${entry.name}`}
+        className="relative block w-full text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      >
+        <CoverImage
+          url={entry.coverUrl}
+          alt={`${entry.name} cover`}
+          className={cn(!entry.isActive && "opacity-60 grayscale")}
+        />
+        <Badge
+          variant="secondary"
+          className="absolute top-2 left-2 bg-background/90 tabular-nums shadow-sm backdrop-blur"
+        >
+          #{entry.order}
+        </Badge>
+      </button>
+      <div className="flex flex-1 flex-col gap-2 px-4 py-3">
+        <CardTitle className="truncate text-base font-semibold" title={entry.name}>
+          {entry.name}
+        </CardTitle>
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <CategoryBadge category={entry.category} />
+          {entry.isActive ? null : <InactiveBadge />}
+          {entry.hasPublishedVersion ? null : <DraftOnlyBadge />}
         </div>
+        {entry.description === null || entry.description === "" ? null : (
+          <p className="line-clamp-2 text-sm text-muted-foreground" title={entry.description}>
+            {entry.description}
+          </p>
+        )}
+        <p className="mt-auto pt-1 text-xs text-muted-foreground">
+          {entry._count.versions} {entry._count.versions === 1 ? "version" : "versions"} · created{" "}
+          {formatShortDate(entry.createdAt)}
+        </p>
       </div>
-      <div className="flex items-center gap-1 border-t bg-muted/40 px-3 py-2">
-        <Button type="button" size="sm" onClick={onOpen}>
+      <div className="flex flex-wrap items-center gap-1 border-t bg-muted/40 px-3 py-2">
+        <Button type="button" onClick={onOpen}>
           Open
         </Button>
-        <Button type="button" size="sm" variant="outline" disabled={busy} onClick={onToggleActive}>
+        <Button type="button" variant="outline" disabled={busy} onClick={onEdit}>
+          <PencilIcon />
+          Edit details
+        </Button>
+        <Button type="button" variant="ghost" disabled={busy} onClick={onToggleActive}>
           {entry.isActive ? "Deactivate" : "Activate"}
         </Button>
         <div className="ml-auto flex items-center gap-0.5">
           <Button
             type="button"
             variant="ghost"
-            size="icon-xs"
+            size="icon"
             aria-label={`Move ${entry.name} up`}
-            disabled={index === 0 || busy}
+            disabled={isFirst || busy}
             onClick={() => onMove(-1)}
           >
             <ChevronUpIcon />
@@ -586,9 +659,9 @@ function RoadmapListCard({
           <Button
             type="button"
             variant="ghost"
-            size="icon-xs"
+            size="icon"
             aria-label={`Move ${entry.name} down`}
-            disabled={index === total - 1 || busy}
+            disabled={isLast || busy}
             onClick={() => onMove(1)}
           >
             <ChevronDownIcon />
@@ -599,40 +672,115 @@ function RoadmapListCard({
   );
 }
 
-function CreateRoadmapDialog({
+interface RoadmapFormErrors {
+  name?: string;
+  order?: string;
+}
+
+/** Create (roadmap = null) or edit a roadmap's details: name, description, category, cover, order. */
+function RoadmapDetailsDialog({
   open,
+  roadmap,
+  categories,
   onClose,
-  onCreated,
+  onSaved,
 }: {
   open: boolean;
+  roadmap: RoadmapSummary | RoadmapDetail | null;
+  categories: QueryState<AdminRoadmapCategory[]>;
   onClose: () => void;
-  onCreated: (id: string) => void;
+  onSaved: (id: string) => void;
 }) {
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [categoryId, setCategoryId] = useState(NO_CATEGORY);
+  const [cover, setCover] = useState<CoverValue>({ assetId: null, url: null });
   const [order, setOrder] = useState("");
+  const [submitted, setSubmitted] = useState(false);
   const [pending, setPending] = useState(false);
 
-  function handleClose(): void {
-    setName("");
-    setOrder("");
-    onClose();
-  }
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    setName(roadmap?.name ?? "");
+    setDescription(roadmap?.description ?? "");
+    setCategoryId(roadmap?.categoryId ?? NO_CATEGORY);
+    setCover({ assetId: roadmap?.coverAssetId ?? null, url: roadmap?.coverUrl ?? null });
+    setOrder(roadmap === null ? "" : String(roadmap.order));
+    setSubmitted(false);
+  }, [open, roadmap]);
 
-  async function handleCreate(event: FormEvent<HTMLFormElement>): Promise<void> {
+  const categoryOptions = useMemo<SelectOption[]>(() => {
+    const known: RoadmapCategoryRef[] =
+      categories.data ?? (roadmap?.category ? [roadmap.category] : []);
+    return [
+      { value: NO_CATEGORY, label: "No category" },
+      ...known.map((category) => ({ value: category.id, label: category.name })),
+    ];
+  }, [categories.data, roadmap]);
+
+  const parsedOrder = parseOptionalNumber(order);
+  const errors: RoadmapFormErrors = {};
+  if (name.trim().length < 2) {
+    errors.name = "Name must be at least 2 characters.";
+  }
+  if (
+    parsedOrder === undefined ||
+    (parsedOrder !== null && (!Number.isInteger(parsedOrder) || parsedOrder < 0))
+  ) {
+    errors.order = "Order must be a whole number (0 or more).";
+  } else if (parsedOrder === null && roadmap !== null) {
+    errors.order = "Order is required.";
+  }
+  const hasErrors = errors.name !== undefined || errors.order !== undefined;
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (pending || name.trim().length < 2) {
+    setSubmitted(true);
+    if (hasErrors || pending || parsedOrder === undefined) {
       return;
     }
-    const parsedOrder = parseOptionalNumber(order);
-    if (parsedOrder === undefined) {
-      return;
-    }
+    const trimmedName = name.trim();
+    const trimmedDescription = description.trim();
+    const nextCategoryId = categoryId === NO_CATEGORY ? null : categoryId;
     setPending(true);
     try {
-      const created = await createRoadmap(name.trim(), parsedOrder ?? undefined);
-      toast.success("Roadmap created");
-      onCreated(created.id);
-      handleClose();
+      if (roadmap === null) {
+        const created = await createRoadmap({
+          name: trimmedName,
+          order: parsedOrder ?? undefined,
+          description: trimmedDescription === "" ? undefined : trimmedDescription,
+          categoryId: nextCategoryId ?? undefined,
+          coverAssetId: cover.assetId ?? undefined,
+        });
+        toast.success("Roadmap created");
+        onSaved(created.id);
+      } else {
+        const payload: RoadmapUpdatePayload = {};
+        if (trimmedName !== roadmap.name) {
+          payload.name = trimmedName;
+        }
+        const nextDescription = trimmedDescription === "" ? null : trimmedDescription;
+        if (nextDescription !== roadmap.description) {
+          payload.description = nextDescription;
+        }
+        if (nextCategoryId !== roadmap.categoryId) {
+          payload.categoryId = nextCategoryId;
+        }
+        if (cover.assetId !== roadmap.coverAssetId) {
+          payload.coverAssetId = cover.assetId;
+        }
+        if (parsedOrder !== null && parsedOrder !== roadmap.order) {
+          payload.order = parsedOrder;
+        }
+        if (Object.keys(payload).length > 0) {
+          await updateRoadmap(roadmap.id, payload);
+          toast.success("Roadmap details updated");
+        }
+        onSaved(roadmap.id);
+      }
+      onClose();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -640,50 +788,137 @@ function CreateRoadmapDialog({
     }
   }
 
+  const showNameError = submitted && errors.name !== undefined;
+  const showOrderError = submitted && errors.order !== undefined;
+
   return (
-    <Dialog open={open} onOpenChange={(next) => (!next ? onClose() : undefined)}>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={(next) => (!next && !pending ? onClose() : undefined)}>
+      <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>New roadmap</DialogTitle>
+          <DialogTitle>{roadmap === null ? "New roadmap" : "Edit roadmap details"}</DialogTitle>
           <DialogDescription>
-            Create a roadmap and start authoring its first version.
+            {roadmap === null
+              ? "Create a roadmap and start authoring its first version. Children only see it once a version is published."
+              : "Name, description, category, cover and position in the roadmap list."}
           </DialogDescription>
         </DialogHeader>
-        <form className="grid gap-4" onSubmit={(event) => void handleCreate(event)}>
+        <form className="grid gap-4" noValidate onSubmit={(event) => void handleSubmit(event)}>
           <div className="grid gap-1.5">
             <Label htmlFor="roadmap-name">Name</Label>
             <Input
               id="roadmap-name"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              required
-              minLength={2}
+              aria-invalid={showNameError}
               autoFocus
             />
+            {showNameError ? <p className="text-xs text-destructive">{errors.name}</p> : null}
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="roadmap-order">Order (optional)</Label>
-            <Input
-              id="roadmap-order"
-              type="number"
-              min={1}
-              value={order}
-              onChange={(event) => setOrder(event.target.value)}
-              placeholder="Appended last when empty"
+            <Label htmlFor="roadmap-description">Description (optional)</Label>
+            <Textarea
+              id="roadmap-description"
+              value={description}
+              rows={3}
+              className="max-h-40"
+              onChange={(event) => setDescription(event.target.value)}
             />
           </div>
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_8rem]">
+            <div className="grid min-w-0 gap-1.5">
+              <Label htmlFor="roadmap-category">Category</Label>
+              <SimpleSelect
+                id="roadmap-category"
+                value={categoryId}
+                onValueChange={setCategoryId}
+                options={categoryOptions}
+                disabled={categories.loading && categories.data === null}
+                placeholder={categories.loading ? "Loading categories…" : "Select a category"}
+                className="w-full"
+              />
+              {categories.error !== null ? (
+                <p className="flex flex-wrap items-center gap-x-2 text-xs text-destructive">
+                  Could not load categories.
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="xs"
+                    className="h-auto px-0"
+                    onClick={categories.reload}
+                  >
+                    Retry
+                  </Button>
+                </p>
+              ) : null}
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="roadmap-order">{roadmap === null ? "Order (optional)" : "Order"}</Label>
+              <Input
+                id="roadmap-order"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1}
+                value={order}
+                onChange={(event) => setOrder(event.target.value)}
+                placeholder={roadmap === null ? "Auto" : undefined}
+                aria-invalid={showOrderError}
+              />
+            </div>
+            {showOrderError ? (
+              <p className="text-xs text-destructive sm:col-span-2">{errors.order}</p>
+            ) : null}
+          </div>
+          <div className="grid gap-1.5">
+            <span className="text-sm leading-none font-medium">Cover image (optional)</span>
+            <CoverImageField value={cover} onChange={setCover} disabled={pending} />
+          </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button type="button" variant="outline" disabled={pending} onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={pending || name.trim().length < 2}>
+            <Button type="submit" disabled={pending || (submitted && hasErrors)}>
               {pending ? <LoaderCircleIcon className="animate-spin" /> : null}
-              {pending ? "Creating…" : "Create"}
+              {roadmap === null ? (pending ? "Creating…" : "Create") : pending ? "Saving…" : "Save"}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Cover, category and description block at the top of the roadmap detail view. */
+function RoadmapDetailsPanel({ roadmap, onEdit }: { roadmap: RoadmapDetail; onEdit: () => void }) {
+  return (
+    <Card className="mb-6 gap-0 py-0 sm:flex-row">
+      <CoverImage
+        url={roadmap.coverUrl}
+        alt={`${roadmap.name} cover`}
+        className="sm:w-56 sm:shrink-0 lg:w-64"
+      />
+      <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <CategoryBadge category={roadmap.category} />
+          {roadmap.isActive ? null : <InactiveBadge />}
+          {roadmap.hasPublishedVersion ? null : <DraftOnlyBadge />}
+        </div>
+        {roadmap.description === null || roadmap.description === "" ? (
+          <p className="text-sm text-muted-foreground italic">No description</p>
+        ) : (
+          <p className="text-sm whitespace-pre-line text-muted-foreground">{roadmap.description}</p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Order #{roadmap.order} · created {formatShortDate(roadmap.createdAt)}
+        </p>
+        <div className="mt-auto pt-1">
+          <Button type="button" variant="outline" onClick={onEdit}>
+            <PencilIcon />
+            Edit details
+          </Button>
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -727,19 +962,70 @@ function ToggleActiveButton({
 
 export function RoadmapPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showCreate, setShowCreate] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<RoadmapSummary | null>(null);
+  const [filter, setFilter] = useState(FILTER_ALL);
+  const [busy, setBusy] = useState(false);
 
   const {
     data: roadmapsRaw,
     loading: roadmapsLoading,
     error: roadmapsError,
     reload: reloadRoadmaps,
-  } = useQuery(async () => (await listRoadmaps()) as RoadmapListItem[], []);
+  } = useQuery(() => listRoadmaps(), []);
+  const categories = useQuery(() => listRoadmapCategories(), []);
+
+  const roadmaps = useMemo(
+    () =>
+      roadmapsRaw === null
+        ? null
+        : [...roadmapsRaw].sort((a, b) => a.order - b.order || a.name.localeCompare(b.name)),
+    [roadmapsRaw],
+  );
+
+  // Filter choices: managed categories (in their order) plus any category only seen on a roadmap.
+  const filterOptions = useMemo<SelectOption[]>(() => {
+    const all = roadmaps ?? [];
+    const known = new Map<string, string>();
+    for (const category of categories.data ?? []) {
+      known.set(category.id, category.name);
+    }
+    for (const entry of all) {
+      if (entry.category !== null && !known.has(entry.category.id)) {
+        known.set(entry.category.id, entry.category.name);
+      }
+    }
+    const uncategorized = all.filter((entry) => entry.categoryId === null).length;
+    return [
+      { value: FILTER_ALL, label: `All categories (${all.length})` },
+      ...[...known].map(([id, name]) => ({
+        value: id,
+        label: `${name} (${all.filter((entry) => entry.categoryId === id).length})`,
+      })),
+      { value: NO_CATEGORY, label: `Uncategorized (${uncategorized})` },
+    ];
+  }, [roadmaps, categories.data]);
+
+  const activeFilter = filterOptions.some((option) => option.value === filter) ? filter : FILTER_ALL;
+  const visible = useMemo(
+    () =>
+      roadmaps === null
+        ? null
+        : roadmaps.filter((entry) =>
+            activeFilter === FILTER_ALL
+              ? true
+              : activeFilter === NO_CATEGORY
+                ? entry.categoryId === null
+                : entry.categoryId === activeFilter,
+          ),
+    [roadmaps, activeFilter],
+  );
 
   if (selectedId !== null) {
     return (
       <RoadmapDetailView
         roadmapId={selectedId}
+        categories={categories}
         onBack={() => {
           setSelectedId(null);
           reloadRoadmaps();
@@ -748,35 +1034,46 @@ export function RoadmapPage() {
     );
   }
 
-  const roadmaps =
-    roadmapsRaw === null ? null : [...roadmapsRaw].sort((a, b) => a.order - b.order);
+  const draftOnlyCount = roadmaps === null ? 0 : roadmaps.filter((entry) => !entry.hasPublishedVersion).length;
 
-  async function handleToggle(entry: RoadmapListItem): Promise<void> {
+  function openDialog(roadmap: RoadmapSummary | null): void {
+    setEditing(roadmap);
+    setDialogOpen(true);
+  }
+
+  async function handleToggle(entry: RoadmapSummary): Promise<void> {
+    setBusy(true);
     try {
       await updateRoadmap(entry.id, { isActive: !entry.isActive });
       toast.success(entry.isActive ? "Roadmap deactivated" : "Roadmap activated");
-      reloadRoadmaps();
     } catch (err) {
       toast.error(getErrorMessage(err));
+    } finally {
+      setBusy(false);
+      reloadRoadmaps();
     }
   }
 
+  /** Swaps with the neighbour in the current (possibly filtered) view; order is global. */
   async function handleMove(index: number, direction: -1 | 1): Promise<void> {
-    if (roadmaps === null) {
+    if (roadmaps === null || visible === null || busy) {
       return;
     }
-    const current = roadmaps[index];
-    const target = roadmaps[index + direction];
+    const current = visible[index];
+    const target = visible[index + direction];
     if (current === undefined || target === undefined) {
       return;
     }
+    setBusy(true);
     try {
-      await updateRoadmap(current.id, { order: target.order });
-      await updateRoadmap(target.id, { order: current.order });
+      for (const update of swapOrderUpdates(roadmaps, current.id, target.id)) {
+        await updateRoadmap(update.id, { order: update.order });
+      }
       toast.success("Roadmap order updated");
-      reloadRoadmaps();
     } catch (err) {
       toast.error(getErrorMessage(err));
+    } finally {
+      setBusy(false);
       reloadRoadmaps();
     }
   }
@@ -790,17 +1087,20 @@ export function RoadmapPage() {
             Manage therapy roadmaps, their versions and stage content.
           </p>
         </div>
-        <div className="flex w-full items-center gap-2 sm:w-auto">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
           <Button
             type="button"
             variant="outline"
-            onClick={reloadRoadmaps}
+            onClick={() => {
+              reloadRoadmaps();
+              categories.reload();
+            }}
             disabled={roadmapsLoading}
           >
             <RefreshCwIcon className={cn(roadmapsLoading && "animate-spin")} />
             Refresh
           </Button>
-          <Button type="button" onClick={() => setShowCreate(true)}>
+          <Button type="button" onClick={() => openDialog(null)}>
             <PlusIcon />
             New roadmap
           </Button>
@@ -810,51 +1110,107 @@ export function RoadmapPage() {
       {roadmapsError !== null ? (
         <ErrorState message={roadmapsError} onRetry={reloadRoadmaps} />
       ) : null}
-      {roadmapsError === null && roadmapsLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
+      {roadmapsError === null && roadmapsLoading && roadmaps === null ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {[0, 1, 2].map((cell) => (
+            <Skeleton key={cell} className="aspect-[4/3] w-full rounded-xl" />
+          ))}
         </div>
       ) : null}
-      {roadmapsError === null && !roadmapsLoading && roadmaps !== null ? (
+      {roadmapsError === null && roadmaps !== null && visible !== null ? (
         roadmaps.length === 0 ? (
           <EmptyState
             title="No roadmaps yet"
             description="Create the first roadmap to start arranging therapy stages."
-          />
+          >
+            <Button type="button" onClick={() => openDialog(null)}>
+              <PlusIcon />
+              New roadmap
+            </Button>
+          </EmptyState>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {roadmaps.map((entry, index) => (
-              <RoadmapListCard
-                key={entry.id}
-                entry={entry}
-                index={index}
-                total={roadmaps.length}
-                busy={roadmapsLoading}
-                onOpen={() => setSelectedId(entry.id)}
-                onToggleActive={() => void handleToggle(entry)}
-                onMove={(direction) => void handleMove(index, direction)}
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <SimpleSelect
+                value={activeFilter}
+                onValueChange={setFilter}
+                options={filterOptions}
+                ariaLabel="Filter roadmaps by category"
+                className="w-full sm:w-72"
               />
-            ))}
+              <p className="text-xs text-muted-foreground">
+                Showing {visible.length} of {roadmaps.length}{" "}
+                {roadmaps.length === 1 ? "roadmap" : "roadmaps"}
+                {categories.error !== null ? " · categories could not be loaded" : ""}
+              </p>
+            </div>
+            {draftOnlyCount > 0 ? (
+              <p
+                role="status"
+                className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300"
+              >
+                <TriangleAlertIcon className="mt-px size-3.5 shrink-0" />
+                {draftOnlyCount === 1
+                  ? "1 roadmap has no published version and is hidden from children until a version is published."
+                  : `${draftOnlyCount} roadmaps have no published version and are hidden from children until a version is published.`}
+              </p>
+            ) : null}
+            {visible.length === 0 ? (
+              <EmptyState
+                title="No roadmaps in this category"
+                description="Assign roadmaps to it with Edit details, or pick another filter."
+              >
+                <Button type="button" variant="outline" onClick={() => setFilter(FILTER_ALL)}>
+                  Show all roadmaps
+                </Button>
+              </EmptyState>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {visible.map((entry, index) => (
+                  <RoadmapListCard
+                    key={entry.id}
+                    entry={entry}
+                    isFirst={index === 0}
+                    isLast={index === visible.length - 1}
+                    busy={busy || roadmapsLoading}
+                    onOpen={() => setSelectedId(entry.id)}
+                    onEdit={() => openDialog(entry)}
+                    onToggleActive={() => void handleToggle(entry)}
+                    onMove={(direction) => void handleMove(index, direction)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )
       ) : null}
 
-      <CreateRoadmapDialog
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
-        onCreated={(id) => {
+      <RoadmapDetailsDialog
+        open={dialogOpen}
+        roadmap={editing}
+        categories={categories}
+        onClose={() => setDialogOpen(false)}
+        onSaved={(id) => {
           reloadRoadmaps();
-          setSelectedId(id);
+          categories.reload();
+          if (editing === null) {
+            setSelectedId(id);
+          }
         }}
       />
     </div>
   );
 }
 
-function RoadmapDetailView({ roadmapId, onBack }: { roadmapId: string; onBack: () => void }) {
+function RoadmapDetailView({
+  roadmapId,
+  categories,
+  onBack,
+}: {
+  roadmapId: string;
+  categories: QueryState<AdminRoadmapCategory[]>;
+  onBack: () => void;
+}) {
   const {
     data: roadmap,
     loading: roadmapLoading,
@@ -863,6 +1219,7 @@ function RoadmapDetailView({ roadmapId, onBack }: { roadmapId: string; onBack: (
   } = useQuery(() => getRoadmap(roadmapId), [roadmapId]);
   const { data: exercises, reload: reloadExercises } = useQuery(() => listExercises(), []);
   const [versionBusy, setVersionBusy] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const { version, isPublished } =
     roadmap === null ? { version: null, isPublished: true } : pickVersion(roadmap.versions);
@@ -938,8 +1295,8 @@ function RoadmapDetailView({ roadmapId, onBack }: { roadmapId: string; onBack: (
           <ArrowLeftIcon />
         </Button>
         <div className="min-w-0 flex-1 basis-40">
-          <div className="flex items-center gap-2">
-            <h1 className="truncate text-lg font-semibold tracking-tight">
+          <div className="flex min-w-0 items-center gap-2">
+            <h1 className="min-w-0 truncate text-lg font-semibold tracking-tight">
               {roadmap === null ? "Roadmap" : roadmap.name}
             </h1>
             {roadmap !== null ? (
@@ -962,7 +1319,7 @@ function RoadmapDetailView({ roadmapId, onBack }: { roadmapId: string; onBack: (
             Arrange therapy stages, mastery rules and the exercises each stage contains.
           </p>
         </div>
-        <div className="flex w-full items-center gap-2 sm:w-auto">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           {roadmap !== null ? (
             <ToggleActiveButton
               id={roadmap.id}
@@ -995,6 +1352,9 @@ function RoadmapDetailView({ roadmapId, onBack }: { roadmapId: string; onBack: (
       {roadmapError !== null ? <ErrorState message={roadmapError} onRetry={reloadRoadmap} /> : null}
       {roadmapError === null && roadmapLoading ? <RoadmapSkeleton /> : null}
       {roadmapError === null && !roadmapLoading && roadmap !== null ? (
+        <RoadmapDetailsPanel roadmap={roadmap} onEdit={() => setEditOpen(true)} />
+      ) : null}
+      {roadmapError === null && !roadmapLoading && roadmap !== null ? (
         version === null ? (
           <EmptyState
             title="No versions yet"
@@ -1014,16 +1374,19 @@ function RoadmapDetailView({ roadmapId, onBack }: { roadmapId: string; onBack: (
               <p className="text-xs text-muted-foreground lg:hidden">
                 v{version.version} · {version.status.charAt(0) + version.status.slice(1).toLowerCase()}
                 {version.publishedAt !== null
-                  ? ` · Published ${new Date(version.publishedAt).toLocaleDateString("en-GB", { dateStyle: "medium" })}`
+                  ? ` · Published ${formatShortDate(version.publishedAt)}`
                   : ""}
               </p>
               {!isPublished ? (
                 <p
-                  className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400"
+                  className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300"
                   role="status"
                 >
-                  This roadmap has no published version — showing the latest{" "}
-                  {version.status.toLowerCase()} version.
+                  <TriangleAlertIcon className="mt-px size-3.5 shrink-0" />
+                  <span>
+                    Draft only — children can&apos;t see this roadmap until a version is published.
+                    Showing the latest {version.status.toLowerCase()} version.
+                  </span>
                 </p>
               ) : null}
               {stages.length === 0 ? (
@@ -1059,6 +1422,18 @@ function RoadmapDetailView({ roadmapId, onBack }: { roadmapId: string; onBack: (
             </div>
           </div>
         )
+      ) : null}
+      {roadmap !== null ? (
+        <RoadmapDetailsDialog
+          open={editOpen}
+          roadmap={roadmap}
+          categories={categories}
+          onClose={() => setEditOpen(false)}
+          onSaved={() => {
+            reloadRoadmap();
+            categories.reload();
+          }}
+        />
       ) : null}
     </div>
   );

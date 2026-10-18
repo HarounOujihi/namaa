@@ -133,6 +133,14 @@ export function getPlayRoadmaps(token: string, childId: string): Promise<PlayRoa
   return request<PlayRoadmapsResponse>(`/play/${encodeURIComponent(childId)}/roadmaps`, { token });
 }
 
+/** Marks a roadmap as opened by the child (fire-and-forget; 204). */
+export function openPlayRoadmap(token: string, childId: string, roadmapId: string): Promise<void> {
+  return request<void>(
+    `/play/${encodeURIComponent(childId)}/roadmaps/${encodeURIComponent(roadmapId)}/open`,
+    { method: "POST", token },
+  );
+}
+
 export function getPlayAssessment(token: string, childId: string): Promise<PlayAssessment> {
   return request<PlayAssessment>(`/play/${encodeURIComponent(childId)}/assessment`, { token });
 }

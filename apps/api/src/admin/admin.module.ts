@@ -7,6 +7,8 @@ import { ExercisesService } from './exercises.service';
 import { ExercisesController } from './exercises.controller';
 import { RoadmapsService } from './roadmaps.service';
 import { RoadmapsController } from './roadmaps.controller';
+import { RoadmapCategoriesService } from './roadmap-categories.service';
+import { RoadmapCategoriesController } from './roadmap-categories.controller';
 import { AdminMetaController } from './admin-meta.controller';
 import { AdminAssetsController } from './admin-assets.controller';
 
@@ -18,8 +20,9 @@ import { AdminAssetsController } from './admin-assets.controller';
     ExerciseTypesController,
     ExercisesController,
     RoadmapsController,
+    RoadmapCategoriesController,
   ],
-  providers: [ValidationService, ExerciseTypesService, ExercisesService, RoadmapsService],
+  providers: [ValidationService, ExerciseTypesService, ExercisesService, RoadmapsService, RoadmapCategoriesService],
   exports: [ValidationService],
 })
 export class AdminModule {}

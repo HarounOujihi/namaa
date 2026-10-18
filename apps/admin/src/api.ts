@@ -22,10 +22,15 @@ import type {
   ExerciseTypeUpdatePayload,
   ExerciseUpdatePayload,
   ExerciseVersionDetail,
+  AdminRoadmapCategory,
+  RoadmapCategoryCreatePayload,
+  RoadmapCategoryUpdatePayload,
+  RoadmapCreatePayload,
   RoadmapDetail,
   RoadmapStage,
   RoadmapStageItem,
   RoadmapSummary,
+  RoadmapUpdatePayload,
   Role,
   Skill,
   StageUpdatePayload,
@@ -331,6 +336,30 @@ export function getRoadmap(id: string): Promise<RoadmapDetail> {
   return request<RoadmapDetail>(`/admin/roadmaps/${id}`);
 }
 
+export function createRoadmap(payload: RoadmapCreatePayload): Promise<RoadmapSummary> {
+  return request<RoadmapSummary>("/admin/roadmaps", { method: "POST", body: payload });
+}
+
+export function updateRoadmap(id: string, payload: RoadmapUpdatePayload): Promise<RoadmapSummary> {
+  return request<RoadmapSummary>(`/admin/roadmaps/${id}`, { method: "PUT", body: payload });
+}
+
+export function deleteRoadmap(roadmapId: string): Promise<void> {
+  return request<void>(`/admin/roadmaps/${roadmapId}`, { method: "DELETE" });
+}
+
+export function createRoadmapVersion(id: string): Promise<RoadmapDetail> {
+  return request<RoadmapDetail>(`/admin/roadmaps/${id}/versions`, { method: "POST" });
+}
+
+export function publishRoadmapVersion(versionId: string): Promise<RoadmapDetail> {
+  return request<RoadmapDetail>(`/admin/roadmap-versions/${versionId}/publish`, { method: "POST" });
+}
+
+export function addRoadmapStage(versionId: string, name: string): Promise<unknown> {
+  return request<unknown>(`/admin/roadmap-versions/${versionId}/stages`, { method: "POST", body: { name } });
+}
+
 export function updateStage(id: string, payload: StageUpdatePayload): Promise<RoadmapStage> {
   return request<RoadmapStage>(`/admin/stages/${id}`, {
     method: "PATCH",
@@ -356,6 +385,32 @@ export function updateStageItemOrder(itemId: string, order: number): Promise<Roa
     method: "PATCH",
     body: { order },
   });
+}
+
+// ---------- Roadmap categories ----------
+
+export function listRoadmapCategories(): Promise<AdminRoadmapCategory[]> {
+  return request<AdminRoadmapCategory[]>("/admin/roadmap-categories");
+}
+
+export function createRoadmapCategory(
+  payload: RoadmapCategoryCreatePayload,
+): Promise<AdminRoadmapCategory> {
+  return request<AdminRoadmapCategory>("/admin/roadmap-categories", { method: "POST", body: payload });
+}
+
+export function updateRoadmapCategory(
+  id: string,
+  payload: RoadmapCategoryUpdatePayload,
+): Promise<AdminRoadmapCategory> {
+  return request<AdminRoadmapCategory>(`/admin/roadmap-categories/${id}`, {
+    method: "PUT",
+    body: payload,
+  });
+}
+
+export function deleteRoadmapCategory(id: string): Promise<void> {
+  return request<void>(`/admin/roadmap-categories/${id}`, { method: "DELETE" });
 }
 
 // ---------- Assets ----------
@@ -425,32 +480,4 @@ export function resetUserPassword(id: string, password: string): Promise<{ ok: b
     method: "PUT",
     body: { password },
   });
-}
-
-export function createRoadmap(name: string, order?: number): Promise<RoadmapDetail> {
-  return request<RoadmapDetail>("/admin/roadmaps", { method: "POST", body: { name, order } });
-}
-
-export function updateRoadmap(id: string, payload: { name?: string; order?: number; isActive?: boolean }): Promise<RoadmapDetail> {
-  return request<RoadmapDetail>(`/admin/roadmaps/${id}`, { method: "PUT", body: payload });
-}
-
-export function createRoadmapVersion(id: string): Promise<RoadmapDetail> {
-  return request<RoadmapDetail>(`/admin/roadmaps/${id}/versions`, { method: "POST" });
-}
-
-export function publishRoadmapVersion(versionId: string): Promise<RoadmapDetail> {
-  return request<RoadmapDetail>(`/admin/roadmap-versions/${versionId}/publish`, { method: "POST" });
-}
-
-export function addRoadmapStage(versionId: string, name: string): Promise<unknown> {
-  return request<unknown>(`/admin/roadmap-versions/${versionId}/stages`, { method: "POST", body: { name } });
-}
-
-export function removeRoadmapStage(stageId: string): Promise<void> {
-  return request<void>(`/admin/stages/${stageId}`, { method: "DELETE" });
-}
-
-export function deleteRoadmap(roadmapId: string): Promise<void> {
-  return request<void>(`/admin/roadmaps/${roadmapId}`, { method: "DELETE" });
 }

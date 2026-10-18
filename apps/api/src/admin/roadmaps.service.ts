@@ -1,22 +1,52 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { AssetsService } from '../assets/assets.service';
 import { StageItemCreateDto, StageItemOrderDto, StagePatchDto } from './dto/admin.dto';
+import { CreateRoadmapDto, UpdateRoadmapDto } from './dto/roadmap.dto';
+
+// Library metadata shared by the list and detail responses.
+const ROADMAP_META_INCLUDE = {
+  category: { select: { id: true, name: true } },
+  coverAsset: { select: { storageKey: true } },
+} satisfies Prisma.RoadmapInclude;
 
 @Injectable()
 export class RoadmapsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly assets: AssetsService,
+  ) {}
 
-  list() {
-    return this.prisma.roadmap.findMany({
+  async list() {
+    const rows = await this.prisma.roadmap.findMany({
       orderBy: { createdAt: 'asc' },
-      include: { _count: { select: { versions: true } } },
+      include: {
+        ...ROADMAP_META_INCLUDE,
+        _count: { select: { versions: true } },
+        versions: { where: { status: 'PUBLISHED' }, select: { id: true }, take: 1 },
+      },
     });
+    return Promise.all(
+      rows.map(async ({ versions, coverAsset, ...row }) => ({
+        ...row,
+        coverUrl: coverAsset ? await this.assets.presignedGetUrl(coverAsset.storageKey) : null,
+        hasPublishedVersion: versions.length > 0,
+      })),
+    );
   }
 
-  async create(dto: { name: string; order?: number }) {
+  async create(dto: CreateRoadmapDto) {
+    await this.assertMetaRefs(dto);
     const roadmap = await this.prisma.roadmap.create({
-      data: { name: dto.name, order: dto.order ?? 0, isActive: true },
-      include: { _count: { select: { versions: true } } },
+      data: {
+        name: dto.name,
+        order: dto.order ?? 0,
+        isActive: true,
+        description: dto.description || null,
+        categoryId: dto.categoryId ?? null,
+        coverAssetId: dto.coverAssetId ?? null,
+      },
     });
     await this.prisma.roadmapVersion.create({
       data: { roadmapId: roadmap.id, version: 1, status: 'DRAFT' },
@@ -24,9 +54,35 @@ export class RoadmapsService {
     return this.get(roadmap.id);
   }
 
-  async update(id: string, dto: { name?: string; order?: number; isActive?: boolean }) {
-    await this.prisma.roadmap.update({ where: { id }, data: dto });
+  async update(id: string, dto: UpdateRoadmapDto) {
+    await this.assertMetaRefs(dto);
+    await this.prisma.roadmap.update({
+      where: { id },
+      data: {
+        name: dto.name,
+        order: dto.order,
+        isActive: dto.isActive,
+        description: dto.description === undefined ? undefined : dto.description || null,
+        categoryId: dto.categoryId,
+        coverAssetId: dto.coverAssetId,
+      },
+    });
     return this.get(id);
+  }
+
+  private async assertMetaRefs(dto: { categoryId?: string | null; coverAssetId?: string | null }): Promise<void> {
+    if (dto.categoryId) {
+      const category = await this.prisma.roadmapCategory.findUnique({
+        where: { id: dto.categoryId },
+        select: { id: true },
+      });
+      if (!category) {
+        throw new BadRequestException('Unknown categoryId');
+      }
+    }
+    if (dto.coverAssetId) {
+      await this.assets.assertImageAsset(dto.coverAssetId);
+    }
   }
 
   async createVersion(roadmapId: string) {
@@ -102,6 +158,7 @@ export class RoadmapsService {
     const roadmap = await this.prisma.roadmap.findUnique({
       where: { id },
       include: {
+        ...ROADMAP_META_INCLUDE,
         versions: {
           orderBy: { version: 'desc' },
           include: {
@@ -135,7 +192,15 @@ export class RoadmapsService {
     return {
       id: roadmap.id,
       name: roadmap.name,
+      order: roadmap.order,
       isActive: roadmap.isActive,
+      description: roadmap.description,
+      categoryId: roadmap.categoryId,
+      category: roadmap.category,
+      coverAssetId: roadmap.coverAssetId,
+      coverUrl: roadmap.coverAsset ? await this.assets.presignedGetUrl(roadmap.coverAsset.storageKey) : null,
+      hasPublishedVersion: roadmap.versions.some((v) => v.status === 'PUBLISHED'),
+      createdAt: roadmap.createdAt,
       versions: roadmap.versions.map((v) => ({
         id: v.id,
         version: v.version,

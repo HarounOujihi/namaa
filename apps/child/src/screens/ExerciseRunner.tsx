@@ -9,6 +9,8 @@ interface ExerciseRunnerProps {
   token: string;
   childId: string;
   item: PlayStageItem;
+  /** Sent with every attempt so progress is credited to this roadmap. */
+  roadmapId: string;
   onAuthExpired: () => void;
   onBack: () => void;
   onDone: () => void;
@@ -30,7 +32,7 @@ interface AttemptRewards {
  * renders the engine player, shows gentle positive-only feedback, and submits
  * the single recorded answer the moment the child answers — التالي only moves on.
  */
-export function ExerciseRunner({ token, childId, item, onAuthExpired, onBack, onDone }: ExerciseRunnerProps) {
+export function ExerciseRunner({ token, childId, item, roadmapId, onAuthExpired, onBack, onDone }: ExerciseRunnerProps) {
   const exercise = item.exercise;
   const [result, setResult] = useState<AnswerResult | null>(null);
   const [earned, setEarned] = useState<AttemptRewards | null>(null);
@@ -84,6 +86,7 @@ export function ExerciseRunner({ token, childId, item, onAuthExpired, onBack, on
       exerciseVersionId: exercise.exerciseVersionId,
       startedAt: session.startedAt,
       completedAt: new Date().toISOString(),
+      roadmapId,
       answers: [
         {
           questionKey: "answer",

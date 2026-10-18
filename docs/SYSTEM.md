@@ -26,7 +26,8 @@ Parent / Specialist dashboards ◄────────── Badges on stage
 | Concept | What it is | Where |
 |---|---|---|
 | **Skill** | One of the 9 canonical abilities from the therapeutic brief (auditory perception → reading comprehension). Tracked **independently per child** — a child can be advanced in one and behind in another. | `skills` table, seeded |
-| **Roadmap** | The child's journey. One default roadmap (الرحلة العلاجية) with 9 stages; the architecture supports multiple roadmaps reusing the same skills. | `roadmaps` / `roadmap_versions` |
+| **Roadmap** | A journey of stages. Many can be active at once; children see a roadmap only when it is **active and has a PUBLISHED version**. Each has an optional description and cover image and belongs to at most one category. | `roadmaps` / `roadmap_versions` |
+| **Roadmap category** | Admin-managed grouping (name, description, cover image, order) for the child app's library. Deleting a category leaves its roadmaps uncategorized. | `roadmap_categories` |
 | **Stage** | A stop on the journey. Owns a **mastery rule** (see §3), one or more skills, and an ordered list of exercises. | `roadmap_stages` + `stage_items` |
 | **Exercise** | A content unit rendered by an exercise-type renderer. Its entire content is a JSON `configuration` validated against the type's JSON Schema. | `exercises` + `exercise_versions` |
 | **Exercise type** | An interaction kind with a renderer + evaluator. First wave: Multiple Choice, Image Match, Audio Match, Sound Position, Ordering, Word Builder, Memory Game. | `exercise_types` + versions, renderers in `packages/exercise-engine` |
@@ -66,7 +67,7 @@ minAccuracy              e.g. 0.7      (nullable → default 0.7)
 minSuccessfulAttempts    e.g. 3        (nullable → default 3)
 ```
 
-**Stage completion (v0 rule):** a stage is *completed* when every one of its playable exercises has at least one successful attempt by that child.
+**Stage completion (v0 rule):** a stage is *completed* when every one of its playable exercises has at least one successful attempt by that child **played from that roadmap** — progress is tracked per roadmap. Every attempt records the `roadmapId` it was played from; the same exercise in two roadmaps must be passed in each. Skills, levels and rewards still count every attempt regardless of roadmap. Attempts made before per-roadmap tracking were attributed to the original roadmap (الرحلة العلاجية) by the migration.
 
 **Unlocking:** a stage is *unlocked* when **every prior playable stage is completed**. Stages with no exercises (قيد التحضير) never block the chain. This runs server-side (`computeStageUnlocks` in `progression/rules.ts`, unit-tested) — the child app just renders the states:
 
@@ -145,7 +146,8 @@ No leaderboards, no comparisons between children — progress is only ever compa
 ## 7. The child experience
 
 - **Entry**: no child logins — a parent/specialist unlocks the device once; the child picks their profile card. Optional per-child PIN for shared tablets.
-- **Journey screen**: slim header (greeting + roadmap chip + 🎁 + exit), the island map, and (if unassessed) the assessment banner.
+- **Library** (hash routes, browser back + shareable links): `#/` shows the categories page — a "تابع رحلتك" card for the most recently active unfinished roadmap, then category cards (uncategorized roadmaps form a "رحلات أخرى" bucket). `#/c/<categoryId>` (or `#/c/other`) lists that category's roadmaps; each card shows, **before opening**, whether it is new / in progress / completed, passed stages, stars earned in that roadmap, the current stage and last activity. With a single bucket the categories page is skipped; with a single roadmap its journey opens directly. Entering a roadmap records it as opened (`child_roadmap_progress`).
+- **Journey screen** (`#/r/<id>`, stages `#/r/<id>/s/<order>`, exercises `#/r/<id>/e/<order>`): slim header (back, greeting, roadmap chip, 🎁, exit), a switcher for roadmaps in the same category, passed-stages and stars chips, the island map, and (if unassessed) the assessment banner.
 - **Play**: exercises render through the engine with audio assets first, Arabic TTS fallback. Positive-only feedback everywhere; platform sounds (welcome / celebration / retry / stage complete) are admin-manageable with TTS fallback.
 - **Screen time**: the parent sets a daily limit (5–480 min). The child app tracks minutes per day and shows a gentle goodnight screen ("🌙 انتهى وقت الرحلة لهذا اليوم") when reached — advisory in-app, never a hard lock mid-flow.
 
@@ -156,6 +158,7 @@ No leaderboards, no comparisons between children — progress is only ever compa
 - **Visual-first authoring**: each exercise type has a form editor; JSON remains as an advanced tab. Assessment items reuse the same editors.
 - **Validation pipeline** (create/patch/publish): ajv schema check → per-type semantic checks (correct-answer membership, option counts, word-builder concatenation…) → referential asset checks.
 - **Lifecycle**: Draft → Validate → Publish → Archive. Published versions are frozen; "New version" clones into an editable draft.
+- **Roadmap categories** (`/roadmap-categories`): create/edit/delete/reorder categories with cover upload or library pick. Roadmap cards show cover, category and a **"Draft only — hidden from children"** warning until a version is published; "Edit details" sets name, description, category, cover and order.
 - **Assets**: uploads live in S3-compatible storage (MinIO locally); configs store asset IDs, URLs are presigned per session. Filenames are preserved for human recognition in pickers.
 - **Platform sounds**: four admin-manageable slots (welcome / celebration / retry / stage-complete), each with an Arabic TTS fallback text.
 
@@ -181,9 +184,11 @@ All rules are enforced **server-side** (verified with 403 tests); the child is s
 | Progression rules (pure + tests) | `apps/api/src/progression/rules.ts` |
 | Rewards engine | `apps/api/src/rewards/rewards.service.ts` |
 | Assessment & placement | `apps/api/src/assessment/` |
-| Play content + attempts | `apps/api/src/play/` |
+| Play content, library progress + attempts | `apps/api/src/play/` |
+| Roadmap categories (admin) | `apps/api/src/admin/roadmap-categories.*` |
 | Analytics (all computed on demand) | `apps/api/src/analytics/` |
 | Exercise evaluators + Arabic utils (32 tests) | `packages/exercise-core/` |
 | Exercise renderers | `packages/exercise-engine/` |
 | Journey map | `apps/child/src/components/JourneyMap.tsx` |
+| Child library pages + hash navigation | `apps/child/src/screens/RoadmapLibrary.tsx`, `apps/child/src/play-views.ts` |
 | Exercise-type contract | `plans/exercise_type_spec.md` |

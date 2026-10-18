@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   OnModuleInit,
@@ -82,6 +83,14 @@ export class AssetsService implements OnModuleInit {
       return null;
     }
     return this.presignedGetUrl(asset.storageKey);
+  }
+
+  /** Throws 400 unless `assetId` is an existing IMAGE asset (cover pickers). */
+  async assertImageAsset(assetId: string): Promise<void> {
+    const asset = await this.prisma.asset.findUnique({ where: { id: assetId }, select: { type: true } });
+    if (asset?.type !== AssetType.IMAGE) {
+      throw new BadRequestException('coverAssetId must reference an IMAGE asset');
+    }
   }
 
   async presignedGetUrl(storageKey: string): Promise<string> {

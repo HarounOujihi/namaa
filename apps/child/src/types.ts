@@ -72,15 +72,41 @@ export interface PlayStage {
   unlocked: boolean;
 }
 
+export interface PlayCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  coverUrl: string | null;
+  order: number;
+}
+
+export interface PlayRoadmapProgress {
+  opened: boolean;
+  lastActivityAt: string | null;
+  completedStages: number;
+  totalStages: number;
+  completedItems: number;
+  totalItems: number;
+  stars: number;
+  maxStars: number;
+  currentStageName: string | null;
+  completed: boolean;
+}
+
 export interface PlayRoadmapSummary {
   id: string;
   name: string;
   order: number;
+  description: string | null;
+  coverUrl: string | null;
+  categoryId: string | null;
+  progress: PlayRoadmapProgress;
   stages: PlayStage[];
 }
 
 export interface PlayRoadmapsResponse {
   child: { id: string; fullName: string };
+  categories: PlayCategory[];
   roadmaps: PlayRoadmapSummary[];
 }
 
@@ -97,6 +123,8 @@ export interface PlayAttemptInput {
   startedAt: string;
   completedAt: string;
   answers: PlayAttemptAnswer[];
+  /** The roadmap the exercise was played from; progress is tracked per roadmap. */
+  roadmapId?: string;
 }
 
 export interface PlayAttemptResult {

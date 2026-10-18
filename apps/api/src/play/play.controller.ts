@@ -36,16 +36,21 @@ export class PlayController {
       .then(() => this.play.activeRoadmaps(childId));
   }
 
+  @Post(':childId/roadmaps/:roadmapId/open')
+  @HttpCode(204)
+  openRoadmap(
+    @CurrentUser() user: AuthUser,
+    @Param('childId') childId: string,
+    @Param('roadmapId') roadmapId: string,
+  ): Promise<void> {
+    return this.play
+      .assertChildLinked(user, childId)
+      .then(() => this.play.openRoadmap(childId, roadmapId));
+  }
+
   @Get('sounds')
   async platformSounds() {
     return { sounds: await this.sounds.soundsForApp() };
-  }
-
-  @Get(':childId/roadmap')
-  roadmap(@CurrentUser() user: AuthUser, @Param('childId') childId: string) {
-    return this.play
-      .assertChildLinked(user, childId)
-      .then(() => this.play.roadmap(childId));
   }
 
   @Get(':childId/recommendations')

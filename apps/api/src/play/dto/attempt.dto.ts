@@ -77,4 +77,9 @@ export class SubmitAttemptDto {
   @ValidateNested({ each: true })
   @Type(() => AttemptEventDto)
   events?: AttemptEventDto[];
+
+  @ApiPropertyOptional({ description: 'Roadmap the exercise was played from (per-roadmap progress)' })
+  @IsOptional()
+  @IsString()
+  roadmapId?: string;
 }

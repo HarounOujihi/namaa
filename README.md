@@ -66,10 +66,11 @@ apps/
   api/      NestJS — auth (JWT, 3 login roles), children & invites, play content,
             attempts + server-side evaluation, assessment, progression engine,
             rewards, platform sounds, admin CMS API, parent & specialist APIs
-  child/    Journey map (locked stages from real progress), exercise runner,
-            diagnostic assessment, rewards shop, screen-time goodnight screen
-  admin/    Exercises (visual config editor + JSON), types, roadmap, assessments,
-            asset library, platform sounds, previews
+  child/    Roadmap library (categories → roadmaps with per-roadmap progress),
+            journey map, exercise runner, diagnostic assessment, rewards shop,
+            screen-time goodnight screen; hash routes for back/deep links
+  admin/    Exercises (visual config editor + JSON), types, roadmaps + categories
+            (covers, publish state), assessments, asset library, platform sounds
   web/      Parent: weekly summaries, child detail, screen-time settings,
             invite redemption, ar/en/fr. Specialist: case overview with status,
             progress curves, activity history, plan overrides, PDF report
@@ -140,7 +141,7 @@ The platform is deployed on **Vercel** (4 projects from the `main` branch) with 
 DATABASE_URL=postgresql://neondb_owner:npg_FCodayIn8G9H@ep-calm-moon-b41rfr2v-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
 ```
 
-All 9 migrations are applied and the database is seeded (1 super admin, 9 skills, 9 roadmap stages, 7 exercise types, 9 exercises, 8 assessment items, 9 badges, 5 customization items).
+All migrations are applied (including `roadmap_categories_progress`) and the database is seeded (1 super admin, 9 skills, 9 roadmap stages, 7 exercise types, 9 exercises, 8 assessment items, 9 badges, 5 customization items).
 
 ### Asset storage (S3-compatible)
 

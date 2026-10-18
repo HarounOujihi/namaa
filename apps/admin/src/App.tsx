@@ -7,6 +7,7 @@ import { ExerciseTypesPage } from "@/features/exercise-types/exercise-types-page
 import { ExercisesPage } from "@/features/exercises/exercises-page";
 import { AssessmentsPage } from "@/features/assessments/assessments-page";
 import { RoadmapPage } from "@/features/roadmap/roadmap-page";
+import { RoadmapCategoriesPage } from "@/features/roadmap-categories/roadmap-categories-page";
 import { AssetsPage } from "@/features/assets/assets-page";
 import { PlatformSoundsPage } from "@/features/sounds/platform-sounds-page";
 import { UsersPage } from "@/features/users/users-page";
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="exercise-types" element={<ExerciseTypesPage />} />
             <Route path="assessments" element={<AssessmentsPage />} />
             <Route path="roadmaps" element={<RoadmapPage />} />
+            <Route path="roadmap-categories" element={<RoadmapCategoriesPage />} />
             <Route path="assets" element={<AssetsPage />} />
             <Route path="sounds" element={<PlatformSoundsPage />} />
             <Route path="users" element={<UsersPage />} />
