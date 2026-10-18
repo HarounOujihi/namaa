@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ApiError, getPlayAssessment } from "../api";
 import type { Child, PlayAssessmentSkillResult } from "../types";
 import { Avatar } from "../components/Avatar";
+import { BackButton } from "../components/BackButton";
 import { toArabicIndic } from "../arabic";
 import "./assessment-results.css";
 
@@ -90,9 +91,7 @@ export function AssessmentResults({ child, token, onAuthExpired, onBack }: Asses
     <main className="screen assessment-results">
       <header className="results-top">
         <div className="results-top-row">
-          <button type="button" className="text-button" onClick={onBack}>
-            رجوع
-          </button>
+          <BackButton onClick={onBack} />
           <h1 className="results-title">نتائج التشخيص</h1>
           <span className="results-top-tail" aria-hidden="true" />
         </div>

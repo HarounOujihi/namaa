@@ -59,6 +59,8 @@ export interface PlayStageItem {
   id: string;
   order: number;
   exercise: PlayExercise | null;
+  /** Server: a successful attempt for this exercise was played from this roadmap. */
+  completed: boolean;
 }
 
 export interface PlayStage {

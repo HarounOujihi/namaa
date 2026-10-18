@@ -1,9 +1,11 @@
 import type { PlayRecommendation, PlayStage, PlayStageItem } from "../types";
 import { speak } from "../speech";
 import { toArabicIndic } from "../arabic";
+import { BackButton } from "../components/BackButton";
 
 interface StageScreenProps {
   stage: PlayStage;
+  /** Items completed this session (the server's `completed` flag covers earlier play). */
   completedItemIds: ReadonlySet<string>;
   onBack: () => void;
   onOpenItem: (item: PlayStageItem) => void;
@@ -11,18 +13,40 @@ interface StageScreenProps {
   onOpenRecommendation: (item: PlayStageItem) => void;
 }
 
+/** A picture per exercise type so the child can tell activities apart without reading. */
+const TYPE_EMOJI: Record<string, string> = {
+  MULTIPLE_CHOICE: "🔤",
+  AUDIO_MATCH: "🎧",
+  IMAGE_MATCH: "🖼️",
+  ORDERING: "🔢",
+  WORD_BUILDER: "🧩",
+  SOUND_POSITION: "👂",
+  MEMORY_GAME: "🃏",
+};
+
 /** The items of one roadmap stage as big activity cards. */
 export function StageScreen({ stage, completedItemIds, onBack, onOpenItem, recommendation, onOpenRecommendation }: StageScreenProps) {
   const items = stage.items.slice().sort((a, b) => a.order - b.order);
+  const playable = items.filter((item) => item.exercise !== null);
+  const doneCount = playable.filter((item) => item.completed || completedItemIds.has(item.id)).length;
 
   return (
-    <main className="screen">
+    <main className="screen play-screen">
       <header className="play-header">
-        <button type="button" className="text-button" onClick={onBack}>
-          رجوع
-        </button>
-        <h1 className="screen-title">{stage.name}</h1>
+        <BackButton onClick={onBack} />
+        <h1 className="play-header-title">{stage.name}</h1>
       </header>
+
+      {playable.length > 0 ? (
+        <div className="stage-progress" aria-label={`أكملت ${toArabicIndic(doneCount)} من ${toArabicIndic(playable.length)}`}>
+          <span className="stage-progress-text" aria-hidden="true">
+            ✓ {toArabicIndic(doneCount)} من {toArabicIndic(playable.length)}
+          </span>
+          <span className="stage-progress-bar" aria-hidden="true">
+            <span style={{ width: `${(doneCount / playable.length) * 100}%` }} />
+          </span>
+        </div>
+      ) : null}
 
       {recommendation !== null && recommendation.exercise !== null ? (
         <button
@@ -34,6 +58,7 @@ export function StageScreen({ stage, completedItemIds, onBack, onOpenItem, recom
               id: `recommendation-${recommendation.exercise.id}`,
               order: 0,
               exercise: recommendation.exercise,
+              completed: false,
             });
           }}
         >
@@ -66,28 +91,25 @@ export function StageScreen({ stage, completedItemIds, onBack, onOpenItem, recom
               </li>
             );
           }
+          const done = item.completed || completedItemIds.has(item.id);
           return (
             <li key={item.id}>
               <button
                 type="button"
-                className="item-card"
+                className={done ? "item-card is-done" : "item-card"}
+                aria-label={done ? `${exercise.title} — أكملت هذا النشاط` : undefined}
                 onClick={() => {
                   speak(exercise.title);
                   onOpenItem(item);
                 }}
               >
-                <span className="stage-number" aria-hidden>
-                  {toArabicIndic(index + 1)}
+                <span className={done ? "stage-number is-done" : "stage-number"} aria-hidden>
+                  {done ? "✓" : toArabicIndic(index + 1)}
                 </span>
-                <span className="stage-card-body">
-                  <span className="item-title">{exercise.title}</span>
-                  <span className="item-skill">المهارة: {exercise.skill.name}</span>
+                <span className="item-title">{exercise.title}</span>
+                <span className="item-type" aria-hidden="true">
+                  {TYPE_EMOJI[exercise.typeCode] ?? "⭐"}
                 </span>
-                {completedItemIds.has(item.id) ? (
-                  <span className="item-check" aria-label="أكملت هذا النشاط">
-                    ✓
-                  </span>
-                ) : null}
               </button>
             </li>
           );

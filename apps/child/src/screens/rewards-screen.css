@@ -25,10 +25,7 @@
   gap: 10px;
 }
 
-/* Slimmer than the global 64px text button, still a 44px touch target. */
-.rewards-top-row .text-button {
-  min-height: 44px;
-  padding: 4px 12px;
+.rewards-top-row .back-button {
   justify-self: start;
 }
 
@@ -456,7 +453,7 @@
 }
 
 /* keyboard focus stays visible for every control */
-.rewards-top-row .text-button:focus-visible,
+.rewards-top-row .back-button:focus-visible,
 .shop-button:focus-visible {
   outline: 4px solid #58a89b;
   outline-offset: 2px;

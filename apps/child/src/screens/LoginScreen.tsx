@@ -1,16 +1,36 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { ApiError, login } from "../api";
+import { BackButton } from "../components/BackButton";
 import type { AuthResponse } from "../types";
+import type { LoginRole } from "./StartScreen";
 
 interface LoginScreenProps {
+  role: LoginRole;
   onBack: () => void;
   onSuccess: (auth: AuthResponse) => void;
 }
 
-export function LoginScreen({ onBack, onSuccess }: LoginScreenProps) {
+const TITLE_BY_ROLE: Record<LoginRole, string> = {
+  parent: "دخول ولي الأمر",
+  specialist: "دخول المختص",
+};
+
+/** Server messages may be English; the screen always speaks Arabic. */
+function loginErrorMessage(error: unknown): string {
+  if (error instanceof ApiError && error.status === 401) {
+    return "البريد أو كلمة المرور غير صحيحة";
+  }
+  if (error instanceof ApiError && error.status === 0) {
+    return "تعذر الاتصال بالخادم";
+  }
+  return "تعذر تسجيل الدخول، حاول مرة أخرى";
+}
+
+export function LoginScreen({ role, onBack, onSuccess }: LoginScreenProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -24,7 +44,7 @@ export function LoginScreen({ onBack, onSuccess }: LoginScreenProps) {
     try {
       onSuccess(await login(email.trim(), password));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "تعذر تسجيل الدخول، حاول مرة أخرى");
+      setError(loginErrorMessage(err));
     } finally {
       setPending(false);
     }
@@ -32,10 +52,10 @@ export function LoginScreen({ onBack, onSuccess }: LoginScreenProps) {
 
   return (
     <main className="screen login-screen">
-      <button type="button" className="big-button secondary back-button" onClick={onBack}>
-        رجوع
-      </button>
-      <h1 className="screen-title">تسجيل الدخول</h1>
+      <header className="play-header">
+        <BackButton onClick={onBack} />
+        <h1 className="play-header-title">{TITLE_BY_ROLE[role]}</h1>
+      </header>
       <form className="card form" onSubmit={handleSubmit}>
         <label className="field">
           <span className="field-label">البريد الإلكتروني</span>
@@ -48,17 +68,31 @@ export function LoginScreen({ onBack, onSuccess }: LoginScreenProps) {
             required
           />
         </label>
-        <label className="field">
-          <span className="field-label">كلمة المرور</span>
-          <input
-            type="password"
-            dir="ltr"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="current-password"
-            required
-          />
-        </label>
+        <div className="field">
+          <label className="field-label" htmlFor="login-password">
+            كلمة المرور
+          </label>
+          <div className="password-row">
+            <input
+              id="login-password"
+              type={showPassword ? "text" : "password"}
+              dir="ltr"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              className="icon-button compact"
+              aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+              aria-pressed={showPassword}
+              onClick={() => setShowPassword((current) => !current)}
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </button>
+          </div>
+        </div>
         {error !== null ? (
           <p className="form-error" role="alert">
             {error}

@@ -201,8 +201,34 @@ export function viewFromHash(hash: string, library: PlayLibrary, current: PlayVi
   return null;
 }
 
-/** Resolve a view's coordinates against server data; stale ones fall back to the default screen. */
-export function resolveView(view: PlayView, library: PlayLibrary): ResolvedView {
+/**
+ * Whether the child may open a stage: the server unlocked it, or every earlier
+ * playable stage is complete (server or this session's checkmarks) — the same
+ * rule the journey map draws, so a stage finished just now opens the next one
+ * before the background refresh lands.
+ */
+export function isStageUnlocked(roadmap: PlayRoadmapSummary, stage: PlayStage, done: ReadonlySet<string>): boolean {
+  if (stage.unlocked) {
+    return true;
+  }
+  return roadmap.stages
+    .filter((candidate) => candidate.order < stage.order && candidate.totalItems > 0)
+    .every((candidate) => {
+      const playable = candidate.items.filter((item) => item.exercise !== null);
+      return candidate.completed || (playable.length > 0 && playable.every((item) => item.completed || done.has(item.id)));
+    });
+}
+
+/**
+ * Resolve a view's coordinates against server data; stale ones fall back to
+ * the default screen, and a stage (or its exercise) that is still locked falls
+ * back to its roadmap's journey — deep links and history never skip ahead.
+ */
+export function resolveView(
+  view: PlayView,
+  library: PlayLibrary,
+  completedByRoadmap: ReadonlyMap<string, ReadonlySet<string>> = new Map(),
+): ResolvedView {
   const resolveHome = (): ResolvedView => {
     const fallbackView = defaultView(library);
     if (fallbackView.kind === "journey") {
@@ -238,24 +264,22 @@ export function resolveView(view: PlayView, library: PlayLibrary): ResolvedView 
       const roadmap = library.roadmaps.find((candidate) => candidate.id === view.roadmapId);
       return roadmap !== undefined ? { kind: "journey", roadmap } : resolveHome();
     }
-    case "stage": {
-      const roadmap = library.roadmaps.find((candidate) => candidate.id === view.roadmapId);
-      const stage = roadmap !== undefined ? findStage(roadmap, view.stageOrder) : undefined;
-      return roadmap !== undefined && stage !== undefined ? { kind: "stage", roadmap, stage } : resolveHome();
-    }
+    case "stage":
     case "exercise": {
       const roadmap = library.roadmaps.find((candidate) => candidate.id === view.roadmapId);
-      const stage = roadmap !== undefined ? findStage(roadmap, view.stageOrder) : undefined;
+      if (roadmap === undefined) {
+        return resolveHome();
+      }
+      const stage = findStage(roadmap, view.stageOrder);
+      if (stage === undefined || !isStageUnlocked(roadmap, stage, completedByRoadmap.get(roadmap.id) ?? NO_COMPLETED_ITEMS)) {
+        return { kind: "journey", roadmap };
+      }
       const item =
-        stage !== undefined ? stage.items.find((candidate) => candidate.order === view.itemOrder) : undefined;
-      if (roadmap !== undefined && stage !== undefined && item !== undefined && item.exercise !== null) {
-        return { kind: "exercise", roadmap, stage, item };
-      }
-      // Item vanished or lost its exercise: settle on the stage instead.
-      if (roadmap !== undefined && stage !== undefined) {
-        return { kind: "stage", roadmap, stage };
-      }
-      return resolveHome();
+        view.kind === "exercise" ? stage.items.find((candidate) => candidate.order === view.itemOrder) : undefined;
+      // A stage view, or an item that vanished / lost its exercise: settle on the stage.
+      return item !== undefined && item.exercise !== null
+        ? { kind: "exercise", roadmap, stage, item }
+        : { kind: "stage", roadmap, stage };
     }
   }
 }

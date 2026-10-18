@@ -18,6 +18,7 @@ import type {
   PlayStageItem,
 } from "../types";
 import { JourneyMap } from "../components/JourneyMap";
+import { BackButton } from "../components/BackButton";
 import { speak } from "../speech";
 import { toArabicIndic } from "../arabic";
 import { loadAppSounds, playAppSound } from "../app-sounds";
@@ -50,8 +51,21 @@ interface ChildHomeProps {
   onExit: () => void;
 }
 
-/** History entries pushed by in-app taps carry this, so a back button knows history.back() stays inside the app. */
-const IN_APP_STATE = { playInApp: true };
+/**
+ * History entries owned by one ChildHome mount carry its id and the hash they
+ * were pushed from, so a back button only pops entries of this child session
+ * (never a previous child's) and only when the popped entry is the parent screen.
+ */
+interface PlayHistoryState {
+  playMount: string;
+  fromHash: string | null;
+}
+
+function mountOf(state: unknown): string | null {
+  return typeof state === "object" && state !== null && "playMount" in state && typeof state.playMount === "string"
+    ? state.playMount
+    : null;
+}
 
 const EMPTY_LIBRARY: PlayLibrary = { categories: [], roadmaps: [] };
 
@@ -82,6 +96,7 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
   viewRef.current = view;
   const initialHashRef = useRef(window.location.hash);
   const didRestoreRef = useRef(false);
+  const mountIdRef = useRef<string>(crypto.randomUUID());
 
   // Best-effort alongside everything else: the map's owl ring color comes
   // from here, but the journey must never wait on it.
@@ -145,10 +160,9 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
           if (initialView.kind === "journey" || initialView.kind === "stage" || initialView.kind === "exercise") {
             setActiveRoadmapId(initialView.roadmapId);
           }
-          const initialHash = hashForView(initialView);
-          if (initialHash !== null && initialHash !== initialHashRef.current) {
-            window.history.replaceState(null, "", initialHash);
-          }
+          // Claim this entry for the current mount so back buttons can tell it apart from earlier sessions.
+          const rootState: PlayHistoryState = { playMount: mountIdRef.current, fromHash: null };
+          window.history.replaceState(rootState, "", hashForView(initialView) ?? initialHashRef.current);
           setView(initialView);
         }
         setLoading(false);
@@ -179,11 +193,15 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
         initialHashRef.current = window.location.hash;
         return;
       }
-      const restored = viewFromHash(window.location.hash, current, viewRef.current);
+      const owner = mountOf(window.history.state);
+      const foreign = owner !== null && owner !== mountIdRef.current;
+      // An entry left behind by an earlier child session is never restored: settle on this child's default screen.
+      const restored = foreign ? null : viewFromHash(window.location.hash, current, viewRef.current);
       const next = restored ?? defaultView(current);
       if (restored === null) {
-        // Stale link (e.g. a removed category): settle the URL on the default screen.
-        window.history.replaceState(window.history.state, "", hashForView(next) ?? "#/");
+        // Stale link (e.g. a removed category) or a foreign entry: settle the URL on the default screen.
+        const rootState: PlayHistoryState = { playMount: mountIdRef.current, fromHash: null };
+        window.history.replaceState(rootState, "", hashForView(next) ?? "#/");
       }
       if (next.kind === "journey" || next.kind === "stage" || next.kind === "exercise") {
         setActiveRoadmapId(next.roadmapId);
@@ -244,26 +262,49 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
     }
     // Temporary overlays (assessment/rewards) reuse the current entry's URL,
     // so the back button simply closes them.
-    window.history.pushState(IN_APP_STATE, "", hashForView(next) ?? window.location.hash);
+    const state: PlayHistoryState = { playMount: mountIdRef.current, fromHash: window.location.hash };
+    window.history.pushState(state, "", hashForView(next) ?? window.location.hash);
     setView(next);
   }, []);
 
   /**
-   * Back buttons mirror the browser: when the previous entry is ours, pop it
-   * (so the child lands exactly where they came from); after a deep link there
-   * is nothing of ours behind, so replace the entry with the parent screen.
+   * Back buttons mirror the browser only when it is safe: the current entry
+   * was pushed by this mount straight from the parent screen, so popping it
+   * lands exactly there. Otherwise (deep link, a previous child's entries
+   * behind, or a chain of exercises) replace the entry with the parent screen.
    */
   const goBack = useCallback((parent: PlayView): void => {
+    const parentHash = hashForView(parent) ?? "#/";
     const state: unknown = window.history.state;
-    if (typeof state === "object" && state !== null && "playInApp" in state) {
+    if (
+      mountOf(state) === mountIdRef.current &&
+      (state as PlayHistoryState).fromHash === parentHash
+    ) {
       window.history.back();
       return;
     }
-    window.history.replaceState(null, "", hashForView(parent) ?? "#/");
+    if (parent.kind === "journey" || parent.kind === "stage" || parent.kind === "exercise") {
+      setActiveRoadmapId(parent.roadmapId);
+    }
+    const rootState: PlayHistoryState = { playMount: mountIdRef.current, fromHash: null };
+    window.history.replaceState(rootState, "", parentHash);
     setView(parent);
   }, []);
 
-  const resolved = resolveView(view, library);
+  const resolved = resolveView(view, library, completedByRoadmap);
+
+  // A locked (or vanished) stage resolved to its journey: settle the URL there too.
+  const settledRoadmapId =
+    (view.kind === "stage" || view.kind === "exercise") && resolved.kind === "journey" ? resolved.roadmap.id : null;
+  useEffect(() => {
+    if (settledRoadmapId === null) {
+      return;
+    }
+    const journey: PlayView = { kind: "journey", roadmapId: settledRoadmapId };
+    window.history.replaceState(window.history.state, "", hashForView(journey) ?? "#/");
+    setView(journey);
+  }, [settledRoadmapId]);
+
   const enteredRoadmapId =
     resolved.kind === "journey" || resolved.kind === "stage" || resolved.kind === "exercise"
       ? resolved.roadmap.id
@@ -281,6 +322,13 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
     void openPlayRoadmap(token, child.id, enteredRoadmapId).catch(() => undefined);
   }, [enteredRoadmapId, token, child.id]);
 
+  // The journey switcher is one scrolling row: keep the active pill in view.
+  const tabsRef = useRef<HTMLElement | null>(null);
+  const journeyRoadmapId = resolved.kind === "journey" ? resolved.roadmap.id : null;
+  useEffect(() => {
+    tabsRef.current?.querySelector(".is-active")?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [journeyRoadmapId, loading]);
+
   // Back on the library after playing: quietly pull fresh stars and progress.
   const wasLibraryRef = useRef(true);
   useEffect(() => {
@@ -291,12 +339,15 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
   }, [isLibrarySurface, loadHomeData]);
 
   const handleExerciseDone = useCallback(
-    (roadmap: PlayRoadmapSummary, stage: PlayStage, item: PlayStageItem): void => {
+    (roadmap: PlayRoadmapSummary, stage: PlayStage, item: PlayStageItem, succeeded: boolean): void => {
       // Stars and points just landed server-side: pull the new balance in the
       // background so the rewards state stays current without a spinner.
       refreshRewards();
+      // Checkmarks mirror the server rule: only a successful attempt completes an item.
       const nextDone = new Set(completedByRoadmap.get(roadmap.id) ?? NO_COMPLETED_ITEMS);
-      nextDone.add(item.id);
+      if (succeeded) {
+        nextDone.add(item.id);
+      }
       setCompletedByRoadmap((current) => {
         const next = new Map(current);
         next.set(roadmap.id, nextDone);
@@ -308,11 +359,10 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
         .filter((candidate) => candidate.order > item.order && candidate.exercise !== null);
       const nextItem = upcoming[0];
       if (nextItem === undefined) {
-        const playableIds = stage.items
-          .filter((candidate) => candidate.exercise !== null)
-          .map((candidate) => candidate.id);
+        const playableItems = stage.items.filter((candidate) => candidate.exercise !== null);
         const allDone =
-          playableIds.length > 0 && playableIds.every((id) => id === item.id || nextDone.has(id));
+          playableItems.length > 0 &&
+          playableItems.every((candidate) => candidate.completed || nextDone.has(candidate.id));
         if (allDone) {
           playAppSound("STAGE_COMPLETE");
           // The map should welcome the child at the next stop when they come
@@ -353,7 +403,7 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
             itemOrder: item.order,
           })
         }
-        onBack={() => navigate({ kind: "journey", roadmapId: resolved.roadmap.id })}
+        onBack={() => goBack({ kind: "journey", roadmapId: resolved.roadmap.id })}
         onOpenItem={(item) => {
           if (item.exercise !== null) {
             navigate({
@@ -393,7 +443,7 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
         onRewardsLoaded={handleRewardsLoaded}
         onAuthExpired={onAuthExpired}
         onBack={() =>
-          navigate(
+          goBack(
             activeRoadmapId !== null &&
               libraryRef.current.roadmaps.some((roadmap) => roadmap.id === activeRoadmapId)
               ? { kind: "journey", roadmapId: activeRoadmapId }
@@ -405,6 +455,9 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
   }
 
   if (resolved.kind === "exercise") {
+    const playable = resolved.stage.items
+      .filter((candidate) => candidate.exercise !== null)
+      .sort((a, b) => a.order - b.order);
     return (
       <ExerciseRunner
         key={resolved.item.id}
@@ -412,11 +465,12 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
         childId={child.id}
         item={resolved.item}
         roadmapId={resolved.roadmap.id}
+        stageName={resolved.stage.name}
+        position={playable.findIndex((candidate) => candidate.id === resolved.item.id) + 1}
+        total={playable.length}
         onAuthExpired={onAuthExpired}
-        onBack={() =>
-          navigate({ kind: "stage", roadmapId: resolved.roadmap.id, stageOrder: resolved.stage.order })
-        }
-        onDone={() => handleExerciseDone(resolved.roadmap, resolved.stage, resolved.item)}
+        onBack={() => goBack({ kind: "stage", roadmapId: resolved.roadmap.id, stageOrder: resolved.stage.order })}
+        onDone={(succeeded) => handleExerciseDone(resolved.roadmap, resolved.stage, resolved.item, succeeded)}
       />
     );
   }
@@ -483,18 +537,8 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
     <main className={activeRoadmap === null ? "screen child-home is-library" : "screen child-home"}>
       <header className="journey-top">
         <div className="journey-top-row">
-          {journeyParent !== null ? (
-            <button
-              type="button"
-              className="icon-button compact"
-              aria-label="رجوع"
-              onClick={() => goBack(journeyParent)}
-            >
-              →
-            </button>
-          ) : null}
+          {journeyParent !== null ? <BackButton onClick={() => goBack(journeyParent)} /> : null}
           <h1 className="home-greeting">مرحبًا، {child.fullName}!</h1>
-          {activeRoadmap !== null ? <span className="home-roadmap-chip">{activeRoadmap.name}</span> : null}
           <div className="home-actions">
             <button
               type="button"
@@ -504,7 +548,7 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
             >
               🎁
             </button>
-            <button type="button" className="text-button" onClick={onExit}>
+            <button type="button" className="text-button home-exit" onClick={onExit}>
               خروج
             </button>
           </div>
@@ -576,7 +620,7 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
       {ready && activeRoadmap !== null ? (
         <>
           {siblingRoadmaps.length > 1 ? (
-            <nav className="roadmap-tabs" aria-label="تبديل الرحلة">
+            <nav className="roadmap-tabs" aria-label="تبديل الرحلة" ref={tabsRef}>
               {siblingRoadmaps.map((roadmap) => (
                 <button
                   key={roadmap.id}
@@ -592,6 +636,8 @@ export function ChildHome({ child, token, onAuthExpired, onExit }: ChildHomeProp
           ) : null}
           {activeProgress !== null && activeProgress.totalStages > 0 ? (
             <p className="journey-progress-line">
+              {/* The switcher already names the roadmap; otherwise say which journey this is. */}
+              {siblingRoadmaps.length <= 1 ? <span className="lib-chip">🧭 {activeRoadmap.name}</span> : null}
               <span className="lib-chip">
                 🏁 {toArabicIndic(activeProgress.completedStages)} من {toArabicIndic(activeProgress.totalStages)}
               </span>

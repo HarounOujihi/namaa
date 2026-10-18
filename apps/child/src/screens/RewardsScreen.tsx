@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ApiError, equipPlayReward, getPlayRewards, purchasePlayReward } from "../api";
 import type { PlayRewardItem, PlayRewards } from "../types";
 import { Mascot } from "../components/Mascot";
+import { BackButton } from "../components/BackButton";
 import { playAppSound } from "../app-sounds";
 import { toArabicIndic } from "../arabic";
 import "./rewards-screen.css";
@@ -27,7 +28,8 @@ function formatEarnedDate(iso: string): string | null {
   if (Number.isNaN(date.getTime())) {
     return null;
   }
-  return date.toLocaleDateString("ar", { day: "numeric", month: "long", year: "numeric" });
+  // `nu-arab`: Arabic-Indic digits ("٢ سبتمبر ٢٠٢٦"), like every other number in the child UI.
+  return date.toLocaleDateString("ar-u-nu-arab", { day: "numeric", month: "long", year: "numeric" });
 }
 
 /**
@@ -126,9 +128,7 @@ export function RewardsScreen({ token, childId, onRewardsLoaded, onAuthExpired, 
     <main className="screen rewards-screen">
       <header className="rewards-top">
         <div className="rewards-top-row">
-          <button type="button" className="text-button" onClick={onBack}>
-            رجوع
-          </button>
+          <BackButton onClick={onBack} />
           <h1 className="rewards-title">جوائزي 🎁</h1>
           <span className="rewards-top-tail" aria-hidden="true" />
         </div>
@@ -185,7 +185,11 @@ export function RewardsScreen({ token, childId, onRewardsLoaded, onAuthExpired, 
               <p className="status-text">لا توجد أوسمة بعد</p>
             ) : (
               <ul className="rewards-badges">
-                {rewards.badges.map((badge, index) => {
+                {rewards.badges
+                  .slice()
+                  // Earned medals first (stable within each group), locked ones after.
+                  .sort((a, b) => Number(b.earnedAt !== null) - Number(a.earnedAt !== null))
+                  .map((badge, index) => {
                   const dateText = badge.earnedAt !== null ? formatEarnedDate(badge.earnedAt) : null;
                   return (
                     <li

@@ -35,10 +35,7 @@
   gap: 10px;
 }
 
-/* Slimmer than the global 64px text button, still a 44px touch target. */
-.results-top-row .text-button {
-  min-height: 44px;
-  padding: 4px 12px;
+.results-top-row .back-button {
   justify-self: start;
 }
 
@@ -50,12 +47,6 @@
 
 .results-top-tail {
   justify-self: end;
-}
-
-.results-top-row .text-button:focus-visible {
-  outline: 3px solid var(--secondary);
-  outline-offset: 2px;
-  border-radius: 10px;
 }
 
 /* ── child identity: a gold medallion, the name, a small caption ──────── */

@@ -144,10 +144,10 @@ export class PlayService {
                     return { id: si.id, order: si.order, exercise: await exercise };
                   }),
               )
-            ).filter((si) => si.exercise !== null && !hiddenIds.has(si.exercise.id));
-            const completedItems = items.filter(
-              (si) => si.exercise !== null && activity?.succeeded.has(si.exercise.id) === true,
-            ).length;
+            )
+              .filter((si) => si.exercise !== null && !hiddenIds.has(si.exercise.id))
+              .map((si) => ({ ...si, completed: si.exercise !== null && activity?.succeeded.has(si.exercise.id) === true }));
+            const completedItems = items.filter((si) => si.completed).length;
             return {
               id: stage.id,
               name: stage.name,

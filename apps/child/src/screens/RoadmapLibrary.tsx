@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { Mascot } from "../components/Mascot";
+import { BackButton } from "../components/BackButton";
 import { arabicCount, arabicRelativeDay, toArabicIndic } from "../arabic";
 import type { PlayRoadmapProgress, PlayRoadmapSummary } from "../types";
 import type { RoadmapBucket } from "../play-views";
@@ -204,9 +205,9 @@ export function CategoryPage({ bucket, atHome, entries, owlRoadmapId, onBack, on
         <Cover id={bucket.id} url={bucket.category?.coverUrl ?? null} alt={name} className="lib-banner-cover" />
         <span className="lib-banner-shade" aria-hidden="true" />
         {!atHome ? (
-          <button type="button" className="lib-banner-back" aria-label="رجوع" onClick={onBack}>
-            →
-          </button>
+          <span className="lib-banner-back">
+            <BackButton onClick={onBack} />
+          </span>
         ) : null}
         <div className="lib-banner-copy">
           <h2 className="lib-banner-title">{name}</h2>
