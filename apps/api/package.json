@@ -7,7 +7,7 @@
     "build": "nest build",
     "migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
-    "db:seed:test-roadmaps": "tsx prisma/seed-test-roadmaps.ts",
+    "db:seed:demo-library": "tsx --env-file=.env prisma/seed-demo-library.ts",
     "test": "vitest run"
   },
   "prisma": {
