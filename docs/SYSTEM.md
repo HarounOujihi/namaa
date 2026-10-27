@@ -145,7 +145,7 @@ No leaderboards, no comparisons between children — progress is only ever compa
 
 ## 7. The child experience
 
-- **Entry**: no child logins — a parent/specialist unlocks the device once; the child picks their profile card. Optional per-child PIN for shared tablets.
+- **Entry**: logged-out visitors land on the public landing page (the idea, how it works, expert-designed programs and the 9 skills, child-safe design, family & specialist features) with a single **تسجيل الدخول** button — any parent or specialist account signs in there, no role choice. A signed-in device opens straight on the child picker; children never log in. Optional per-child PIN for shared tablets.
 - **Library** (hash routes, browser back + shareable links): `#/` shows the categories page — a "تابع رحلتك" card for the most recently active unfinished roadmap, then category cards (uncategorized roadmaps form a "رحلات أخرى" bucket). `#/c/<categoryId>` (or `#/c/other`) lists that category's roadmaps; each card shows, **before opening**, whether it is new / in progress / completed, passed stages, stars earned in that roadmap, the current stage and last activity. With a single bucket the categories page is skipped; with a single roadmap its journey opens directly. Entering a roadmap records it as opened (`child_roadmap_progress`).
 - **Journey screen** (`#/r/<id>`, stages `#/r/<id>/s/<order>`, exercises `#/r/<id>/e/<order>`): slim header (back, greeting, 🎁, exit), a horizontally scrolling switcher for roadmaps in the same category (or a roadmap chip when it is alone), passed-stages and stars chips, the island map, and (if unassessed) the assessment banner.
 - **Navigation safety**: picking another child or exiting resets to `#/`; in-app back only walks history entries created by the current child's session, and a deep link or history entry into a **locked** stage opens that roadmap's journey instead. Every screen uses the same round back button at the RTL start of its header.
@@ -193,4 +193,5 @@ All rules are enforced **server-side** (verified with 403 tests); the child is s
 | Exercise renderers | `packages/exercise-engine/` |
 | Journey map | `apps/child/src/components/JourneyMap.tsx` |
 | Child library pages + hash navigation | `apps/child/src/screens/RoadmapLibrary.tsx`, `apps/child/src/play-views.ts` |
+| Public landing page | `apps/child/src/screens/LandingPage.tsx` |
 | Exercise-type contract | `plans/exercise_type_spec.md` |

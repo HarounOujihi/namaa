@@ -1,0 +1,829 @@
+/* LandingPage — the public front door.
+   Mobile-first: everything is one column at 360–430px, grids open to two
+   columns from 640px and three/four from 1024px, inside a container that
+   tops out at 1120px. A slim sticky header carries the only login control.
+   Warm creams and peaches with one deep-teal band for the expert programs. */
+
+.landing {
+  /* --primary on white measures 4.44:1; this darker orange reaches 5.6:1. */
+  --landing-primary: #bf360c;
+  --landing-primary-hover: #a52a0a;
+  --landing-peach: #fff1e0;
+  --landing-mint: #e6f4f1;
+  --landing-shadow: 0 10px 30px rgba(93, 64, 55, 0.08);
+  min-height: 100%;
+  line-height: 1.7;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+.landing-container {
+  width: min(100% - 32px, 1120px);
+  margin-inline: auto;
+}
+
+@media (min-width: 640px) {
+  .landing-container {
+    width: min(100% - 48px, 1120px);
+  }
+}
+
+.landing button:focus-visible {
+  outline: 3px solid var(--secondary);
+  outline-offset: 3px;
+}
+
+/* Sections receive focus after an in-page jump; the heading is the cue, not a frame. */
+.landing-section:focus {
+  outline: none;
+}
+
+/* ── sticky header ───────────────────────────────────────────────────── */
+
+.landing-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(255, 247, 237, 0.92);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.landing-header-row {
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.landing-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.45rem;
+  font-weight: 900;
+  color: var(--ink);
+}
+
+.landing-logo-owl .mascot {
+  display: block;
+  width: 36px;
+  height: 39px;
+}
+
+.landing-nav {
+  display: none;
+}
+
+.landing-nav-link {
+  min-height: 44px;
+  padding: 8px 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: none;
+  border-radius: 999px;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.landing-nav-link:hover {
+  color: var(--ink);
+  background: var(--landing-peach);
+}
+
+.landing-login {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  min-height: 48px;
+  padding: 10px 24px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  white-space: nowrap;
+  color: #ffffff;
+  background: var(--landing-primary);
+  border-radius: 999px;
+  box-shadow: 0 6px 16px rgba(191, 54, 12, 0.28);
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.landing-login:hover {
+  background: var(--landing-primary-hover);
+}
+
+.landing-login:active {
+  transform: translateY(2px);
+}
+
+@media (min-width: 900px) {
+  .landing-nav {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+  }
+}
+
+/* ── hero ────────────────────────────────────────────────────────────── */
+
+.landing-hero {
+  padding-block: 28px 56px;
+  background:
+    radial-gradient(circle at 100% 0%, #ffe0b2 0, transparent 42%),
+    radial-gradient(circle at 0% 100%, #e0f2f1 0, transparent 38%),
+    var(--bg);
+}
+
+.landing-hero-grid {
+  display: grid;
+  gap: 28px;
+}
+
+.landing-hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.landing-chip {
+  display: inline-flex;
+  padding: 6px 14px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--landing-primary-hover);
+  background: #ffe9d6;
+  border-radius: 999px;
+}
+
+.landing-title {
+  margin: 16px 0 12px;
+  font-size: clamp(2.1rem, 8.5vw, 3.6rem);
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.landing-title-mark {
+  background: linear-gradient(transparent 62%, #ffd180 62% 92%, transparent 92%);
+}
+
+.landing-lead {
+  margin: 0;
+  max-width: 60ch;
+  font-size: 1.1rem;
+  color: var(--ink-soft);
+}
+
+.landing-checks {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.landing-checks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.landing-check-mark {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  margin-top: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #ffffff;
+  background: var(--secondary);
+  border-radius: 50%;
+}
+
+.landing-text-link {
+  min-height: 44px;
+  margin-top: 18px;
+  padding: 8px 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--secondary);
+  background: none;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 7px;
+}
+
+.landing-text-link span {
+  transition: transform 200ms ease;
+}
+
+.landing-text-link:hover span {
+  transform: translateX(-4px);
+}
+
+/* Island scene: a soft sky blob, letter bubbles drifting around the owl,
+   two little reward chips. Everything stays inside the box, so it can never
+   push the page sideways. */
+.landing-hero-visual {
+  position: relative;
+  width: min(100%, 380px);
+  aspect-ratio: 1 / 0.95;
+  margin-inline: auto;
+}
+
+.landing-sky {
+  position: absolute;
+  inset: 4% 7% 12%;
+  background: radial-gradient(circle at 50% 38%, #fffaf2 0, #ffe3c4 58%, #ffd2a8 100%);
+  border-radius: 46% 54% 50% 50% / 52% 46% 54% 48%;
+}
+
+.landing-island {
+  position: absolute;
+  inset-inline: 14%;
+  bottom: 6%;
+  height: 58%;
+}
+
+.landing-island-ground {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 26%;
+  background: linear-gradient(#8bc34a 0 34%, #f3d9a4 34% 100%);
+  border-radius: 50%;
+  box-shadow:
+    0 10px 0 -2px #b3e5fc,
+    0 22px 34px rgba(0, 105, 92, 0.18);
+}
+
+.landing-island-owl {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: 13%;
+  width: 52%;
+  transform: translateX(-50%);
+}
+
+.landing-island-owl .mascot {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.landing-palm {
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: 14%;
+  font-size: clamp(2.6rem, 11vw, 3.8rem);
+  line-height: 1;
+}
+
+.landing-letter {
+  position: absolute;
+  width: 2.1em;
+  height: 2.1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(1.15rem, 4.6vw, 1.6rem);
+  font-weight: 900;
+  line-height: 1;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 8px 18px rgba(93, 64, 55, 0.12);
+}
+
+.landing-letter-1 { top: 6%; inset-inline-start: 18%; color: var(--landing-primary); }
+.landing-letter-2 { top: 22%; inset-inline-start: 3%; color: var(--secondary); }
+.landing-letter-3 { top: 40%; inset-inline-end: 4%; color: #6a1b9a; }
+.landing-letter-4 { top: 2%; inset-inline-end: 34%; color: var(--secondary); }
+.landing-letter-5 { top: 50%; inset-inline-start: 8%; color: #ad1457; }
+.landing-letter-6 { top: 24%; inset-inline-end: 12%; color: var(--landing-primary); }
+
+.landing-float-chip {
+  position: absolute;
+  z-index: 2;
+  padding: 7px 14px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  white-space: nowrap;
+  color: var(--ink);
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: 0 10px 24px rgba(93, 64, 55, 0.14);
+}
+
+.landing-float-chip-stars {
+  top: 12%;
+  inset-inline-end: 0;
+}
+
+.landing-float-chip-badge {
+  bottom: 30%;
+  inset-inline-start: 0;
+}
+
+@media (min-width: 640px) {
+  .landing-lead {
+    font-size: 1.2rem;
+  }
+
+  .landing-hero-visual {
+    width: min(100%, 440px);
+  }
+}
+
+@media (min-width: 900px) {
+  .landing-hero {
+    padding-block: 56px 88px;
+  }
+
+  /* RTL: the copy takes the start (right) column, the island the end (left). */
+  .landing-hero-grid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    align-items: center;
+    gap: 48px;
+  }
+
+  .landing-hero-visual {
+    width: 100%;
+    max-width: 480px;
+  }
+}
+
+/* ── sections ────────────────────────────────────────────────────────── */
+
+.landing-section {
+  padding-block: 44px;
+  scroll-margin-top: 68px;
+}
+
+.landing-section.is-tinted {
+  background: var(--landing-peach);
+}
+
+.landing-section.is-mint {
+  background: var(--landing-mint);
+}
+
+.landing-h2 {
+  margin: 0 0 12px;
+  font-size: clamp(1.6rem, 6vw, 2.4rem);
+  font-weight: 900;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.landing-section-lead {
+  max-width: 62ch;
+  margin: 0 auto 32px;
+  font-size: 1.1rem;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.landing-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.landing-h2 + .landing-grid {
+  margin-top: 28px;
+}
+
+.landing-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--landing-shadow);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.landing-card-icon {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  line-height: 1;
+  background: var(--landing-peach);
+  border-radius: 16px;
+}
+
+.is-tinted .landing-card-icon,
+.is-mint .landing-card-icon {
+  background: var(--landing-mint);
+}
+
+.landing-card-title {
+  margin: 6px 0 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.landing-card-text {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--ink-soft);
+}
+
+@media (hover: hover) {
+  .landing-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 36px rgba(93, 64, 55, 0.12);
+  }
+}
+
+/* Phones: icon beside title + text keeps the stacked lists short; from
+   640px the cards sit in a grid and stack the icon on top again. */
+.landing-card:not(.landing-audience) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 14px;
+  row-gap: 2px;
+  align-items: start;
+  padding: 16px 18px;
+}
+
+.landing-card:not(.landing-audience) > :first-child {
+  grid-row: 1 / span 2;
+  width: 46px;
+  height: 46px;
+}
+
+.landing-card:not(.landing-audience) .landing-card-title {
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .landing-card:not(.landing-audience) {
+    display: flex;
+    padding: 24px;
+  }
+
+  .landing-card:not(.landing-audience) > :first-child {
+    width: 52px;
+    height: 52px;
+  }
+
+  .landing-card:not(.landing-audience) .landing-card-title {
+    margin: 6px 0 0;
+  }
+}
+
+/* How it works: numbered steps, joined by a dashed trail on wide screens. */
+.landing-steps {
+  position: relative;
+}
+
+.landing-step-number {
+  width: 52px;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #ffffff;
+  background: var(--landing-primary);
+  border-radius: 50%;
+  box-shadow: 0 6px 14px rgba(191, 54, 12, 0.25);
+}
+
+/* Expert programs: the one deep band on the page. */
+.landing-programs {
+  position: relative;
+  overflow: hidden;
+  color: #ffffff;
+  background: linear-gradient(135deg, #00695c 0%, #004d40 100%);
+}
+
+.landing-programs::before,
+.landing-programs::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+
+.landing-programs::before {
+  width: 420px;
+  height: 420px;
+  top: -180px;
+  inset-inline-end: -140px;
+}
+
+.landing-programs::after {
+  width: 300px;
+  height: 300px;
+  bottom: -160px;
+  inset-inline-start: -100px;
+}
+
+.landing-programs > .landing-container {
+  position: relative;
+}
+
+.landing-programs .landing-section-lead {
+  color: #e0f2f1;
+}
+
+.landing-point {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: var(--radius-md);
+}
+
+.landing-point-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.landing-skills {
+  margin-top: 24px;
+}
+
+.landing-skill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: var(--ink);
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 20px rgba(0, 40, 34, 0.18);
+}
+
+.landing-skill-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  line-height: 1;
+  background: var(--landing-mint);
+  border-radius: 50%;
+}
+
+.landing-skill-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.landing-skill-number {
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--secondary);
+}
+
+/* For family & specialist */
+.landing-audience {
+  gap: 4px;
+}
+
+.landing-audience-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.4rem;
+  font-weight: 900;
+}
+
+.landing-audience .landing-checks {
+  margin-top: 12px;
+}
+
+/* Closing band */
+.landing-closing-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 20px;
+  text-align: center;
+  background: linear-gradient(135deg, #ffe0b2 0%, #ffccbc 100%);
+  border-radius: 32px;
+}
+
+.landing-closing-owl .mascot {
+  display: block;
+  width: 104px;
+  height: 112px;
+}
+
+.landing-closing-box .landing-section-lead {
+  margin-bottom: 0;
+  color: var(--ink);
+}
+
+/* Footer */
+.landing-footer {
+  padding-block: 24px 32px;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  border-top: 1px solid var(--border);
+}
+
+.landing-footer-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.landing-footer p {
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .landing-grid-2,
+  .landing-grid-3,
+  .landing-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .landing-closing-box {
+    flex-direction: row;
+    justify-content: center;
+    gap: 28px;
+    padding: 40px;
+    text-align: start;
+  }
+
+  .landing-closing-box .landing-h2,
+  .landing-closing-box .landing-section-lead {
+    text-align: start;
+  }
+
+  .landing-closing-owl .mascot {
+    width: 130px;
+    height: 140px;
+  }
+
+  .landing-footer-row {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+/* Two columns only: an odd last card spans the row instead of sitting alone. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .landing-grid-3 > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 900px) {
+  .landing-section {
+    padding-block: 88px;
+  }
+
+  .landing-section-lead {
+    font-size: 1.2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .landing-grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .landing-steps::before {
+    content: "";
+    position: absolute;
+    top: 50px;
+    inset-inline: 10%;
+    border-top: 3px dashed #f0b88f;
+  }
+
+  .landing-step {
+    position: relative;
+  }
+}
+
+/* ── motion: entrance, drifting letters, a bobbing owl ───────────────── */
+
+@media (prefers-reduced-motion: no-preference) {
+  .landing-hero-copy > * {
+    animation: landing-rise 600ms ease-out both;
+  }
+
+  .landing-hero-copy > :nth-child(2) { animation-delay: 80ms; }
+  .landing-hero-copy > :nth-child(3) { animation-delay: 160ms; }
+  .landing-hero-copy > :nth-child(4) { animation-delay: 240ms; }
+  .landing-hero-copy > :nth-child(5) { animation-delay: 320ms; }
+
+  .landing-hero-visual {
+    animation: landing-pop 700ms 150ms ease-out both;
+  }
+
+  .landing-island-owl {
+    animation: landing-bob 4s ease-in-out infinite;
+  }
+
+  .landing-letter {
+    animation: landing-drift 6s ease-in-out infinite alternate;
+  }
+
+  .landing-letter-2 { animation-delay: -1s; }
+  .landing-letter-3 { animation-delay: -2s; }
+  .landing-letter-4 { animation-delay: -3s; }
+  .landing-letter-5 { animation-delay: -4s; }
+  .landing-letter-6 { animation-delay: -5s; }
+
+  .landing-float-chip {
+    animation: landing-drift 5s ease-in-out infinite alternate;
+  }
+
+  .landing-float-chip-badge {
+    animation-delay: -2.5s;
+  }
+
+  .landing-reveal {
+    transition: opacity 650ms ease, transform 650ms ease;
+  }
+
+  .landing-reveal:not(.is-visible) {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-login,
+  .landing-card,
+  .landing-text-link span {
+    transition: none;
+  }
+
+  .landing-card:hover,
+  .landing-text-link:hover span {
+    transform: none;
+  }
+}
+
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+@keyframes landing-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+@keyframes landing-bob {
+  50% {
+    transform: translate(-50%, -6px);
+  }
+}
+
+@keyframes landing-drift {
+  to {
+    transform: translateY(-10px) rotate(-4deg);
+  }
+}

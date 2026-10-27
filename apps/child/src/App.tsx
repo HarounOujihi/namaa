@@ -1,14 +1,13 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { clearStoredAuth, loadStoredAuth, persistAuth } from "./auth";
 import type { AuthResponse, Child } from "./types";
 import { ChildHome } from "./screens/ChildHome";
 import { ChildPicker } from "./screens/ChildPicker";
+import { LandingPage } from "./screens/LandingPage";
 import { LoginScreen } from "./screens/LoginScreen";
-import { StartScreen } from "./screens/StartScreen";
-import type { LoginRole } from "./screens/StartScreen";
 import { AssessmentResults } from "./screens/assessment-results";
 
-type Screen = "start" | "login" | "picker" | "childHome" | "assessmentResults";
+type Screen = "landing" | "login" | "picker" | "childHome" | "assessmentResults";
 
 /**
  * Leaving a child's session drops its deep link: the next child (or the same
@@ -20,15 +19,26 @@ function resetPlayLocation(): void {
 
 export default function App() {
   const [auth, setAuth] = useState<AuthResponse | null>(() => loadStoredAuth());
-  const [screen, setScreen] = useState<Screen>("start");
-  const [loginRole, setLoginRole] = useState<LoginRole>("parent");
+  const [screen, setScreen] = useState<Screen>(() => (auth !== null ? "picker" : "landing"));
   const [activeChild, setActiveChild] = useState<Child | null>(null);
   const [resultsChild, setResultsChild] = useState<Child | null>(null);
   // Only the first child entered after a page load may restore the URL's deep link.
   const deepLinkUsedRef = useRef(false);
 
+  // Login sits on its own history entry (same URL, so a `#/r/...` deep link
+  // survives): the browser's back button returns to the landing page.
+  useEffect(() => {
+    if (screen !== "login") {
+      return;
+    }
+    const backToLanding = (): void => setScreen("landing");
+    window.addEventListener("popstate", backToLanding);
+    return () => window.removeEventListener("popstate", backToLanding);
+  }, [screen]);
+
   const handleLoginSuccess = useCallback((result: AuthResponse): void => {
     persistAuth(result);
+    window.history.replaceState(null, "");
     setAuth(result);
     setScreen("picker");
   }, []);
@@ -39,7 +49,7 @@ export default function App() {
     setAuth(null);
     setActiveChild(null);
     setResultsChild(null);
-    setScreen("start");
+    setScreen("landing");
   }, []);
 
   if (screen === "assessmentResults" && resultsChild !== null && auth !== null) {
@@ -93,15 +103,13 @@ export default function App() {
   }
 
   if (screen === "login") {
-    return <LoginScreen role={loginRole} onBack={() => setScreen("start")} onSuccess={handleLoginSuccess} />;
+    return <LoginScreen onBack={() => window.history.back()} onSuccess={handleLoginSuccess} />;
   }
 
   return (
-    <StartScreen
-      hasSavedAuth={auth !== null}
-      onEnterAsChild={() => setScreen("picker")}
-      onLogin={(role) => {
-        setLoginRole(role);
+    <LandingPage
+      onLogin={() => {
+        window.history.pushState({ dtLogin: true }, "");
         setScreen("login");
       }}
     />

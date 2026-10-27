@@ -140,81 +140,9 @@ body {
   height: 172px;
 }
 
-.app-title {
-  margin: 0;
-  font-size: 3.2rem;
-  letter-spacing: 1px;
-}
-
 .screen-title {
   margin: 0;
   font-size: 2.2rem;
-}
-
-/* Start screen: content sits in the optical middle on tall phones. */
-.start-screen {
-  justify-content: center;
-  padding-block: max(24px, 6vh) max(48px, 8vh);
-}
-
-.role-buttons {
-  width: min(420px, 100%);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.role-buttons .big-button {
-  width: 100%;
-  min-width: 0;
-}
-
-.role-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.role-buttons > .role-button {
-  min-height: 80px;
-  font-size: 1.8rem;
-}
-
-.role-secondary {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.role-secondary .big-button {
-  min-height: 56px;
-  padding: 8px 12px;
-  font-size: 1.2rem;
-}
-
-.role-icon {
-  font-size: 1.3em;
-  line-height: 1;
-}
-
-.hint-card {
-  width: min(420px, 100%);
-  background: var(--card);
-  border: 3px solid var(--accent);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  text-align: center;
-}
-
-.hint-card p {
-  margin: 0;
-  font-size: 1.3rem;
-  font-weight: 700;
 }
 
 .card {
@@ -1256,6 +1184,7 @@ body {
 }
 
 .play-header-sub {
+  margin: 0;
   font-size: 1rem;
   font-weight: 700;
   color: var(--ink-soft);

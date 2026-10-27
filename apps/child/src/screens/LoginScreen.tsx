@@ -3,18 +3,11 @@ import type { FormEvent } from "react";
 import { ApiError, login } from "../api";
 import { BackButton } from "../components/BackButton";
 import type { AuthResponse } from "../types";
-import type { LoginRole } from "./StartScreen";
 
 interface LoginScreenProps {
-  role: LoginRole;
   onBack: () => void;
   onSuccess: (auth: AuthResponse) => void;
 }
-
-const TITLE_BY_ROLE: Record<LoginRole, string> = {
-  parent: "دخول ولي الأمر",
-  specialist: "دخول المختص",
-};
 
 /** Server messages may be English; the screen always speaks Arabic. */
 function loginErrorMessage(error: unknown): string {
@@ -27,7 +20,7 @@ function loginErrorMessage(error: unknown): string {
   return "تعذر تسجيل الدخول، حاول مرة أخرى";
 }
 
-export function LoginScreen({ role, onBack, onSuccess }: LoginScreenProps) {
+export function LoginScreen({ onBack, onSuccess }: LoginScreenProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -54,7 +47,10 @@ export function LoginScreen({ role, onBack, onSuccess }: LoginScreenProps) {
     <main className="screen login-screen">
       <header className="play-header">
         <BackButton onClick={onBack} />
-        <h1 className="play-header-title">{TITLE_BY_ROLE[role]}</h1>
+        <div className="play-header-copy">
+          <h1 className="play-header-title">تسجيل الدخول</h1>
+          <p className="play-header-sub">أدخل بريدك الإلكتروني وكلمة المرور</p>
+        </div>
       </header>
       <form className="card form" onSubmit={handleSubmit}>
         <label className="field">
