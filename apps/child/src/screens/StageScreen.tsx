@@ -1,13 +1,15 @@
+import type { ReactNode } from "react";
 import type { PlayRecommendation, PlayStage, PlayStageItem } from "../types";
 import { speak } from "../speech";
-import { toArabicIndic } from "../arabic";
-import { BackButton } from "../components/BackButton";
+import { PageHeader } from "../components/PageHeader";
 
 interface StageScreenProps {
   stage: PlayStage;
   /** Items completed this session (the server's `completed` flag covers earlier play). */
   completedItemIds: ReadonlySet<string>;
-  onBack: () => void;
+  /** The journey this stage belongs to (the header's back target). */
+  parent: string;
+  headerActions?: ReactNode;
   onOpenItem: (item: PlayStageItem) => void;
   recommendation: PlayRecommendation | null;
   onOpenRecommendation: (item: PlayStageItem) => void;
@@ -25,22 +27,27 @@ const TYPE_EMOJI: Record<string, string> = {
 };
 
 /** The items of one roadmap stage as big activity cards. */
-export function StageScreen({ stage, completedItemIds, onBack, onOpenItem, recommendation, onOpenRecommendation }: StageScreenProps) {
+export function StageScreen({
+  stage,
+  completedItemIds,
+  parent,
+  headerActions,
+  onOpenItem,
+  recommendation,
+  onOpenRecommendation,
+}: StageScreenProps) {
   const items = stage.items.slice().sort((a, b) => a.order - b.order);
   const playable = items.filter((item) => item.exercise !== null);
   const doneCount = playable.filter((item) => item.completed || completedItemIds.has(item.id)).length;
 
   return (
     <main className="screen play-screen">
-      <header className="play-header">
-        <BackButton onClick={onBack} />
-        <h1 className="play-header-title">{stage.name}</h1>
-      </header>
+      <PageHeader title={stage.name} parent={parent} actions={headerActions} />
 
       {playable.length > 0 ? (
-        <div className="stage-progress" aria-label={`أكملت ${toArabicIndic(doneCount)} من ${toArabicIndic(playable.length)}`}>
+        <div className="stage-progress" aria-label={`أكملت ${doneCount} من ${playable.length}`}>
           <span className="stage-progress-text" aria-hidden="true">
-            ✓ {toArabicIndic(doneCount)} من {toArabicIndic(playable.length)}
+            ✓ {doneCount} من {playable.length}
           </span>
           <span className="stage-progress-bar" aria-hidden="true">
             <span style={{ width: `${(doneCount / playable.length) * 100}%` }} />
@@ -104,7 +111,7 @@ export function StageScreen({ stage, completedItemIds, onBack, onOpenItem, recom
                 }}
               >
                 <span className={done ? "stage-number is-done" : "stage-number"} aria-hidden>
-                  {done ? "✓" : toArabicIndic(index + 1)}
+                  {done ? "✓" : index + 1}
                 </span>
                 <span className="item-title">{exercise.title}</span>
                 <span className="item-type" aria-hidden="true">

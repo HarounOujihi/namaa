@@ -9,8 +9,12 @@
   --secondary: #00695c;
   --secondary-shadow: #00463c;
   --accent: #ffb300;
-  --danger: #b71c1c;
-  --danger-shadow: #7f0000;
+  /* Destructive confirm: white on #c62828 is 5.6:1. */
+  --danger: #c62828;
+  --danger-shadow: #8e0000;
+  /* Form confirm buttons: white on #2e7d32 is 5.1:1, on the hover shade 7.9:1. */
+  --success: #2e7d32;
+  --success-hover: #1b5e20;
   --border: #f0d9c8;
   --radius-lg: 28px;
   --radius-md: 18px;
@@ -98,6 +102,48 @@ body {
 
 .big-button.danger:active {
   box-shadow: 0 2px 0 var(--danger-shadow);
+}
+
+/* Form confirm/submit: solid green. */
+.big-button.confirm {
+  background: var(--success);
+  box-shadow: 0 6px 0 var(--success-hover);
+}
+
+.big-button.confirm:active {
+  box-shadow: 0 2px 0 var(--success-hover);
+}
+
+@media (hover: hover) {
+  .big-button.confirm:not(:disabled):hover {
+    background: var(--success-hover);
+  }
+}
+
+/* Form cancel/close: neutral outlined, never a bare text link. */
+.big-button.neutral {
+  color: var(--ink);
+  background: var(--card);
+  border: 3px solid var(--border);
+  box-shadow: 0 4px 0 var(--border);
+}
+
+.big-button.neutral:active {
+  box-shadow: 0 1px 0 var(--border);
+}
+
+/* Opens a destructive confirmation: outlined red, never a bare link. */
+.big-button.danger-outline {
+  color: var(--danger);
+  background: var(--card);
+  border: 3px solid currentColor;
+  box-shadow: none;
+}
+
+.big-button:focus-visible,
+.text-button:focus-visible {
+  outline: 4px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .text-button {
@@ -484,15 +530,24 @@ body {
   font-weight: 700;
 }
 
+/* Confirm first (RTL start), cancel beside it, equal widths; stacked (confirm on top) on very narrow screens. */
 .dialog-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
 .dialog-actions .big-button {
-  min-width: 150px;
+  min-width: 0;
+  min-height: 56px;
+  padding: 10px 14px;
+  font-size: 1.25rem;
+}
+
+@media (max-width: 340px) {
+  .dialog-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .invite-text {
@@ -520,10 +575,40 @@ body {
   justify-content: flex-start;
 }
 
-.home-greeting {
-  /* Grows into the free space; only ellipsizes once it is down to a readable minimum. */
-  flex: 1 1 auto;
-  min-width: 7.5em;
+/* The one screen header (PageHeader): sticky slim bar — back at the RTL
+   start, a one-line title (+ subtitle), optional actions at the end. */
+.page-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  width: 100%;
+  padding: 6px 0 8px;
+  background: var(--bg);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  box-shadow: 0 6px 14px rgba(93, 64, 55, 0.08);
+}
+
+.page-header-row {
+  width: min(720px, 100%);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-header.is-wide .page-header-row {
+  width: min(1100px, 100%);
+}
+
+.page-header-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.page-header-title {
   margin: 0;
   font-size: 1.3rem;
   font-weight: 800;
@@ -533,34 +618,39 @@ body {
   text-overflow: ellipsis;
 }
 
-.home-exit.text-button {
-  min-height: 44px;
-  padding: 4px 8px;
+.page-header-sub {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.home-actions {
+.page-header-actions {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-inline-start: auto;
 }
 
-.home-roadmap {
-  margin: 0;
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--ink-soft);
-  text-align: center;
+/* Centered screens (login, diagnostic): the header stays on top, the content centers below it. */
+.login-screen > .page-header,
+.assessment-runner > .page-header {
+  margin-bottom: auto;
 }
+
+.login-screen > :last-child,
+.assessment-runner > :last-child {
+  margin-bottom: auto;
+}
+
 
 /* Roadmap library: categories page, one group's roadmap list, continue hero.
    Wider container than the rest of the app so cards can sit 2–3 per row. */
 .screen.child-home.is-library {
   width: min(100%, 1180px);
-}
-
-.is-library .journey-top-row {
-  width: min(1100px, 100%);
 }
 
 .lib-page {
@@ -931,13 +1021,6 @@ body {
   );
 }
 
-.lib-banner-back {
-  position: absolute;
-  z-index: 1;
-  top: 12px;
-  inset-inline-start: 12px;
-}
-
 .lib-banner-copy {
   position: relative;
   display: flex;
@@ -1085,8 +1168,7 @@ body {
   }
 
   .lib-card:active,
-  .lib-continue:active,
-  .lib-banner-back:active {
+  .lib-continue:active {
     transform: none;
   }
 }
@@ -1154,40 +1236,6 @@ body {
 /* Stage, exercise, login: content keeps a comfortable reading width on desktop. */
 .play-screen {
   width: min(100%, 720px);
-}
-
-/* Slim header: back at the RTL start, a one-line title, optional tail action. */
-.play-header {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.play-header-copy {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.play-header-title {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  font-size: 1.3rem;
-  font-weight: 800;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.play-header-sub {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--ink-soft);
 }
 
 .login-screen .card {
@@ -1551,11 +1599,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.big-button.danger {
-  background: #c62828;
-  border-color: #a71d1d;
 }
 
 

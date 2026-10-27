@@ -61,7 +61,7 @@ export function EditChildDialog({ token, child, onAuthExpired, onSaved, onCancel
     const trimmedLimit = dailyLimit.trim();
     const minutes = trimmedLimit === "" ? null : Number.parseInt(trimmedLimit, 10);
     if (minutes !== null && (Number.isNaN(minutes) || minutes < 5 || minutes > 480)) {
-      setError("الحد اليومي يجب أن يكون بين ٥ و ٤٨٠ دقيقة");
+      setError("الحد اليومي يجب أن يكون بين 5 و 480 دقيقة");
       return;
     }
     setPending(true);
@@ -164,11 +164,11 @@ export function EditChildDialog({ token, child, onAuthExpired, onSaved, onCancel
           </p>
         ) : null}
         <div className="dialog-actions">
-          <button type="button" className="big-button secondary" onClick={onCancel}>
-            إلغاء
-          </button>
-          <button type="submit" className="big-button" disabled={pending}>
+          <button type="submit" className="big-button confirm" disabled={pending}>
             {pending ? "جارٍ الحفظ…" : "حفظ"}
+          </button>
+          <button type="button" className="big-button neutral" onClick={onCancel}>
+            إلغاء
           </button>
         </div>
       </form>
@@ -180,16 +180,16 @@ export function EditChildDialog({ token, child, onAuthExpired, onSaved, onCancel
               حذف {child.fullName} نهائيًا؟ لا يمكن التراجع.
             </p>
             <div className="dialog-actions">
-              <button type="button" className="big-button secondary" onClick={() => setConfirmDelete(false)}>
-                تراجع
-              </button>
               <button type="button" className="big-button danger" onClick={() => void handleDelete()} disabled={pending}>
-                نعم، احذف
+                {pending ? "جارٍ الحذف…" : "نعم، احذف"}
+              </button>
+              <button type="button" className="big-button neutral" onClick={() => setConfirmDelete(false)}>
+                تراجع
               </button>
             </div>
           </>
         ) : (
-          <button type="button" className="goodnight-parent-link" onClick={() => setConfirmDelete(true)}>
+          <button type="button" className="big-button danger-outline" onClick={() => setConfirmDelete(true)}>
             حذف ملف الطفل
           </button>
         )}

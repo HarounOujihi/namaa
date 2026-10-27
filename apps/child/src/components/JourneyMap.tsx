@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import type { PlayStage } from "../types";
 import { Mascot } from "./Mascot";
-import { toArabicIndic } from "../arabic";
 import "./journey-map.css";
 
 /** Vertical rhythm of the map: every stage occupies one fixed-height row. */
@@ -266,7 +265,7 @@ export function JourneyMap({ stages, completedItemIds, onOpenStage, equippedItem
 
       <ol className="journey-rows">
         {rows.map((row, index) => {
-          const number = toArabicIndic(index + 1);
+          const number = String(index + 1);
           return (
             <li
               key={row.stage.id}

@@ -62,7 +62,7 @@ export function ChildSettingsDialog({ token, child, onClose, onSaved, onAuthExpi
       const trimmed = dailyLimit.trim();
       const minutes = trimmed === "" ? null : Number.parseInt(trimmed, 10);
       if (minutes !== null && (Number.isNaN(minutes) || minutes < 5 || minutes > 480)) {
-        setError("الحد اليومي يجب أن يكون بين ٥ و ٤٨٠ دقيقة");
+        setError("الحد اليومي يجب أن يكون بين 5 و 480 دقيقة");
         return;
       }
       setSaving(true);
@@ -149,11 +149,11 @@ export function ChildSettingsDialog({ token, child, onClose, onSaved, onAuthExpi
             ) : null}
 
             <div className="dialog-actions">
-              <button type="button" className="text-button" onClick={onClose}>
-                إلغاء
-              </button>
-              <button type="submit" className="big-button" disabled={saving}>
+              <button type="submit" className="big-button confirm" disabled={saving || saved}>
                 {saving ? "جارٍ الحفظ…" : "حفظ"}
+              </button>
+              <button type="button" className="big-button neutral" onClick={onClose}>
+                إلغاء
               </button>
             </div>
           </form>

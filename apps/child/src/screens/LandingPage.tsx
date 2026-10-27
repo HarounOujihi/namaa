@@ -1,11 +1,8 @@
 import { useEffect, useRef } from "react";
-import { toArabicIndic } from "../arabic";
+import { useNavigate } from "react-router-dom";
 import { Mascot } from "../components/Mascot";
+import { backState } from "../navigation";
 import "./landing.css";
-
-interface LandingPageProps {
-  onLogin: () => void;
-}
 
 type SectionId = "idea" | "how" | "programs" | "family";
 
@@ -80,9 +77,8 @@ const AUDIENCES: ReadonlyArray<{ icon: string; title: string; items: ReadonlyArr
 const FLOATING_LETTERS = ["أ", "ب", "ت", "ج", "د", "س"];
 
 /**
- * In-page navigation without touching location.hash: the hash is reserved for
- * play deep links (`#/r/...`). Focus follows the scroll so keyboard and screen
- * reader users land on the section too.
+ * In-page navigation by scrolling, so no `#` ever enters the URL. Focus
+ * follows the scroll so keyboard and screen reader users land on the section too.
  */
 function scrollToSection(id: SectionId): void {
   const section = document.getElementById(id);
@@ -95,7 +91,8 @@ function scrollToSection(id: SectionId): void {
 }
 
 /** Public landing page: explains the product; the header pill is its only way in. */
-export function LandingPage({ onLogin }: LandingPageProps) {
+export function LandingPage() {
+  const navigate = useNavigate();
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Sections fade up as they enter the viewport (CSS skips the effect under reduced motion).
@@ -124,7 +121,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
     return () => observer.disconnect();
   }, []);
 
-  const year = toArabicIndic(new Date().getFullYear());
+  const year = new Date().getFullYear();
 
   return (
     <div className="landing" ref={rootRef}>
@@ -143,7 +140,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
               </button>
             ))}
           </nav>
-          <button type="button" className="landing-login" onClick={onLogin}>
+          <button type="button" className="landing-login" onClick={() => void navigate("/login", { state: backState("/") })}>
             تسجيل الدخول
           </button>
         </div>
@@ -153,12 +150,12 @@ export function LandingPage({ onLogin }: LandingPageProps) {
         <section className="landing-hero" aria-labelledby="landing-title">
           <div className="landing-container landing-hero-grid">
             <div className="landing-hero-copy">
-              <span className="landing-chip">لصعوبات القراءة عند الأطفال</span>
+              <span className="landing-chip">لصعوبات التعلّم عند الأطفال</span>
               <h1 id="landing-title" className="landing-title">
                 رحلة ممتعة نحو <span className="landing-title-mark">قراءة أسهل</span>
               </h1>
               <p className="landing-lead">
-                رحلتي تطبيق عربي يساعد الأطفال الذين يواجهون صعوبات في القراءة (عُسر القراءة) على التقدّم خطوة بخطوة،
+                رحلتي تطبيق عربي يساعد الأطفال الذين يواجهون صعوبات التعلّم على التقدّم خطوة بخطوة،
                 من خلال ألعاب وأنشطة ممتعة، بمتابعة الأسرة والمختص.
               </p>
               <ul className="landing-checks">
@@ -191,7 +188,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
                 </div>
                 <div className="landing-island-ground" />
               </div>
-              <span className="landing-float-chip landing-float-chip-stars">⭐ ٣ نجوم</span>
+              <span className="landing-float-chip landing-float-chip-stars">⭐ 3 نجوم</span>
               <span className="landing-float-chip landing-float-chip-badge">🏅 وسام جديد</span>
             </div>
           </div>
@@ -203,7 +200,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
               كل طفل يستطيع أن يقرأ… بطريقته
             </h2>
             <p className="landing-section-lead">
-              صعوبات القراءة لا تعني ضعف الذكاء. يحتاج الطفل إلى تدريب مناسب لمستواه، يتكرّر بلطف ويُشعره بالنجاح؛ لذلك
+              صعوبات التعلّم لا تعني ضعف الذكاء. يحتاج الطفل إلى تدريب مناسب لمستواه، يتكرّر بلطف ويُشعره بالنجاح؛ لذلك
               حوّلنا التدريب العلاجي إلى رحلة يلعبها الطفل كل يوم، ويتابعها الكبار بوضوح.
             </p>
             <ul className="landing-grid landing-grid-3">
@@ -229,7 +226,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
               {STEPS.map((step, index) => (
                 <li key={step.title} className="landing-card landing-step">
                   <span className="landing-step-number" aria-hidden="true">
-                    {toArabicIndic(index + 1)}
+                    {index + 1}
                   </span>
                   <h3 className="landing-card-title">{step.title}</h3>
                   <p className="landing-card-text">{step.text}</p>
@@ -245,7 +242,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
               برامج مبنية على دراسة متأنية من المختصين
             </h2>
             <p className="landing-section-lead">
-              لم تُصمَّم الأنشطة عشوائيًا: كل برنامج في رحلتي أُعدّ بعد دراسة متأنية من مختصين في صعوبات التعلّم والقراءة،
+              لم تُصمَّم الأنشطة عشوائيًا: كل برنامج في رحلتي أُعدّ بعد دراسة متأنية من مختصين في صعوبات التعلّم،
               ورُتّبت مهاراته من الأسهل إلى الأصعب، ولكل مرحلة شروط إتقان واضحة قبل الانتقال إلى ما بعدها.
             </p>
             <ul className="landing-grid landing-grid-4 landing-points">
@@ -266,7 +263,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
                   </span>
                   <span className="landing-skill-name">{skill.name}</span>
                   <span className="landing-skill-number" aria-hidden="true">
-                    {toArabicIndic(index + 1)}
+                    {index + 1}
                   </span>
                 </li>
               ))}
@@ -340,7 +337,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
 
       <footer className="landing-footer">
         <div className="landing-container landing-footer-row">
-          <p>رحلتي — منصة عربية لتشخيص صعوبات القراءة وعلاجها</p>
+          <p>رحلتي — منصة عربية لتشخيص صعوبات التعلّم وعلاجها</p>
           <p>© {year}</p>
         </div>
       </footer>

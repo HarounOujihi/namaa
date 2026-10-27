@@ -26,13 +26,6 @@ export function shuffle<T>(items: readonly T[]): T[] {
   return out;
 }
 
-const ARABIC_DIGITS = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
-
-/** 3 → "٣" — western digits as Arabic-Indic numerals for the child UI. */
-export function toArabicDigits(value: number): string {
-  return String(value).replace(/[0-9]/g, (digit) => ARABIC_DIGITS[Number(digit)]);
-}
-
 function nonEmptyArray(value: unknown): boolean {
   return Array.isArray(value) && value.length > 0;
 }

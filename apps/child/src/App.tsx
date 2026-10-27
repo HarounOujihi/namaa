@@ -1,117 +1,72 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { clearStoredAuth, loadStoredAuth, persistAuth } from "./auth";
-import type { AuthResponse, Child } from "./types";
-import { ChildHome } from "./screens/ChildHome";
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useSearchParams } from "react-router-dom";
+import { AuthProvider, useAuth } from "./auth-context";
+import { pathOf, safeNext, withNext } from "./navigation";
+import { CHILDREN_PATH } from "./play-views";
 import { ChildPicker } from "./screens/ChildPicker";
 import { LandingPage } from "./screens/LandingPage";
 import { LoginScreen } from "./screens/LoginScreen";
-import { AssessmentResults } from "./screens/assessment-results";
+import { AssessmentResultsRoute } from "./screens/assessment-results";
+import { ActiveChildLayout } from "./screens/PlayLayout";
+import {
+  ActivityRoute,
+  AssessmentRoute,
+  CategoryRoute,
+  JourneyRoute,
+  PlayHomeRoute,
+  RewardsRoute,
+  StageRoute,
+} from "./screens/PlayRoutes";
 
-type Screen = "landing" | "login" | "picker" | "childHome" | "assessmentResults";
+/** Public screens: a stored session skips them (to `?next=` when safe). */
+function PublicOnly() {
+  const { auth } = useAuth();
+  const [params] = useSearchParams();
+  if (auth !== null) {
+    return <Navigate to={safeNext(params.get("next")) ?? CHILDREN_PATH} replace />;
+  }
+  return <Outlet />;
+}
 
-/**
- * Leaving a child's session drops its deep link: the next child (or the same
- * one re-entering) starts from the library home, never mid-roadmap.
- */
-function resetPlayLocation(): void {
-  window.history.replaceState(null, "", "#/");
+/** Everything past login: no session → `/login?next=<here>`. */
+function RequireAuth() {
+  const { auth } = useAuth();
+  const location = useLocation();
+  if (auth === null) {
+    return <Navigate to={withNext("/login", pathOf(location))} replace />;
+  }
+  return <Outlet />;
 }
 
 export default function App() {
-  const [auth, setAuth] = useState<AuthResponse | null>(() => loadStoredAuth());
-  const [screen, setScreen] = useState<Screen>(() => (auth !== null ? "picker" : "landing"));
-  const [activeChild, setActiveChild] = useState<Child | null>(null);
-  const [resultsChild, setResultsChild] = useState<Child | null>(null);
-  // Only the first child entered after a page load may restore the URL's deep link.
-  const deepLinkUsedRef = useRef(false);
-
-  // Login sits on its own history entry (same URL, so a `#/r/...` deep link
-  // survives): the browser's back button returns to the landing page.
-  useEffect(() => {
-    if (screen !== "login") {
-      return;
-    }
-    const backToLanding = (): void => setScreen("landing");
-    window.addEventListener("popstate", backToLanding);
-    return () => window.removeEventListener("popstate", backToLanding);
-  }, [screen]);
-
-  const handleLoginSuccess = useCallback((result: AuthResponse): void => {
-    persistAuth(result);
-    window.history.replaceState(null, "");
-    setAuth(result);
-    setScreen("picker");
-  }, []);
-
-  const handleLeavePicker = useCallback((): void => {
-    clearStoredAuth();
-    resetPlayLocation();
-    setAuth(null);
-    setActiveChild(null);
-    setResultsChild(null);
-    setScreen("landing");
-  }, []);
-
-  if (screen === "assessmentResults" && resultsChild !== null && auth !== null) {
-    return (
-      <AssessmentResults
-        child={resultsChild}
-        token={auth.accessToken}
-        onAuthExpired={handleLeavePicker}
-        onBack={() => {
-          setResultsChild(null);
-          setScreen("picker");
-        }}
-      />
-    );
-  }
-
-  if (screen === "childHome" && activeChild !== null && auth !== null) {
-    return (
-      <ChildHome
-        child={activeChild}
-        token={auth.accessToken}
-        onAuthExpired={handleLeavePicker}
-        onExit={() => {
-          resetPlayLocation();
-          setScreen("picker");
-        }}
-      />
-    );
-  }
-
-  if (screen === "picker" && auth !== null) {
-    return (
-      <ChildPicker
-        auth={auth}
-        onChildSelected={(child) => {
-          if (deepLinkUsedRef.current) {
-            resetPlayLocation();
-          }
-          deepLinkUsedRef.current = true;
-          setActiveChild(child);
-          setScreen("childHome");
-        }}
-        onShowResults={(child) => {
-          setResultsChild(child);
-          setScreen("assessmentResults");
-        }}
-        onAuthExpired={handleLeavePicker}
-        onLogout={handleLeavePicker}
-      />
-    );
-  }
-
-  if (screen === "login") {
-    return <LoginScreen onBack={() => window.history.back()} onSuccess={handleLoginSuccess} />;
-  }
-
   return (
-    <LandingPage
-      onLogin={() => {
-        window.history.pushState({ dtLogin: true }, "");
-        setScreen("login");
-      }}
-    />
+    // Synchronous location updates: a logout's navigate and its auth reset
+    // land in one render, so the auth guard never sees the old path signed out.
+    <BrowserRouter useTransitions={false}>
+      <AuthProvider>
+        <Routes>
+          <Route element={<PublicOnly />}>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginScreen />} />
+          </Route>
+          <Route element={<RequireAuth />}>
+            <Route path="/children" element={<ChildPicker />} />
+            <Route path="/children/:childId/results" element={<AssessmentResultsRoute />} />
+            <Route element={<ActiveChildLayout />}>
+              <Route path="/play" element={<PlayHomeRoute />} />
+              <Route path="/categories/:categoryId" element={<CategoryRoute />} />
+              <Route path="/roadmaps/:roadmapId" element={<JourneyRoute />} />
+              <Route path="/roadmaps/:roadmapId/stages/:stageOrder" element={<StageRoute />} />
+              <Route
+                path="/roadmaps/:roadmapId/stages/:stageOrder/activities/:itemOrder"
+                element={<ActivityRoute />}
+              />
+              <Route path="/rewards" element={<RewardsRoute />} />
+              <Route path="/assessment" element={<AssessmentRoute />} />
+            </Route>
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }

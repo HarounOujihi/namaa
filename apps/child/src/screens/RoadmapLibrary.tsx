@@ -1,7 +1,6 @@
 import type { CSSProperties } from "react";
 import { Mascot } from "../components/Mascot";
-import { BackButton } from "../components/BackButton";
-import { arabicCount, arabicRelativeDay, toArabicIndic } from "../arabic";
+import { arabicCount, arabicRelativeDay } from "../arabic";
 import type { PlayRoadmapProgress, PlayRoadmapSummary } from "../types";
 import type { RoadmapBucket } from "../play-views";
 
@@ -113,7 +112,7 @@ export function CategoriesPage({ buckets, progressOf, continueEntry, onOpenBucke
                     <span className="lib-chip">🧭 {arabicCount(bucket.roadmaps.length, ROADMAP_FORMS)}</span>
                     {completed > 0 ? (
                       <span className="lib-chip is-done">
-                        🏆 {toArabicIndic(completed)} من {toArabicIndic(bucket.roadmaps.length)}
+                        🏆 {completed} من {bucket.roadmaps.length}
                       </span>
                     ) : null}
                   </span>
@@ -149,7 +148,7 @@ function ContinueHero({ entry, onOpen }: { entry: RoadmapEntry; onOpen: () => vo
 
 /** One segment per playable stage, filled for each passed one. */
 function StageBar({ progress }: { progress: PlayRoadmapProgress }) {
-  const label = `المحطات: ${toArabicIndic(progress.completedStages)} من ${toArabicIndic(progress.totalStages)}`;
+  const label = `المحطات: ${progress.completedStages} من ${progress.totalStages}`;
   if (progress.totalStages === 0) {
     return null;
   }
@@ -187,16 +186,15 @@ function StageBar({ progress }: { progress: PlayRoadmapProgress }) {
 
 interface CategoryPageProps {
   bucket: RoadmapBucket;
-  /** Home already is this list: no banner back button. */
+  /** Home already is this list (a single bucket): generic heading for the "other" bucket. */
   atHome: boolean;
   entries: RoadmapEntry[];
   owlRoadmapId: string | null;
-  onBack: () => void;
   onOpenRoadmap: (roadmapId: string) => void;
 }
 
 /** One group's roadmaps, each card showing status and progress before opening. */
-export function CategoryPage({ bucket, atHome, entries, owlRoadmapId, onBack, onOpenRoadmap }: CategoryPageProps) {
+export function CategoryPage({ bucket, atHome, entries, owlRoadmapId, onOpenRoadmap }: CategoryPageProps) {
   const name = bucket.category?.name ?? (atHome ? "اختر رحلتك" : "رحلات أخرى");
   const description = bucket.category?.description ?? (atHome ? "لكل رحلة مغامراتها الخاصة" : null);
   return (
@@ -204,11 +202,6 @@ export function CategoryPage({ bucket, atHome, entries, owlRoadmapId, onBack, on
       <section className="lib-banner lib-enter">
         <Cover id={bucket.id} url={bucket.category?.coverUrl ?? null} alt={name} className="lib-banner-cover" />
         <span className="lib-banner-shade" aria-hidden="true" />
-        {!atHome ? (
-          <span className="lib-banner-back">
-            <BackButton onClick={onBack} />
-          </span>
-        ) : null}
         <div className="lib-banner-copy">
           <h2 className="lib-banner-title">{name}</h2>
           {description !== null && description.length > 0 ? <p className="lib-banner-desc">{description}</p> : null}
@@ -255,11 +248,11 @@ function RoadmapCard({ entry, hasOwl, onOpen }: { entry: RoadmapEntry; hasOwl: b
           <span className="lib-progress-block">
             <span className="lib-progress-row">
               <span>
-                المحطات: {toArabicIndic(progress.completedStages)} من {toArabicIndic(progress.totalStages)}
+                المحطات: {progress.completedStages} من {progress.totalStages}
               </span>
               {progress.maxStars > 0 ? (
                 <span>
-                  ⭐ {toArabicIndic(progress.stars)} من {toArabicIndic(progress.maxStars)}
+                  ⭐ {progress.stars} من {progress.maxStars}
                 </span>
               ) : null}
             </span>

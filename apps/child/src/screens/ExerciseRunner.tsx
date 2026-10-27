@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { ExercisePlayer, speakArabic } from "@dyslexia/exercise-engine";
 import type { AnswerResult } from "@dyslexia/exercise-engine";
 import { ApiError, submitPlayAttempt } from "../api";
 import { playAppSound } from "../app-sounds";
-import { toArabicIndic } from "../arabic";
-import { BackButton } from "../components/BackButton";
+import { PageHeader } from "../components/PageHeader";
 import type { PlayAttemptResult, PlayStageItem } from "../types";
 
 interface ExerciseRunnerProps {
@@ -15,11 +15,14 @@ interface ExerciseRunnerProps {
   roadmapId: string;
   /** Shown small in the header — the CMS title can reveal the answer, so it never headlines. */
   stageName: string;
+  /** The stage (the header's back target). */
+  parent: string;
+  /** Extra header controls after 🔊. */
+  headerActions?: ReactNode;
   /** 1-based place of this item among the stage's playable items. */
   position: number;
   total: number;
   onAuthExpired: () => void;
-  onBack: () => void;
   /** Moving on; `succeeded` = the last attempt was correct. */
   onDone: (succeeded: boolean) => void;
 }
@@ -51,10 +54,11 @@ export function ExerciseRunner({
   item,
   roadmapId,
   stageName,
+  parent,
+  headerActions,
   position,
   total,
   onAuthExpired,
-  onBack,
   onDone,
 }: ExerciseRunnerProps) {
   const exercise = item.exercise;
@@ -79,10 +83,7 @@ export function ExerciseRunner({
   if (exercise === null) {
     return (
       <main className="screen play-screen">
-        <header className="play-header">
-          <BackButton onClick={onBack} />
-          <span className="play-header-title">{stageName}</span>
-        </header>
+        <PageHeader title={stageName} parent={parent} actions={headerActions} />
         <p className="status-text">هذا النشاط قيد التحضير</p>
       </main>
     );
@@ -138,25 +139,30 @@ export function ExerciseRunner({
 
   return (
     <main className="screen play-screen exercise-runner">
-      <header className="play-header">
-        <BackButton onClick={onBack} />
-        <div className="play-header-copy">
-          <span className="play-header-title">{stageName}</span>
-          {total > 1 && position > 0 ? (
-            <span className="play-header-sub" aria-label={`النشاط ${toArabicIndic(position)} من ${toArabicIndic(total)}`}>
-              {toArabicIndic(position)} / {toArabicIndic(total)}
+      <PageHeader
+        title={stageName}
+        subtitle={
+          total > 1 && position > 0 ? (
+            <span aria-label={`النشاط ${position} من ${total}`}>
+              {position} / {total}
             </span>
-          ) : null}
-        </div>
-        <button
-          type="button"
-          className="icon-button compact"
-          aria-label="إعادة التعليمات"
-          onClick={() => speakArabic(instructions)}
-        >
-          🔊
-        </button>
-      </header>
+          ) : undefined
+        }
+        parent={parent}
+        actions={
+          <>
+            <button
+              type="button"
+              className="icon-button compact"
+              aria-label="إعادة التعليمات"
+              onClick={() => speakArabic(instructions)}
+            >
+              🔊
+            </button>
+            {headerActions}
+          </>
+        }
+      />
 
       <p className="runner-instructions">{instructions}</p>
 

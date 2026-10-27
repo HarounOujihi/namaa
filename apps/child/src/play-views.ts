@@ -1,27 +1,15 @@
 import type { PlayCategory, PlayRoadmapProgress, PlayRoadmapSummary, PlayStage, PlayStageItem } from "./types";
 
 /**
- * Every ChildHome screen is addressed by stable coordinates (roadmap id +
- * stage/item order, category id) instead of object references, so the URL
- * hash can reconstruct the exact view on browser back/forward and from shared
- * deep links. Hash formats:
+ * Pure navigation rules for the play area. Every screen is addressed by a
+ * path built from stable coordinates (roadmap id, stage/item order, category id):
  *
- * - `#/`                          → library home (categories, a single bucket's list, or the single roadmap's map)
- * - `#/c/<categoryId>` / `#/c/other` → one bucket's roadmap list
- * - `#/r/<roadmapId>`             → journey map
- * - `#/r/<roadmapId>/s/<stageOrder>` → stage items
- * - `#/r/<roadmapId>/e/<itemOrder>`  → exercise
- *
- * Assessment and rewards are temporary overlays and get no hash entry.
+ * - `/play`                                            → library home
+ * - `/categories/<categoryId>` (`other` = uncategorized) → one bucket's roadmap list
+ * - `/roadmaps/<roadmapId>`                            → journey map
+ * - `/roadmaps/<roadmapId>/stages/<stageOrder>`        → stage items
+ * - `/roadmaps/<roadmapId>/stages/<stageOrder>/activities/<itemOrder>` → one activity
  */
-export type PlayView =
-  | { kind: "home" }
-  | { kind: "category"; bucketId: string }
-  | { kind: "journey"; roadmapId: string }
-  | { kind: "stage"; roadmapId: string; stageOrder: number }
-  | { kind: "exercise"; roadmapId: string; stageOrder: number; itemOrder: number }
-  | { kind: "assessment" }
-  | { kind: "rewards" };
 
 /** The server data navigation resolves against. */
 export interface PlayLibrary {
@@ -32,6 +20,9 @@ export interface PlayLibrary {
 /** Bucket id for uncategorized roadmaps (and ones whose category is not listed). */
 export const OTHER_BUCKET_ID = "other";
 
+/** Activity segment of the stage's "easier activity" recommendation (its item travels in navigation state). */
+export const PRACTICE_ACTIVITY = "practice";
+
 /** A group of roadmaps shown together: one category, or the "other" bucket (category null). */
 export interface RoadmapBucket {
   id: string;
@@ -39,37 +30,34 @@ export interface RoadmapBucket {
   roadmaps: PlayRoadmapSummary[];
 }
 
-/** The same views with the roadmap/stage/item/bucket objects resolved out of server data. */
-export type ResolvedView =
-  | { kind: "categories"; buckets: RoadmapBucket[] }
-  /** `atHome`: the list is the library home itself (only one bucket), so it has no back step. */
-  | { kind: "category"; bucket: RoadmapBucket; atHome: boolean }
-  | { kind: "empty" }
-  | { kind: "journey"; roadmap: PlayRoadmapSummary }
-  | { kind: "stage"; roadmap: PlayRoadmapSummary; stage: PlayStage }
-  | { kind: "exercise"; roadmap: PlayRoadmapSummary; stage: PlayStage; item: PlayStageItem }
-  | { kind: "assessment" }
-  | { kind: "rewards" };
-
 export const NO_COMPLETED_ITEMS: ReadonlySet<string> = new Set();
 
-/** Deep-link hash for a view; null = temporary overlay that keeps the current history entry's URL. */
-export function hashForView(view: PlayView): string | null {
-  switch (view.kind) {
-    case "home":
-      return "#/";
-    case "category":
-      return `#/c/${encodeURIComponent(view.bucketId)}`;
-    case "journey":
-      return `#/r/${encodeURIComponent(view.roadmapId)}`;
-    case "stage":
-      return `#/r/${encodeURIComponent(view.roadmapId)}/s/${view.stageOrder}`;
-    case "exercise":
-      return `#/r/${encodeURIComponent(view.roadmapId)}/e/${view.itemOrder}`;
-    case "assessment":
-    case "rewards":
-      return null;
+export const PLAY_PATH = "/play";
+export const CHILDREN_PATH = "/children";
+
+export function categoryPath(bucketId: string): string {
+  return `/categories/${encodeURIComponent(bucketId)}`;
+}
+
+export function roadmapPath(roadmapId: string): string {
+  return `/roadmaps/${encodeURIComponent(roadmapId)}`;
+}
+
+export function stagePath(roadmapId: string, stageOrder: number): string {
+  return `${roadmapPath(roadmapId)}/stages/${stageOrder}`;
+}
+
+export function activityPath(roadmapId: string, stageOrder: number, item: number | typeof PRACTICE_ACTIVITY): string {
+  return `${stagePath(roadmapId, stageOrder)}/activities/${item}`;
+}
+
+/** Strict integer parse of a path segment; null for anything else ("2x", "", "1.5"). */
+export function parseOrder(segment: string | undefined): number | null {
+  if (segment === undefined || !/^-?\d+$/.test(segment)) {
+    return null;
   }
+  const value = Number(segment);
+  return Number.isSafeInteger(value) ? value : null;
 }
 
 /**
@@ -97,108 +85,73 @@ export function bucketIdForRoadmap(library: PlayLibrary, roadmapId: string): str
   return buildBuckets(library).find((bucket) => bucket.roadmaps.some((roadmap) => roadmap.id === roadmapId))?.id ?? null;
 }
 
-export function defaultView(library: PlayLibrary): { kind: "journey"; roadmapId: string } | { kind: "home" } {
+/** What `/play` shows: the single roadmap's journey (redirect), the single bucket's list, the categories, or nothing. */
+export type PlayHome =
+  | { kind: "journey"; roadmapId: string }
+  | { kind: "category"; bucket: RoadmapBucket }
+  | { kind: "categories"; buckets: RoadmapBucket[] }
+  | { kind: "empty" };
+
+export function playHome(library: PlayLibrary): PlayHome {
   const single = library.roadmaps.length === 1 ? library.roadmaps[0] : undefined;
   // One roadmap only: skip the library entirely and land on its map.
-  return single !== undefined ? { kind: "journey", roadmapId: single.id } : { kind: "home" };
+  if (single !== undefined) {
+    return { kind: "journey", roadmapId: single.id };
+  }
+  const buckets = buildBuckets(library);
+  const only = buckets.length === 1 ? buckets[0] : undefined;
+  if (only !== undefined) {
+    return { kind: "category", bucket: only };
+  }
+  return buckets.length === 0 ? { kind: "empty" } : { kind: "categories", buckets };
 }
 
 /**
- * Where an in-app back step leads: journey → its bucket's list (or home when
- * home already is that list); category → home. Null when there is nowhere to go.
+ * The bucket behind `/categories/<id>`; null when unknown — or when there is a
+ * single bucket, because `/play` already is that list.
  */
-export function parentView(view: PlayView, library: PlayLibrary): PlayView | null {
-  switch (view.kind) {
-    case "category":
-      return { kind: "home" };
-    case "journey": {
-      if (library.roadmaps.length <= 1) {
-        return null;
-      }
-      const buckets = buildBuckets(library);
-      const bucketId = bucketIdForRoadmap(library, view.roadmapId);
-      return buckets.length > 1 && bucketId !== null ? { kind: "category", bucketId } : { kind: "home" };
-    }
-    default:
-      return null;
+export function findCategoryBucket(library: PlayLibrary, bucketId: string): RoadmapBucket | null {
+  const buckets = buildBuckets(library);
+  if (buckets.length <= 1) {
+    return null;
   }
+  return buckets.find((bucket) => bucket.id === bucketId) ?? null;
+}
+
+export function findRoadmap(library: PlayLibrary, roadmapId: string): PlayRoadmapSummary | null {
+  return library.roadmaps.find((roadmap) => roadmap.id === roadmapId) ?? null;
+}
+
+/**
+ * A journey's logical parent: its bucket's page, `/play` when that page is
+ * the home list, or the picker when `/play` would forward straight back here.
+ */
+export function journeyParentPath(library: PlayLibrary, roadmapId: string): string {
+  if (library.roadmaps.length <= 1) {
+    return CHILDREN_PATH;
+  }
+  const bucketId = bucketIdForRoadmap(library, roadmapId);
+  return buildBuckets(library).length > 1 && bucketId !== null ? categoryPath(bucketId) : PLAY_PATH;
 }
 
 export function findStage(roadmap: PlayRoadmapSummary, stageOrder: number): PlayStage | undefined {
   return roadmap.stages.find((stage) => stage.order === stageOrder);
 }
 
-/**
- * The first playable item with the given order. Item orders repeat across
- * stages, so a bare `e/<itemOrder>` hash is ambiguous: prefer the stage the
- * child is already in, then scan stages in ascending order.
- */
-export function findPlayableItem(
-  roadmap: PlayRoadmapSummary,
-  itemOrder: number,
-  preferredStageOrder: number | null,
-): { stage: PlayStage; item: PlayStageItem } | null {
-  const stages = roadmap.stages.slice().sort((a, b) => a.order - b.order);
-  const preferred =
-    preferredStageOrder === null ? undefined : stages.find((stage) => stage.order === preferredStageOrder);
-  const ordered = preferred !== undefined ? [preferred, ...stages.filter((stage) => stage !== preferred)] : stages;
-  for (const stage of ordered) {
-    const item = stage.items.find((candidate) => candidate.order === itemOrder);
-    if (item !== undefined && item.exercise !== null) {
-      return { stage, item };
-    }
-  }
-  return null;
+/** A playable item of the stage by order; null when missing or still without an exercise. */
+export function findPlayableItem(stage: PlayStage, itemOrder: number): PlayStageItem | null {
+  const item = stage.items.find((candidate) => candidate.order === itemOrder);
+  return item !== undefined && item.exercise !== null ? item : null;
 }
 
-/** Turn a location hash into a view; null means the hash is not a valid (or no longer valid) deep link. */
-export function viewFromHash(hash: string, library: PlayLibrary, current: PlayView | null): PlayView | null {
-  const segments = hash
-    .replace(/^#\/?/, "")
-    .split("/")
-    .filter((segment) => segment !== "");
-  // `#/` or empty: the library home (or the single roadmap's map).
-  if (segments.length === 0) {
-    return defaultView(library);
-  }
-  if (segments[0] === "c" && segments.length === 2) {
-    const bucketId = decodeURIComponent(segments[1]);
-    // Stale or unknown category: not a valid link, the caller falls back to `#/`.
-    return buildBuckets(library).some((bucket) => bucket.id === bucketId) ? { kind: "category", bucketId } : null;
-  }
-  if (segments[0] !== "r" || segments.length < 2) {
-    return null;
-  }
-  const roadmapId = decodeURIComponent(segments[1]);
-  const roadmap = library.roadmaps.find((candidate) => candidate.id === roadmapId);
-  if (roadmap === undefined) {
-    return null;
-  }
-  if (segments.length === 2) {
-    return { kind: "journey", roadmapId };
-  }
-  if (segments.length === 4 && segments[2] === "s") {
-    const stageOrder = Number(segments[3]);
-    if (Number.isInteger(stageOrder) && findStage(roadmap, stageOrder) !== undefined) {
-      return { kind: "stage", roadmapId, stageOrder };
-    }
-    return null;
-  }
-  if (segments.length === 4 && segments[2] === "e") {
-    const itemOrder = Number(segments[3]);
-    if (!Number.isInteger(itemOrder)) {
-      return null;
-    }
-    const preferred =
-      current !== null &&
-      (current.kind === "exercise" || current.kind === "stage") &&
-      current.roadmapId === roadmapId
-        ? current.stageOrder
-        : null;
-    const found = findPlayableItem(roadmap, itemOrder, preferred);
-    return found !== null ? { kind: "exercise", roadmapId, stageOrder: found.stage.order, itemOrder } : null;
-  }
-  return null;
+/** The stage's playable items in play order. */
+export function playableItems(stage: PlayStage): PlayStageItem[] {
+  return stage.items.filter((item) => item.exercise !== null).sort((a, b) => a.order - b.order);
+}
+
+/** The playable item after `itemOrder` in the stage, or null after the last one. */
+export function nextPlayableItem(stage: PlayStage, itemOrder: number): PlayStageItem | null {
+  return playableItems(stage).find((item) => item.order > itemOrder) ?? null;
 }
 
 /**
@@ -220,68 +173,33 @@ export function isStageUnlocked(roadmap: PlayRoadmapSummary, stage: PlayStage, d
 }
 
 /**
- * Resolve a view's coordinates against server data; stale ones fall back to
- * the default screen, and a stage (or its exercise) that is still locked falls
- * back to its roadmap's journey — deep links and history never skip ahead.
+ * Resolve a stage address: a missing roadmap, a missing stage and a stage
+ * that is still locked each say so, so the route can fall back (deep links
+ * and history never skip ahead).
  */
-export function resolveView(
-  view: PlayView,
-  library: PlayLibrary,
-  completedByRoadmap: ReadonlyMap<string, ReadonlySet<string>> = new Map(),
-): ResolvedView {
-  const resolveHome = (): ResolvedView => {
-    const fallbackView = defaultView(library);
-    if (fallbackView.kind === "journey") {
-      const roadmap = library.roadmaps.find((candidate) => candidate.id === fallbackView.roadmapId);
-      if (roadmap !== undefined) {
-        return { kind: "journey", roadmap };
-      }
-    }
-    const buckets = buildBuckets(library);
-    const only = buckets.length === 1 ? buckets[0] : undefined;
-    if (only !== undefined) {
-      return { kind: "category", bucket: only, atHome: true };
-    }
-    return buckets.length === 0 ? { kind: "empty" } : { kind: "categories", buckets };
-  };
+export type StageResolution =
+  | { kind: "no-roadmap" }
+  | { kind: "no-stage"; roadmap: PlayRoadmapSummary }
+  | { kind: "locked"; roadmap: PlayRoadmapSummary; stage: PlayStage }
+  | { kind: "open"; roadmap: PlayRoadmapSummary; stage: PlayStage };
 
-  switch (view.kind) {
-    case "home":
-      return resolveHome();
-    case "assessment":
-    case "rewards":
-      return view;
-    case "category": {
-      const buckets = buildBuckets(library);
-      const bucket = buckets.find((candidate) => candidate.id === view.bucketId);
-      // With a single bucket the category page and home are the same list.
-      if (bucket === undefined || buckets.length === 1) {
-        return resolveHome();
-      }
-      return { kind: "category", bucket, atHome: false };
-    }
-    case "journey": {
-      const roadmap = library.roadmaps.find((candidate) => candidate.id === view.roadmapId);
-      return roadmap !== undefined ? { kind: "journey", roadmap } : resolveHome();
-    }
-    case "stage":
-    case "exercise": {
-      const roadmap = library.roadmaps.find((candidate) => candidate.id === view.roadmapId);
-      if (roadmap === undefined) {
-        return resolveHome();
-      }
-      const stage = findStage(roadmap, view.stageOrder);
-      if (stage === undefined || !isStageUnlocked(roadmap, stage, completedByRoadmap.get(roadmap.id) ?? NO_COMPLETED_ITEMS)) {
-        return { kind: "journey", roadmap };
-      }
-      const item =
-        view.kind === "exercise" ? stage.items.find((candidate) => candidate.order === view.itemOrder) : undefined;
-      // A stage view, or an item that vanished / lost its exercise: settle on the stage.
-      return item !== undefined && item.exercise !== null
-        ? { kind: "exercise", roadmap, stage, item }
-        : { kind: "stage", roadmap, stage };
-    }
+export function resolveStage(
+  library: PlayLibrary,
+  roadmapId: string,
+  stageOrder: number | null,
+  completedByRoadmap: ReadonlyMap<string, ReadonlySet<string>>,
+): StageResolution {
+  const roadmap = findRoadmap(library, roadmapId);
+  if (roadmap === null) {
+    return { kind: "no-roadmap" };
   }
+  const stage = stageOrder === null ? undefined : findStage(roadmap, stageOrder);
+  if (stage === undefined) {
+    return { kind: "no-stage", roadmap };
+  }
+  return isStageUnlocked(roadmap, stage, completedByRoadmap.get(roadmap.id) ?? NO_COMPLETED_ITEMS)
+    ? { kind: "open", roadmap, stage }
+    : { kind: "locked", roadmap, stage };
 }
 
 /**

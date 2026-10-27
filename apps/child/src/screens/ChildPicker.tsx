@@ -1,20 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, listChildren } from "../api";
-import type { AuthResponse, Child } from "../types";
+import { persistActiveChildId } from "../auth";
+import { useSignedIn } from "../auth-context";
+import { backState, safeNext } from "../navigation";
+import { CHILDREN_PATH, PLAY_PATH } from "../play-views";
+import type { Child } from "../types";
 import { Avatar } from "../components/Avatar";
 import { AddChildDialog } from "../components/AddChildDialog";
 import { EditChildDialog } from "../components/EditChildDialog";
 import { InviteCodeDialog } from "../components/InviteCodeDialog";
 import { RedeemInviteDialog } from "../components/RedeemInviteDialog";
 import { speak } from "../speech";
-
-interface ChildPickerProps {
-  auth: AuthResponse;
-  onChildSelected: (child: Child) => void;
-  onShowResults: (child: Child) => void;
-  onAuthExpired: () => void;
-  onLogout: () => void;
-}
 
 type PickerDialog =
   | { kind: "none" }
@@ -23,7 +20,11 @@ type PickerDialog =
   | { kind: "redeem" }
   | { kind: "edit"; child: Child };
 
-export function ChildPicker({ auth, onChildSelected, onShowResults, onAuthExpired, onLogout }: ChildPickerProps) {
+/** `/children`: who plays on this device. Picking a child makes it the active child and continues to `?next=` or `/play`. */
+export function ChildPicker() {
+  const { auth, expire: onAuthExpired, signOut } = useSignedIn();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [children, setChildren] = useState<Child[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -53,7 +54,13 @@ export function ChildPicker({ auth, onChildSelected, onShowResults, onAuthExpire
 
   const handleCardTap = (child: Child): void => {
     speak(`أهلًا ${child.fullName}`);
-    onChildSelected(child);
+    persistActiveChildId(child.id);
+    void navigate(safeNext(params.get("next")) ?? PLAY_PATH, { state: backState(CHILDREN_PATH) });
+  };
+
+  const handleLogout = (): void => {
+    signOut();
+    void navigate("/");
   };
 
   return (
@@ -63,8 +70,8 @@ export function ChildPicker({ auth, onChildSelected, onShowResults, onAuthExpire
           <h1 className="picker-title">من يلعب اليوم؟</h1>
           <p className="picker-subtitle">اختر ملفك للبدء باللعب</p>
         </div>
-        <button type="button" className="text-button" onClick={onLogout}>
-          خروج
+        <button type="button" className="text-button" onClick={handleLogout}>
+          تسجيل الخروج
         </button>
       </header>
 
@@ -98,7 +105,11 @@ export function ChildPicker({ auth, onChildSelected, onShowResults, onAuthExpire
                   type="button"
                   className="icon-button compact"
                   aria-label={`نتائج التشخيص لـ${child.fullName}`}
-                  onClick={() => onShowResults(child)}
+                  onClick={() =>
+                    void navigate(`/children/${encodeURIComponent(child.id)}/results`, {
+                      state: backState(CHILDREN_PATH),
+                    })
+                  }
                 >
                   📊
                 </button>

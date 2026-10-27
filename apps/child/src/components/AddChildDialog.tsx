@@ -80,11 +80,11 @@ export function AddChildDialog({ token, onAuthExpired, onCreated, onCancel }: Ad
           </p>
         ) : null}
         <div className="dialog-actions">
-          <button type="button" className="big-button secondary" onClick={onCancel}>
-            إلغاء
-          </button>
-          <button type="submit" className="big-button" disabled={pending}>
+          <button type="submit" className="big-button confirm" disabled={pending}>
             {pending ? "جارٍ الإضافة…" : "إضافة"}
+          </button>
+          <button type="button" className="big-button neutral" onClick={onCancel}>
+            إلغاء
           </button>
         </div>
       </form>

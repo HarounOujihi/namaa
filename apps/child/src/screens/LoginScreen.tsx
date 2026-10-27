@@ -1,13 +1,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { ApiError, login } from "../api";
-import { BackButton } from "../components/BackButton";
-import type { AuthResponse } from "../types";
-
-interface LoginScreenProps {
-  onBack: () => void;
-  onSuccess: (auth: AuthResponse) => void;
-}
+import { useAuth } from "../auth-context";
+import { PageHeader } from "../components/PageHeader";
 
 /** Server messages may be English; the screen always speaks Arabic. */
 function loginErrorMessage(error: unknown): string {
@@ -20,7 +15,12 @@ function loginErrorMessage(error: unknown): string {
   return "تعذر تسجيل الدخول، حاول مرة أخرى";
 }
 
-export function LoginScreen({ onBack, onSuccess }: LoginScreenProps) {
+/**
+ * `/login`: signing in stores the session; the public-route guard then
+ * forwards (replacing this entry) to `?next=` when safe, else the picker.
+ */
+export function LoginScreen() {
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -35,7 +35,7 @@ export function LoginScreen({ onBack, onSuccess }: LoginScreenProps) {
     setPending(true);
     setError(null);
     try {
-      onSuccess(await login(email.trim(), password));
+      signIn(await login(email.trim(), password));
     } catch (err) {
       setError(loginErrorMessage(err));
     } finally {
@@ -45,13 +45,7 @@ export function LoginScreen({ onBack, onSuccess }: LoginScreenProps) {
 
   return (
     <main className="screen login-screen">
-      <header className="play-header">
-        <BackButton onClick={onBack} />
-        <div className="play-header-copy">
-          <h1 className="play-header-title">تسجيل الدخول</h1>
-          <p className="play-header-sub">أدخل بريدك الإلكتروني وكلمة المرور</p>
-        </div>
-      </header>
+      <PageHeader title="تسجيل الدخول" subtitle="أدخل بريدك الإلكتروني وكلمة المرور" parent="/" />
       <form className="card form" onSubmit={handleSubmit}>
         <label className="field">
           <span className="field-label">البريد الإلكتروني</span>
@@ -94,7 +88,7 @@ export function LoginScreen({ onBack, onSuccess }: LoginScreenProps) {
             {error}
           </p>
         ) : null}
-        <button type="submit" className="big-button" disabled={pending}>
+        <button type="submit" className="big-button confirm" disabled={pending}>
           {pending ? "جارٍ الدخول…" : "دخول"}
         </button>
       </form>

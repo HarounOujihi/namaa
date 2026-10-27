@@ -4,14 +4,16 @@ import type { AnswerResult } from "@dyslexia/exercise-engine";
 import { ApiError, submitPlayAssessmentAttempt } from "../api";
 import { playAppSound } from "../app-sounds";
 import type { PlayAssessmentAttemptAnswer, PlayAssessmentItem } from "../types";
-import { toArabicIndic } from "../arabic";
 import { Mascot } from "../components/Mascot";
+import { PageHeader } from "../components/PageHeader";
 
 interface AssessmentRunnerProps {
   token: string;
   childId: string;
   versionId: string;
   items: PlayAssessmentItem[];
+  /** Where the header's back button leads (the screen the diagnostic was opened from). */
+  parent: string;
   onAuthExpired: () => void;
   onDone: () => void;
 }
@@ -28,6 +30,7 @@ export function AssessmentRunner({
   childId,
   versionId,
   items,
+  parent,
   onAuthExpired,
   onDone,
 }: AssessmentRunnerProps) {
@@ -57,6 +60,7 @@ export function AssessmentRunner({
   }, [answered, itemIndex]);
 
   const item = items[itemIndex];
+  const header = <PageHeader title="لعبة البداية" parent={parent} />;
 
   const handleAnswer = (answerResult: AnswerResult): void => {
     if (answered || item === undefined) {
@@ -114,6 +118,7 @@ export function AssessmentRunner({
   if (phase === "intro") {
     return (
       <main className="screen assessment-runner">
+        {header}
         <Mascot />
         <h1 className="screen-title">سنلعب لعبة قصيرة وممتعة!</h1>
         <p className="assessment-intro-note">ليس فيها نجاح أو خطأ</p>
@@ -132,9 +137,10 @@ export function AssessmentRunner({
     const progressPercent = Math.round(((itemIndex + 1) / items.length) * 100);
     return (
       <main className="screen assessment-runner">
+        {header}
         <div className="assessment-progress">
           <p className="assessment-progress-label">
-            النشاط {toArabicIndic(itemIndex + 1)} من {toArabicIndic(items.length)}
+            النشاط {itemIndex + 1} من {items.length}
           </p>
           <div
             className="assessment-progress-track"
@@ -172,6 +178,7 @@ export function AssessmentRunner({
 
   return (
     <main className="screen assessment-runner">
+      {header}
       <h1 className="assessment-done-title">🎉 أحسنت! انتهت اللعبة — سنبدأ الآن رحلة ممتعة معًا</h1>
       <button type="button" className="big-button" onClick={handleFinish}>
         هيا نلعب

@@ -55,11 +55,11 @@ export function RedeemInviteDialog({ token, onAuthExpired, onRedeemed, onCancel 
           </p>
         ) : null}
         <div className="dialog-actions">
-          <button type="button" className="big-button secondary" onClick={onCancel}>
-            إلغاء
-          </button>
-          <button type="submit" className="big-button" disabled={pending}>
+          <button type="submit" className="big-button confirm" disabled={pending}>
             {pending ? "جارٍ التفعيل…" : "تفعيل"}
+          </button>
+          <button type="button" className="big-button neutral" onClick={onCancel}>
+            إلغاء
           </button>
         </div>
       </form>

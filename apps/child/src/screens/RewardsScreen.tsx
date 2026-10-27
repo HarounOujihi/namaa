@@ -2,9 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { ApiError, equipPlayReward, getPlayRewards, purchasePlayReward } from "../api";
 import type { PlayRewardItem, PlayRewards } from "../types";
 import { Mascot } from "../components/Mascot";
-import { BackButton } from "../components/BackButton";
+import { PageHeader } from "../components/PageHeader";
 import { playAppSound } from "../app-sounds";
-import { toArabicIndic } from "../arabic";
 import "./rewards-screen.css";
 
 interface RewardsScreenProps {
@@ -13,7 +12,8 @@ interface RewardsScreenProps {
   /** Fresh rewards are pushed up so the journey map's owl ring stays in sync. */
   onRewardsLoaded: (rewards: PlayRewards) => void;
   onAuthExpired: () => void;
-  onBack: () => void;
+  /** The screen rewards were opened from (the header's back target). */
+  parent: string;
 }
 
 /** Toast-ish inline note: celebrate on success, gentle info otherwise. */
@@ -22,14 +22,14 @@ interface InlineStatus {
   message: string;
 }
 
-/** ISO date → "٢ سبتمبر ٢٠٢٦" for an earned badge; null when unparsable. */
+/** ISO date → "2 سبتمبر 2026" for an earned badge; null when unparsable. */
 function formatEarnedDate(iso: string): string | null {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) {
     return null;
   }
-  // `nu-arab`: Arabic-Indic digits ("٢ سبتمبر ٢٠٢٦"), like every other number in the child UI.
-  return date.toLocaleDateString("ar-u-nu-arab", { day: "numeric", month: "long", year: "numeric" });
+  // `nu-latn`: Western digits ("2 سبتمبر 2026"), like every other number in the child UI.
+  return date.toLocaleDateString("ar-u-nu-latn", { day: "numeric", month: "long", year: "numeric" });
 }
 
 /**
@@ -39,7 +39,7 @@ function formatEarnedDate(iso: string): string | null {
  * dashed — and the customization shop whose cards preview each item on a
  * mini owl before buying. Positive-only everywhere.
  */
-export function RewardsScreen({ token, childId, onRewardsLoaded, onAuthExpired, onBack }: RewardsScreenProps) {
+export function RewardsScreen({ token, childId, onRewardsLoaded, onAuthExpired, parent }: RewardsScreenProps) {
   const [rewards, setRewards] = useState<PlayRewards | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -126,13 +126,7 @@ export function RewardsScreen({ token, childId, onRewardsLoaded, onAuthExpired, 
 
   return (
     <main className="screen rewards-screen">
-      <header className="rewards-top">
-        <div className="rewards-top-row">
-          <BackButton onClick={onBack} />
-          <h1 className="rewards-title">جوائزي 🎁</h1>
-          <span className="rewards-top-tail" aria-hidden="true" />
-        </div>
-      </header>
+      <PageHeader title="جوائزي 🎁" parent={parent} />
 
       {loading ? <p className="status-text">جارٍ تحميل الجوائز…</p> : null}
       {!loading && loadError !== null ? (
@@ -160,11 +154,11 @@ export function RewardsScreen({ token, childId, onRewardsLoaded, onAuthExpired, 
             </div>
             <div className="rewards-hero-copy">
               <p className="rewards-hero-balance">
-                <span className="rewards-hero-number">{toArabicIndic(rewards.balance)}</span>
+                <span className="rewards-hero-number">{rewards.balance}</span>
                 <span className="rewards-hero-unit">نقطة</span>
               </p>
               <p className="rewards-hero-stars">
-                ⭐ {toArabicIndic(rewards.stars)}
+                ⭐ {rewards.stars}
                 <span className="rewards-hero-stars-unit">نجمة</span>
               </p>
             </div>
@@ -235,7 +229,7 @@ export function RewardsScreen({ token, childId, onRewardsLoaded, onAuthExpired, 
                         )}
                         <Mascot scarfColor={scarf ? item.color : null} />
                       </div>
-                      <span className="shop-price">{toArabicIndic(item.price)} نقطة</span>
+                      <span className="shop-price">{item.price} نقطة</span>
                       <span className="shop-name">{item.name}</span>
                       <div className="shop-actions">
                         {item.equipped ? (
@@ -261,7 +255,7 @@ export function RewardsScreen({ token, childId, onRewardsLoaded, onAuthExpired, 
                             </button>
                             {rewards.balance < item.price ? (
                               <span className="shop-note">
-                                تحتاج {toArabicIndic(missingPoints)} نقطة إضافية
+                                تحتاج {missingPoints} نقطة إضافية
                               </span>
                             ) : null}
                           </>

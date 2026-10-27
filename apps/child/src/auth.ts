@@ -1,6 +1,9 @@
 import type { AuthResponse, User } from "./types";
 
 export const AUTH_STORAGE_KEY = "dt_auth";
+/** The child this device plays as (a child id). */
+export const ACTIVE_CHILD_STORAGE_KEY = "dt_active_child";
+
 function isUser(value: unknown): value is User {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -51,6 +54,30 @@ export function persistAuth(auth: AuthResponse): void {
 export function clearStoredAuth(): void {
   try {
     window.localStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch {
+    // Nothing sensible to do if removal fails.
+  }
+}
+
+export function loadActiveChildId(): string | null {
+  try {
+    return window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function persistActiveChildId(childId: string): void {
+  try {
+    window.localStorage.setItem(ACTIVE_CHILD_STORAGE_KEY, childId);
+  } catch {
+    // Storage can be unavailable; the picker simply asks again after a reload.
+  }
+}
+
+export function clearActiveChildId(): void {
+  try {
+    window.localStorage.removeItem(ACTIVE_CHILD_STORAGE_KEY);
   } catch {
     // Nothing sensible to do if removal fails.
   }

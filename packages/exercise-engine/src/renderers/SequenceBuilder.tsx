@@ -13,7 +13,7 @@ import {
   sequenceGrid,
   stack,
 } from "../styles.js";
-import { assetUrl, shuffle, toArabicDigits } from "../utils.js";
+import { assetUrl, shuffle } from "../utils.js";
 
 /** A tappable card in a recall sequence (option spec resolved against assets). */
 export interface SequenceCard {
@@ -89,7 +89,7 @@ export function SequenceBuilder({
             >
               {isSelected ? (
                 <span style={positionBadge} aria-hidden>
-                  {toArabicDigits(index + 1)}
+                  {index + 1}
                 </span>
               ) : null}
               {isSelected || !faceDown ? (
@@ -106,7 +106,7 @@ export function SequenceBuilder({
       <InstructionText>
         {complete
           ? "رتبت كل البطاقات، اضغط «تحقق»"
-          : `اضغط البطاقات بالترتيب (${toArabicDigits(selected.length)} من ${toArabicDigits(cards.length)})`}
+          : `اضغط البطاقات بالترتيب (${selected.length} من ${cards.length})`}
       </InstructionText>
       <button
         type="button"
@@ -145,12 +145,12 @@ export function RevealRecall({
   if (phase === "reveal") {
     return (
       <div style={stack}>
-        <InstructionText>انظر جيدًا واحفظ الترتيب… {toArabicDigits(secondsLeft)}</InstructionText>
+        <InstructionText>انظر جيدًا واحفظ الترتيب… {secondsLeft}</InstructionText>
         <div style={sequenceGrid}>
           {cards.map((card, index) => (
             <div key={card.id} style={{ ...sequenceCard, cursor: "default" }}>
               <span style={positionBadge} aria-hidden>
-                {toArabicDigits(index + 1)}
+                {index + 1}
               </span>
               <CardFace card={card} />
             </div>

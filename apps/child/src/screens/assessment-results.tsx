@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
-import { ApiError, getPlayAssessment } from "../api";
+import { Navigate, useParams } from "react-router-dom";
+import { ApiError, getPlayAssessment, listChildren } from "../api";
+import { useSignedIn } from "../auth-context";
 import type { Child, PlayAssessmentSkillResult } from "../types";
 import { Avatar } from "../components/Avatar";
-import { BackButton } from "../components/BackButton";
-import { toArabicIndic } from "../arabic";
+import { PageHeader } from "../components/PageHeader";
+import { CHILDREN_PATH } from "../play-views";
 import "./assessment-results.css";
 
 interface AssessmentResultsProps {
   child: Child;
   token: string;
   onAuthExpired: () => void;
-  onBack: () => void;
 }
 
 /* Ring geometry lives in a 72×72 viewBox; radius 30 with an 8px stroke
@@ -49,15 +50,64 @@ function ScoreRing({ correct, total }: { correct: number; total: number }) {
         ) : null}
       </svg>
       <span className="score-ring-label" dir="ltr">
-        {toArabicIndic(correct)}
-        <small>/{toArabicIndic(total)}</small>
+        {correct}
+        <small>/{total}</small>
       </span>
     </div>
   );
 }
 
+/** `/children/:childId/results`: resolves the child from the account's list; an unknown id goes back to the picker. */
+export function AssessmentResultsRoute() {
+  const { auth, expire } = useSignedIn();
+  const { childId = "" } = useParams();
+  const [child, setChild] = useState<Child | null | "missing">(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadChild = useCallback(async (): Promise<void> => {
+    setLoadError(null);
+    try {
+      const found = (await listChildren(auth.accessToken)).find((candidate) => candidate.id === childId);
+      setChild(found ?? "missing");
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        expire();
+        return;
+      }
+      setLoadError(error instanceof ApiError ? error.message : "تعذر تحميل نتائج التشخيص، حاول مرة أخرى");
+    }
+  }, [auth.accessToken, childId, expire]);
+
+  useEffect(() => {
+    void loadChild();
+  }, [loadChild]);
+
+  if (child === "missing") {
+    return <Navigate to={CHILDREN_PATH} replace />;
+  }
+  if (child !== null) {
+    return <AssessmentResults child={child} token={auth.accessToken} onAuthExpired={expire} />;
+  }
+  return (
+    <main className="screen assessment-results">
+      <PageHeader title="نتائج التشخيص" parent={CHILDREN_PATH} />
+      {loadError === null ? <p className="status-text">جارٍ التحميل…</p> : null}
+      {loadError !== null ? (
+        <div className="card retry-card">
+          <p className="form-error" role="alert">
+            {loadError}
+          </p>
+          <button type="button" className="big-button" onClick={() => void loadChild()}>
+            إعادة المحاولة
+          </button>
+        </div>
+      ) : null}
+    </main>
+  );
+}
+
 /** Parent/specialist view of the child's latest diagnostic results per skill. */
-export function AssessmentResults({ child, token, onAuthExpired, onBack }: AssessmentResultsProps) {
+function AssessmentResults({ child, token, onAuthExpired }: AssessmentResultsProps) {
   const [results, setResults] = useState<PlayAssessmentSkillResult[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -89,13 +139,7 @@ export function AssessmentResults({ child, token, onAuthExpired, onBack }: Asses
 
   return (
     <main className="screen assessment-results">
-      <header className="results-top">
-        <div className="results-top-row">
-          <BackButton onClick={onBack} />
-          <h1 className="results-title">نتائج التشخيص</h1>
-          <span className="results-top-tail" aria-hidden="true" />
-        </div>
-      </header>
+      <PageHeader title="نتائج التشخيص" parent={CHILDREN_PATH} />
 
       <section className="results-child">
         <div className="results-child-medal">
@@ -139,9 +183,9 @@ export function AssessmentResults({ child, token, onAuthExpired, onBack }: Asses
               ✨
             </span>
             <p className="results-hero-fraction">
-              <span className="results-hero-correct">{toArabicIndic(totalCorrect)}</span>
+              <span className="results-hero-correct">{totalCorrect}</span>
               <span className="results-hero-of">من</span>
-              <span className="results-hero-total">{toArabicIndic(totalItems)}</span>
+              <span className="results-hero-total">{totalItems}</span>
             </p>
             <div className="results-hero-copy">
               <p className="results-hero-caption">إجابة صحيحة في الاختبار كامل</p>
@@ -163,7 +207,7 @@ export function AssessmentResults({ child, token, onAuthExpired, onBack }: Asses
                   <h2 className="results-skill-name">{result.skillName}</h2>
                   <p className="level-badge">
                     <span className="level-badge-text">
-                      المستوى الابتدائي: {toArabicIndic(result.startingLevel)}
+                      المستوى الابتدائي: {result.startingLevel}
                     </span>
                     <span className="level-dots" aria-hidden="true">
                       {[1, 2, 3].map((step) => (

@@ -69,7 +69,7 @@ apps/
   child/    Public landing page (single login), roadmap library (categories →
             roadmaps with per-roadmap progress), journey map, exercise runner,
             diagnostic assessment, rewards shop, screen-time goodnight screen;
-            hash routes for back/deep links
+            path-based routes (/play, /roadmaps/<id>, …) for back/deep links
   admin/    Exercises (visual config editor + JSON), types, roadmaps + categories
             (covers, publish state), assessments, asset library, platform sounds
   web/      Parent: weekly summaries, child detail, screen-time settings,

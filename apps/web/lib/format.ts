@@ -5,16 +5,16 @@ import { useTranslations } from "next-intl";
 import { ApiError, isNetworkError } from "./api";
 
 /**
- * ICU data in some environments resolves `ar` to Latin digits; the explicit
- * `arab` numbering extension keeps Arabic-Indic digits deterministic.
+ * Arabic text, Western digits (123) everywhere: the explicit `latn`
+ * numbering extension keeps `ar` from resolving to Arabic-Indic digits.
  */
-const NUMBER_LOCALES: Record<string, string> = { ar: "ar-u-nu-arab" };
+const NUMBER_LOCALES: Record<string, string> = { ar: "ar-u-nu-latn" };
 
 function numberLocale(locale: string): string {
   return NUMBER_LOCALES[locale] ?? locale;
 }
 
-/** Locale-aware number (Arabic-Indic digits with the `ar` locale). */
+/** Locale-aware number, always with Western digits. */
 export function formatNumber(value: number, locale: string): string {
   return new Intl.NumberFormat(numberLocale(locale)).format(value);
 }

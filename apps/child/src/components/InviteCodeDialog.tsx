@@ -8,14 +8,18 @@ interface InviteCodeDialogProps {
 
 export function InviteCodeDialog({ code, onClose }: InviteCodeDialogProps) {
   const [copied, setCopied] = useState(false);
+  const [copying, setCopying] = useState(false);
 
   async function copyCode(): Promise<void> {
     setCopied(false);
+    setCopying(true);
     try {
       await navigator.clipboard.writeText(code);
       setCopied(true);
     } catch {
       // Clipboard access can be blocked; the code stays selectable as text.
+    } finally {
+      setCopying(false);
     }
   }
 
@@ -26,10 +30,10 @@ export function InviteCodeDialog({ code, onClose }: InviteCodeDialogProps) {
         {code}
       </output>
       <div className="dialog-actions">
-        <button type="button" className="big-button" onClick={() => void copyCode()}>
-          {copied ? "تم النسخ" : "نسخ الرمز"}
+        <button type="button" className="big-button confirm" disabled={copying} onClick={() => void copyCode()}>
+          {copying ? "جارٍ النسخ…" : copied ? "تم النسخ" : "نسخ الرمز"}
         </button>
-        <button type="button" className="big-button secondary" onClick={onClose}>
+        <button type="button" className="big-button neutral" onClick={onClose}>
           تم
         </button>
       </div>

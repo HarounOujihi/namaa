@@ -2,27 +2,6 @@
    One sticky header, then a tall map: sandy road, round stage stops,
    palm/bush greenery, water washes at both shores. */
 
-.journey-top {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  width: 100%;
-  padding: 6px 0 8px;
-  background: var(--bg);
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
-  box-shadow: 0 6px 14px rgba(93, 64, 55, 0.08);
-}
-
-/* One slim row: greeting + roadmap chip on one end, rewards + exit on the
-   other. The map gets the screen; the header gets out of the way. */
-.journey-top-row {
-  width: min(720px, 100%);
-  margin-inline: auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .journey {
   position: relative;
   width: min(720px, 100%);
