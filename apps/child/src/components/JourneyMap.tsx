@@ -97,6 +97,11 @@ export function JourneyMap({ stages, completedItemIds, onOpenStage, equippedItem
       setRtl(getComputedStyle(el).direction === "rtl");
     };
     measure();
+    // ResizeObserver needs Chrome 64 / iOS 13.4; older devices re-measure on window resize.
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measure);
+      return () => window.removeEventListener("resize", measure);
+    }
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();

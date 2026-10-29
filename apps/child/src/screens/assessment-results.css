@@ -401,3 +401,24 @@
     animation: none;
   }
 }
+
+/* Browsers without min()/max()/clamp() (Chrome < 79, iOS < 11.3) drop those
+   declarations; these exact-enough fixed equivalents take over there. */
+@supports not (width: min(1px, 2px)) {
+  .results-child {
+    width: 100%;
+    max-width: 640px;
+  }
+  .results-body {
+    width: 100%;
+    max-width: 640px;
+  }
+  .results-hero {
+    padding: 5vw 4vw;
+  }
+  @media (min-width: 640px) {
+    .results-hero {
+      gap: 4vw;
+    }
+  }
+}

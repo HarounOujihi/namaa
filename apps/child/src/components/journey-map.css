@@ -256,3 +256,19 @@
     transform: none;
   }
 }
+
+/* Browsers without min()/max()/clamp() (Chrome < 79, iOS < 11.3) drop those
+   declarations; these exact-enough fixed equivalents take over there. */
+@supports not (width: min(1px, 2px)) {
+  .journey {
+    width: 100%;
+    max-width: 720px;
+  }
+  .journey-row {
+    width: 46vw;
+    max-width: 170px;
+  }
+  .journey-hint {
+    max-width: 92%;
+  }
+}

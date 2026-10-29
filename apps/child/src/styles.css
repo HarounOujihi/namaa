@@ -1642,3 +1642,141 @@ body {
     font-size: 1.8rem;
   }
 }
+
+/* App-wide crash fallback (ErrorBoundary) */
+.crash-screen {
+  min-height: 100vh;
+  justify-content: center;
+  text-align: center;
+}
+
+.crash-owl {
+  font-size: 4.5rem;
+  line-height: 1;
+}
+
+.crash-title {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 900;
+}
+
+.crash-text {
+  max-width: 34ch;
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.crash-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.crash-actions .big-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+/* Old browsers (Chrome < 88, iOS < 15) lack aspect-ratio: a spacer whose
+   padding is relative to the cover's own width keeps every cover 16:9,
+   including the narrow one in the "تابع رحلتك" card. */
+@supports not (aspect-ratio: 1) {
+  .lib-cover {
+    display: block;
+  }
+
+  .lib-cover::before {
+    content: "";
+    display: block;
+    padding-top: 56.25%;
+  }
+
+  .lib-cover > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .lib-cover-emoji {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Browsers without min()/max()/clamp() (Chrome < 79, iOS < 11.3) drop those
+   declarations; these exact-enough fixed equivalents take over there. */
+@supports not (width: min(1px, 2px)) {
+  .screen {
+    width: 100%;
+    max-width: 860px;
+    padding: 24px 4vw 48px;
+  }
+  .card {
+    width: 100%;
+    max-width: 480px;
+  }
+  .picker-header {
+    width: 100%;
+    max-width: 760px;
+  }
+  .child-grid {
+    width: 100%;
+    max-width: 760px;
+  }
+  .dialog {
+    width: 100%;
+    max-width: 480px;
+  }
+  .page-header-row {
+    width: 100%;
+    max-width: 720px;
+  }
+  .page-header.is-wide .page-header-row {
+    width: 100%;
+    max-width: 1100px;
+  }
+  .screen.child-home.is-library {
+    width: 100%;
+    max-width: 1180px;
+  }
+  .lib-page {
+    width: 100%;
+    max-width: 1100px;
+  }
+  .lib-continue-cover {
+    flex: 0 0 30%;
+  }
+  .roadmap-tabs {
+    width: 100%;
+    max-width: 720px;
+  }
+  .play-screen {
+    width: 100%;
+    max-width: 720px;
+  }
+  .feedback-banner {
+    width: 100%;
+    max-width: 520px;
+  }
+  .assessment-banner {
+    width: 100%;
+    max-width: 720px;
+  }
+  .assessment-progress {
+    width: 100%;
+    max-width: 520px;
+  }
+  .assessment-results-list {
+    width: 100%;
+    max-width: 520px;
+  }
+}

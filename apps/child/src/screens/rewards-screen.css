@@ -492,3 +492,32 @@
     transform: none;
   }
 }
+
+/* Old browsers (Chrome < 88, iOS < 15) lack aspect-ratio: mirror the width
+   fallback so the owl medallion stays a circle. */
+@supports not (aspect-ratio: 1) {
+  .rewards-hero-owl {
+    height: 26vw;
+    min-height: 112px;
+    max-height: 168px;
+  }
+}
+
+/* Browsers without min()/max()/clamp() (Chrome < 79, iOS < 11.3) drop those
+   declarations; these exact-enough fixed equivalents take over there. */
+@supports not (width: min(1px, 2px)) {
+  .rewards-hero {
+    gap: 4vw;
+    padding: 4vw;
+  }
+  .rewards-hero-owl {
+    width: 26vw;
+    min-width: 112px;
+    max-width: 168px;
+  }
+  .shop-preview .mascot {
+    width: 18vw;
+    min-width: 72px;
+    max-width: 96px;
+  }
+}

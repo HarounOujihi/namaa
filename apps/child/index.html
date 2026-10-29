@@ -16,9 +16,69 @@
       property="og:description"
       content="رحلتي تطبيق عربي يساعد الأطفال الذين يواجهون صعوبات التعلّم على التقدّم خطوة بخطوة، من خلال ألعاب وأنشطة ممتعة، بمتابعة الأسرة والمختص."
     />
+    <!-- Boot screen: visible from the first byte and replaced when React
+         mounts, so a slow or unsupported phone never sees an empty page. -->
+    <style>
+      html, body { margin: 0; background: #fff7ed; }
+      .boot { min-height: 100vh; box-sizing: border-box; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #341a0a; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Tahoma, Arial, sans-serif; }
+      .boot-owl { font-size: 72px; line-height: 1; }
+      .boot-name { margin: 12px 0 8px; font-size: 28px; font-weight: 900; }
+      .boot-text { margin: 10px 0 0; max-width: 340px; font-size: 17px; line-height: 1.7; color: #5d4037; }
+      .boot-dots span { display: inline-block; width: 10px; height: 10px; margin: 0 4px; border-radius: 50%; background: #d84315; animation: boot-pulse 1s infinite ease-in-out; }
+      .boot-dots span:nth-child(2) { animation-delay: 0.15s; }
+      .boot-dots span:nth-child(3) { animation-delay: 0.3s; }
+      .boot-retry { margin-top: 18px; min-height: 48px; padding: 0 28px; border: 0; border-radius: 999px; background: #2e7d32; color: #ffffff; font: inherit; font-size: 17px; font-weight: 800; cursor: pointer; }
+      @keyframes boot-pulse { 0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .boot-dots span { animation: none; } }
+    </style>
+    <noscript><style>.boot-dots, #boot-text { display: none; }</style></noscript>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot" id="boot" role="status" aria-live="polite">
+        <div class="boot-owl" aria-hidden="true">🦉</div>
+        <p class="boot-name">رحلتي</p>
+        <div class="boot-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+        <p class="boot-text" id="boot-text">جارٍ التحميل…</p>
+        <noscript><p class="boot-text">لتشغيل رحلتي فعّل JavaScript في المتصفح، أو افتح الرابط في Chrome أو Safari.</p></noscript>
+      </div>
+    </div>
+    <script>
+      // Plain ES5 on purpose: it must run on browsers too old for the app.
+      (function () {
+        var reported = false;
+        function report(message) {
+          var boot = document.getElementById("boot");
+          if (!boot || reported) {
+            return;
+          }
+          reported = true;
+          var dots = boot.querySelector(".boot-dots");
+          if (dots) {
+            dots.style.display = "none";
+          }
+          document.getElementById("boot-text").textContent = message;
+          var retry = document.createElement("button");
+          retry.type = "button";
+          retry.className = "boot-retry";
+          retry.textContent = "إعادة المحاولة";
+          retry.onclick = function () {
+            window.location.reload();
+          };
+          boot.appendChild(retry);
+        }
+        // A script error before the app mounts: the browser can't run it.
+        window.addEventListener("error", function () {
+          setTimeout(function () {
+            report("تعذّر تشغيل التطبيق على هذا المتصفح. افتح الرابط في Chrome أو Safari بعد تحديثه.");
+          }, 3000);
+        });
+        // Still booting after 20 s: a very slow connection or a stalled download.
+        setTimeout(function () {
+          report("التحميل يستغرق وقتًا أطول من المعتاد. تأكّد من الاتصال بالإنترنت ثم أعد المحاولة، أو افتح الرابط في Chrome أو Safari بعد تحديثه.");
+        }, 20000);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

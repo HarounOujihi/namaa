@@ -3,6 +3,7 @@ import { ExercisePlayer } from "@dyslexia/exercise-engine";
 import type { AnswerResult } from "@dyslexia/exercise-engine";
 import { ApiError, submitPlayAssessmentAttempt } from "../api";
 import { playAppSound } from "../app-sounds";
+import { newClientId } from "../client-id";
 import type { PlayAssessmentAttemptAnswer, PlayAssessmentItem } from "../types";
 import { Mascot } from "../components/Mascot";
 import { PageHeader } from "../components/PageHeader";
@@ -39,7 +40,7 @@ export function AssessmentRunner({
   const [answered, setAnswered] = useState(false);
   const answersRef = useRef<PlayAssessmentAttemptAnswer[]>([]);
   // startedAt is the intro start; completedAt is stamped when submitting.
-  const sessionRef = useRef({ clientAttemptId: crypto.randomUUID(), startedAt: new Date().toISOString() });
+  const sessionRef = useRef({ clientAttemptId: newClientId(), startedAt: new Date().toISOString() });
   const submittedRef = useRef(false);
   const nextButtonRef = useRef<HTMLButtonElement | null>(null);
 

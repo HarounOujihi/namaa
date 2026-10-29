@@ -4,6 +4,7 @@ import { ExercisePlayer, speakArabic } from "@dyslexia/exercise-engine";
 import type { AnswerResult } from "@dyslexia/exercise-engine";
 import { ApiError, submitPlayAttempt } from "../api";
 import { playAppSound } from "../app-sounds";
+import { newClientId } from "../client-id";
 import { PageHeader } from "../components/PageHeader";
 import type { PlayAttemptResult, PlayStageItem } from "../types";
 
@@ -39,7 +40,7 @@ interface AttemptRewards {
 }
 
 function newSession(): PlaySession {
-  return { clientAttemptId: crypto.randomUUID(), startedAt: new Date().toISOString() };
+  return { clientAttemptId: newClientId(), startedAt: new Date().toISOString() };
 }
 
 /**

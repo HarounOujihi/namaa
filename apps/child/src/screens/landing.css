@@ -827,3 +827,36 @@
     transform: translateY(-10px) rotate(-4deg);
   }
 }
+
+/* Old browsers (Chrome < 88, iOS < 15) lack aspect-ratio; every child of the
+   scene is absolutely positioned, so a width-relative spacer gives it height. */
+@supports not (aspect-ratio: 1) {
+  .landing-hero-visual::before {
+    content: "";
+    display: block;
+    padding-top: 95%;
+  }
+}
+
+/* Browsers without min()/max()/clamp() (Chrome < 79, iOS < 11.3) drop those
+   declarations; these exact-enough fixed equivalents take over there. */
+@supports not (width: min(1px, 2px)) {
+  .landing-container {
+    width: calc(100% - 32px);
+    max-width: 1120px;
+  }
+  .landing-hero-visual {
+    width: 100%;
+    max-width: 380px;
+  }
+  @media (min-width: 640px) {
+    .landing-container {
+      width: calc(100% - 48px);
+      max-width: 1120px;
+    }
+    .landing-hero-visual {
+      width: 100%;
+      max-width: 440px;
+    }
+  }
+}
